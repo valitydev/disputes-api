@@ -1,0 +1,105 @@
+server:
+  port: ${server.port}
+
+management:
+  server:
+    port: ${management.port}
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+service:
+  invoicing:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  dominant:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    cache:
+      currencies:
+        poolSize: 10
+        ttlSec: 86400
+      terminals:
+        poolSize: 30
+        ttlSec: 60
+      providers:
+        poolSize: 20
+        ttlSec: 300
+      payment_services:
+        poolSize: 30
+        ttlSec: 300
+      proxies:
+        poolSize: 30
+        ttlSec: 300
+  bouncer:
+    url: http://localhost:8022/change_it
+    networkTimeout: 10000
+    deployment-id: production
+    realm: external
+    rule-set-id: change_it
+    operation-id: change_it
+    auth:
+      enabled: false
+  tokenKeeper:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  adapters:
+    connection:
+      timeoutSec: 30
+      poolSize: 10
+      ttlMin: 1440
+      reconnect:
+        maxAttempts: 3
+        initialDelaySec: 1
+
+spring:
+  application:
+    name: ${project.name}
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/daway
+    username: postgres
+    password: postgres
+  threads:
+    virtual:
+      enabled: true
+
+info:
+  version: ${project.version}
+  stage: dev
+
+auth:
+  enabled: true
+
+cascade:
+  max-time-polling-sec: 5
+  thread-sleep-ms: 100
+
+metrics:
+  woody:
+    name: p2p.api.woody.client.request
+
+bank-details:
+  bic:
+    alfabank: "044525593"
+    raiffeisen: "044525700"
+    sberbank: "044525225"
+    tinkoff: "044525974"
+  purpose:
+    sberbank: Перевод
