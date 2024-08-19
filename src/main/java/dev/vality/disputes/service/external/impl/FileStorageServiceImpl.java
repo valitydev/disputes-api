@@ -14,7 +14,6 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.entity.FileEntity;
-import org.apache.thrift.TException;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -35,16 +34,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     private final FileStorageProperties fileStorageProperties;
     private final FileStorageSrv.Iface fileStorageClient;
     private final CloseableHttpClient httpClient;
-
-    @Override
-    public boolean isFileExists(String fileId) {
-        try {
-            fileStorageClient.getFileData(fileId).getFileName();
-            return true;
-        } catch (TException e) {
-            return false;
-        }
-    }
 
     @Override
     @SneakyThrows
