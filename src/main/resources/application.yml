@@ -55,6 +55,11 @@ service:
   tokenKeeper:
     url: http://localhost:8022/change_it
     networkTimeout: 5000
+  file-storage:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    urlLifeTimeDuration: 360
+    timeZone: Europe/Moscow
   adapters:
     connection:
       timeoutSec: 30
@@ -65,6 +70,10 @@ service:
         initialDelaySec: 1
 
 spring:
+  servlet:
+    multipart:
+      max-request-size: 10MB
+      max-file-size: 10MB
   application:
     name: ${project.name}
   output:
@@ -73,7 +82,7 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/daway
+    url: jdbc:postgresql://localhost:5432/dispute
     username: postgres
     password: postgres
   threads:
@@ -87,19 +96,5 @@ info:
 auth:
   enabled: true
 
-cascade:
-  max-time-polling-sec: 5
-  thread-sleep-ms: 100
-
-metrics:
-  woody:
-    name: p2p.api.woody.client.request
-
-bank-details:
-  bic:
-    alfabank: "044525593"
-    raiffeisen: "044525700"
-    sberbank: "044525225"
-    tinkoff: "044525974"
-  purpose:
-    sberbank: Перевод
+dispute:
+  batchSize: 1

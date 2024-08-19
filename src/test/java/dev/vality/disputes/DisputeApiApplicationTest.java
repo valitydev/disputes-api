@@ -2,7 +2,8 @@ package dev.vality.disputes;
 
 import org.junit.jupiter.api.Test;
 
-class P2pApiApplicationTest {
+class DisputeApiApplicationTest {
+
     @Test
     public void up() {
 
