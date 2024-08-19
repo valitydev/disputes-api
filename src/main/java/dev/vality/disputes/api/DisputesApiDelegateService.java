@@ -3,9 +3,9 @@ package dev.vality.disputes.api;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.FileMeta;
-import dev.vality.disputes.model.ContextPaymentDto;
+import dev.vality.disputes.model.PaymentParams;
 import dev.vality.disputes.security.AccessService;
-import dev.vality.disputes.service.PaymentContextBuilder;
+import dev.vality.disputes.service.PaymentParamsBuilder;
 import dev.vality.disputes.service.external.FileStorageService;
 import dev.vality.swag.disputes.model.*;
 import jakarta.validation.Valid;
@@ -28,7 +28,7 @@ import java.util.Optional;
 public class DisputesApiDelegateService implements DisputesApiDelegate {
 
     private final AccessService accessService;
-    private final PaymentContextBuilder paymentContextBuilder;
+    private final PaymentParamsBuilder paymentParamsBuilder;
     private final FileStorageService fileStorageService;
     private final DisputeDao disputeDao;
 
@@ -42,7 +42,7 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
             String reason) {
         var accessData = accessService.buildAccessData(invoiceId, paymentId);
         accessService.checkUserAccess(accessData);
-        var paymentParams = paymentContextBuilder.buildGeneralPaymentContext(accessData);
+        var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var files = new ArrayList<FileMeta>();
         for (var attachment : attachments) {
             var fileId = fileStorageService.saveFile(attachment.getAttachment());
@@ -81,13 +81,13 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         return ResponseEntity.ok(body);
     }
 
-    private Dispute getDispute(ContextPaymentDto p2pDto, Amount amount, String reason) {
+    private Dispute getDispute(PaymentParams paymentParams, Amount amount, String reason) {
         var dispute = new Dispute();
         dispute.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
-        dispute.setInvoiceId(p2pDto.getPaymentInfo().getInvoice().getId());
-        dispute.setPaymentId(p2pDto.getPaymentInfo().getPayment().getId());
-        dispute.setProviderId(p2pDto.getProviderId());
-        dispute.setTerminalId(p2pDto.getTerminalId());
+        dispute.setInvoiceId(paymentParams.getInvoiceId());
+        dispute.setPaymentId(paymentParams.getPaymentId());
+        dispute.setProviderId(paymentParams.getProviderId());
+        dispute.setTerminalId(paymentParams.getTerminalId());
         dispute.setAmount(Optional.ofNullable(amount).map(Amount::getAmount).orElse(null));
         dispute.setCurrency(Optional.ofNullable(amount).map(Amount::getCurrency).orElse(null));
         dispute.setReason(reason);

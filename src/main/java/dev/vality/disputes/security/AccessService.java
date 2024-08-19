@@ -34,15 +34,15 @@ public class AccessService {
     }
 
     public void checkUserAccess(AccessData accessData) {
-        log.info("Check the user's rights to perform p2p operation");
+        log.info("Check the user's rights to perform dispute operation");
         try {
             var resolution = bouncerService.getResolution(accessData);
             switch (resolution.getSetField()) {
                 case FORBIDDEN: {
                     if (authEnabled) {
-                        throw new AuthorizationException("No rights to perform p2p");
+                        throw new AuthorizationException("No rights to perform dispute");
                     } else {
-                        log.warn("No rights to perform p2p operation, but auth is disabled");
+                        log.warn("No rights to perform dispute operation, but auth is disabled");
                     }
                 }
                 break;
@@ -54,10 +54,10 @@ public class AccessService {
                                     .filter(shop ->
                                             shop.getId().equals(accessData.getInvoice().getInvoice().getShopId()))
                                     .findFirst()
-                                    .orElseThrow(() -> new AuthorizationException("No rights to perform p2p"));
+                                    .orElseThrow(() -> new AuthorizationException("No rights to perform dispute"));
                         }
                     } else {
-                        log.warn("Rights to perform p2p are restricted, but auth is disabled");
+                        log.warn("Rights to perform dispute are restricted, but auth is disabled");
                     }
                 }
                 break;
