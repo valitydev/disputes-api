@@ -1,9 +1,5 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.ProxyDefinition;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.DisputeCreatedResult;
 import dev.vality.disputes.constant.ErrorReason;
@@ -12,8 +8,7 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
-import dev.vality.disputes.schedule.converter.DisputeParamsConverter;
-import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +20,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -33,13 +27,11 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
 public class CreatedDisputeService {
 
+    private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;
     private final ProviderDisputeDao providerDisputeDao;
-    private final ProviderRouting providerRouting;
     private final CreatedAttachmentsService createdAttachmentsService;
-    private final DominantService dominantService;
     private final InvoicingService invoicingService;
-    private final DisputeParamsConverter disputeParamsConverter;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
@@ -79,13 +71,7 @@ public class CreatedDisputeService {
             log.debug("Dispute status has been set to failed {}", dispute);
             return;
         }
-        var terminal = getTerminal(dispute.getTerminalId());
-        var proxy = getProxy(dispute.getProviderId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.get().getOptions());
-        var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
-        log.info("Trying to routed remote provider's createDispute() call {}", dispute);
-        var result = remoteClient.createDispute(disputeParams);
-        log.debug("Routed remote provider's createDispute() has been called {}", dispute);
+        var result = remoteClient.createDispute(dispute, attachments);
         finishTask(dispute, result);
     }
 
@@ -105,14 +91,6 @@ public class CreatedDisputeService {
                 log.debug("Dispute status has been set to failed {}", dispute);
             }
         }
-    }
-
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
-        return dominantService.getTerminal(new TerminalRef(terminalId));
-    }
-
-    private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
-        return dominantService.getProxy(new ProviderRef(providerId));
     }
 
     private InvoicePayment getInvoicePayment(Dispute dispute) {

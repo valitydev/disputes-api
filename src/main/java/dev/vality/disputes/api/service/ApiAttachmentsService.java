@@ -15,6 +15,7 @@ import org.springframework.util.MimeType;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"ParameterName", "LineLength"})
 public class ApiAttachmentsService {
 
     private final FileMetaDao fileMetaDao;
@@ -23,21 +24,13 @@ public class ApiAttachmentsService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void createAttachments(CreateRequest req, Long disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
-        req.getAttachments().stream()
-                .peek(this::validateMimeType)
-                .map(attachment -> new FileMeta(
-                        // http 500
-                        fileStorageService.saveFile(attachment.getData()),
-                        disputeId,
-                        attachment.getMimeType()))
-                .peek(fileMeta -> log.debug("Trying to save Attachment {}", fileMeta.getFileId()))
-                // http 500
-                .peek(fileMetaDao::save);
+        for (CreateRequestAttachmentsInner attachment : req.getAttachments()) {
+            MimeType.valueOf(attachment.getMimeType());
+            // http 500
+            var fileMeta = new FileMeta(fileStorageService.saveFile(attachment.getData()), disputeId, attachment.getMimeType());
+            log.debug("Trying to save Attachment {}", fileMeta.getFileId());
+            fileMetaDao.save(fileMeta);
+        }
         log.debug("Attachments have been saved {}", disputeId);
-    }
-
-    private MimeType validateMimeType(CreateRequestAttachmentsInner attachment) {
-        // http 400
-        return MimeType.valueOf(attachment.getMimeType());
     }
 }

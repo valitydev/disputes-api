@@ -1,6 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.disputes.DisputeStatusResult;
@@ -10,13 +10,11 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
-import dev.vality.disputes.schedule.converter.DisputeContextConverter;
+import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.schedule.converter.InvoicePaymentAdjustmentParamsConverter;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -32,12 +29,10 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
 public class PendingDisputeService {
 
+    private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;
     private final ProviderDisputeDao providerDisputeDao;
-    private final ProviderRouting providerRouting;
-    private final DominantService dominantService;
     private final InvoicingService invoicingService;
-    private final DisputeContextConverter disputeContextConverter;
     private final InvoicePaymentAdjustmentParamsConverter invoicePaymentAdjustmentParamsConverter;
     private final AdjustmentExtractor adjustmentExtractor;
 
@@ -50,7 +45,6 @@ public class PendingDisputeService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
-    @SneakyThrows
     public void callPendingDisputeRemotely(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -69,13 +63,7 @@ public class PendingDisputeService {
             return;
         }
         log.debug("ProviderDispute has been found {}", dispute);
-        var terminal = getTerminal(dispute.getTerminalId());
-        var proxy = getProxy(dispute.getProviderId());
-        var disputeContext = disputeContextConverter.convert(providerDispute, terminal.get().getOptions());
-        var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
-        log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
-        var result = remoteClient.checkDisputeStatus(disputeContext);
-        log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
+        var result = remoteClient.checkDisputeStatus(dispute, providerDispute);
         finishTask(dispute, result);
     }
 
@@ -124,14 +112,6 @@ public class PendingDisputeService {
                 log.debug("Dispute status has been set to failed {}", dispute);
             }
         }
-    }
-
-    private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
-        return dominantService.getProxy(new ProviderRef(providerId));
-    }
-
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
-        return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 
     private InvoicePaymentAdjustment createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {

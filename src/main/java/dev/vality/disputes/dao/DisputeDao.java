@@ -56,6 +56,7 @@ public class DisputeDao extends AbstractGenericDao {
     public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.STATUS.eq(disputeStatus))
+                .orderBy(DISPUTE.CREATED_AT)
                 .limit(limit)
                 .forUpdate()
                 .skipLocked();
