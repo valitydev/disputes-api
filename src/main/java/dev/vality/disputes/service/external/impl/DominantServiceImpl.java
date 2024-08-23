@@ -23,11 +23,6 @@ public class DominantServiceImpl implements DominantService {
         return dominantCacheService.getCurrency(currencyRef);
     }
 
-    @Override
-    public PaymentService getPaymentService(PaymentServiceRef paymentServiceRef) {
-        return dominantCacheService.getPaymentService(paymentServiceRef);
-    }
-
     @Async
     @Override
     public CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef) {
@@ -41,24 +36,13 @@ public class DominantServiceImpl implements DominantService {
 
     @Async
     @Override
-    public CompletableFuture<Provider> getProvider(ProviderRef providerRef) {
+    public CompletableFuture<ProxyDefinition> getProxy(ProviderRef providerRef) {
         try {
             var provider = dominantCacheService.getProvider(providerRef);
-            return CompletableFuture.completedFuture(provider);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<ProxyDefinition> getProxy(ProxyRef proxyRef) {
-        try {
-            var proxy = dominantCacheService.getProxy(proxyRef);
+            var proxy = dominantCacheService.getProxy(provider.getProxy().getRef());
             return CompletableFuture.completedFuture(proxy);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
     }
-
 }

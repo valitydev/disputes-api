@@ -1,20 +1,20 @@
-package dev.vality.disputes.handler;
+package dev.vality.disputes.schedule.handler;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.service.DisputeService;
+import dev.vality.disputes.schedule.service.CreatedDisputeService;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class DisputePendingHandler {
+public class CreatedDisputeHandler {
 
-    private final DisputeService disputeService;
+    private final CreatedDisputeService createdDisputeService;
 
     public Long handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("dispute-creating-" + dispute.getId());
+        currentThread.setName("dispute-created-" + dispute.getId());
         try {
-            disputeService.pendingDispute(dispute);
+            createdDisputeService.callCreateDisputeRemotely(dispute);
             return dispute.getId();
         } finally {
             currentThread.setName(oldName);

@@ -8,11 +8,8 @@ public interface DominantService {
 
     Currency getCurrency(CurrencyRef currencyRef);
 
-    PaymentService getPaymentService(PaymentServiceRef paymentServiceRef);
-
     CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef);
 
-    CompletableFuture<Provider> getProvider(ProviderRef providerRef);
+    CompletableFuture<ProxyDefinition> getProxy(ProviderRef providerRef);
 
-    CompletableFuture<ProxyDefinition> getProxy(ProxyRef proxyRef);
 }

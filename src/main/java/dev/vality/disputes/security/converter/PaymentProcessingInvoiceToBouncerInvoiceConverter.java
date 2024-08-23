@@ -1,4 +1,4 @@
-package dev.vality.disputes.converter;
+package dev.vality.disputes.security.converter;
 
 import dev.vality.bouncer.base.Entity;
 import dev.vality.bouncer.context.v1.Payment;

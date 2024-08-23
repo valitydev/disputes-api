@@ -25,9 +25,41 @@ public class CacheConfig {
     @Bean
     @Primary
     public CacheManager adaptersCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
+        var caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.setCaffeine(adaptersConnectionsCacheConfig());
         caffeineCacheManager.setCacheNames(List.of("adapters"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager currenciesCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getCurrencies()));
+        caffeineCacheManager.setCacheNames(List.of("currencies"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager terminalsCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getTerminals()));
+        caffeineCacheManager.setCacheNames(List.of("terminals"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager providersCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProviders()));
+        caffeineCacheManager.setCacheNames(List.of("providers"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager proxiesCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProxies()));
+        caffeineCacheManager.setCacheNames(List.of("proxies"));
         return caffeineCacheManager;
     }
 
@@ -37,50 +69,9 @@ public class CacheConfig {
                 .maximumSize(adaptersConnectionProperties.getPoolSize());
     }
 
-    @Bean
-    public CacheManager currenciesCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getCurrencies()));
-        caffeineCacheManager.setCacheNames(List.of("currencies"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager terminalsCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getTerminals()));
-        caffeineCacheManager.setCacheNames(List.of("terminals"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager providersCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProviders()));
-        caffeineCacheManager.setCacheNames(List.of("providers"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager paymentServicesCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getPaymentServices()));
-        caffeineCacheManager.setCacheNames(List.of("payment_services"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager proxiesCacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProxies()));
-        caffeineCacheManager.setCacheNames(List.of("proxies"));
-        return caffeineCacheManager;
-    }
-
     private Caffeine getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
                 .maximumSize(cacheConfig.getPoolSize());
     }
-
 }

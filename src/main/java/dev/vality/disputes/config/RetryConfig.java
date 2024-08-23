@@ -1,7 +1,7 @@
 package dev.vality.disputes.config;
 
+import dev.vality.dao.DaoException;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
-import dev.vality.woody.api.flow.error.WUndefinedResultException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +19,11 @@ public class RetryConfig {
     private final AdaptersConnectionProperties adaptersConnectionProperties;
 
     @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
+    public RetryTemplate retryDbTemplate() {
+        var retryTemplate = new RetryTemplate();
         retryTemplate.setRetryPolicy(
                 new SimpleRetryPolicy(adaptersConnectionProperties.getReconnect().getMaxAttempts(),
-                        Collections.singletonMap(WUndefinedResultException.class, true), true)
-        );
+                        Collections.singletonMap(DaoException.class, true), true));
         var backoffPolicy = new ExponentialBackOffPolicy();
         backoffPolicy
                 .setInitialInterval(TimeUnit.SECONDS.toMillis(
@@ -32,5 +31,4 @@ public class RetryConfig {
         retryTemplate.setBackOffPolicy(backoffPolicy);
         return retryTemplate;
     }
-
 }

@@ -1,4 +1,4 @@
-package dev.vality.disputes.model;
+package dev.vality.disputes.api.model;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -14,9 +14,14 @@ public class PaymentParams {
 
     private String invoiceId;
     private String paymentId;
+    private Integer terminalId;
+    private Integer providerId;
+    private String providerTrxId;
+    private String currencyName;
+    private String currencySymbolicCode;
+    private Integer currencyNumericCode;
+    private Integer currencyExponent;
     @ToString.Exclude
     private Map<String, String> options;
-    private String terminalId;
-    private String providerId;
 
 }

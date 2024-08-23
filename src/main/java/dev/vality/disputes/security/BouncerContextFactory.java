@@ -6,9 +6,9 @@ import dev.vality.bouncer.context.v1.Deployment;
 import dev.vality.bouncer.context.v1.Environment;
 import dev.vality.bouncer.decisions.Context;
 import dev.vality.disputes.config.properties.BouncerProperties;
-import dev.vality.disputes.converter.ContextFragmentV1ToContextFragmentConverter;
-import dev.vality.disputes.converter.PaymentProcessingInvoiceToBouncerInvoiceConverter;
-import dev.vality.disputes.converter.PaymentProcessingInvoiceToCommonApiOperationConverter;
+import dev.vality.disputes.security.converter.ContextFragmentV1ToContextFragmentConverter;
+import dev.vality.disputes.security.converter.PaymentProcessingInvoiceToBouncerInvoiceConverter;
+import dev.vality.disputes.security.converter.PaymentProcessingInvoiceToCommonApiOperationConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class BouncerContextFactory {
     private ContextFragment buildCapiContextFragment(AccessData accessData) {
         var env = buildEnvironment();
         var contextPaymentProcessing = buildPaymentProcessingContext(accessData);
-        ContextFragment fragment = new ContextFragment();
+        var fragment = new ContextFragment();
         return fragment
                 .setCapi(invoiceToCapiOpConverter.convert(accessData.getInvoice()))
                 .setEnv(env)

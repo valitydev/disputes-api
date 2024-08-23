@@ -1,11 +1,9 @@
-package dev.vality.disputes.controller;
+package dev.vality.disputes.api.controller;
 
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.NotFoundException;
-import dev.vality.disputes.exception.ProviderErrorException;
 import dev.vality.disputes.exception.TokenKeeperException;
 import dev.vality.swag.disputes.model.DefaultLogicError;
-import dev.vality.swag.disputes.model.GeneralError;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.InvalidMimeTypeException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,6 +35,15 @@ import static org.springframework.http.ResponseEntity.status;
 public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
+
+    @ExceptionHandler({InvalidMimeTypeException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleInvalidMimeTypeException(InvalidMimeTypeException e) {
+        log.warn("<- Res [400]: MimeType not valid", e);
+        return new DefaultLogicError()
+                .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
+                .message(e.getMessage());
+    }
 
     @ExceptionHandler({ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -65,7 +73,6 @@ public class ErrorControllerAdvice {
         return new DefaultLogicError()
                 .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
                 .message(e.getMessage());
-
     }
 
     @ExceptionHandler({TokenKeeperException.class})
@@ -100,21 +107,6 @@ public class ErrorControllerAdvice {
                 .build();
     }
 
-    private HttpHeaders httpHeaders(HttpMediaTypeNotSupportedException e) {
-        HttpHeaders headers = new HttpHeaders();
-        List<MediaType> mediaTypes = e.getSupportedMediaTypes();
-        if (!CollectionUtils.isEmpty(mediaTypes)) {
-            headers.setAccept(mediaTypes);
-        }
-        return headers;
-    }
-
-//    @ExceptionHandler({MethodNotSupported.class})
-//    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-//    public void handleMethodNotSupported(MethodNotSupported e) {
-//        log.warn("<- Res [422]: Method not supported", e);
-//    }
-
     // ----------------- 5xx -----------------------------------------------------
 
     @ExceptionHandler(HttpClientErrorException.class)
@@ -130,15 +122,18 @@ public class ErrorControllerAdvice {
         log.error("<- Res [504]: Timeout with using inner http client", e);
     }
 
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public void handleException(Exception e) {
+    public void handleException(Throwable e) {
         log.error("<- Res [500]: Unrecognized inner error", e);
     }
 
-    @ExceptionHandler({ProviderErrorException.class})
-    public ResponseEntity<GeneralError> handleProviderError(ProviderErrorException e) {
-        log.warn("<- Res [500]: {}", e.getMessage());
-        return ResponseEntity.internalServerError().body(e.getGeneralError());
+    private HttpHeaders httpHeaders(HttpMediaTypeNotSupportedException e) {
+        var headers = new HttpHeaders();
+        List<MediaType> mediaTypes = e.getSupportedMediaTypes();
+        if (!CollectionUtils.isEmpty(mediaTypes)) {
+            headers.setAccept(mediaTypes);
+        }
+        return headers;
     }
 }

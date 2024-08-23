@@ -1,7 +1,7 @@
-package dev.vality.disputes.service.external.impl;
+package dev.vality.disputes.security.service.impl;
 
 import dev.vality.disputes.exception.TokenKeeperException;
-import dev.vality.disputes.service.external.TokenKeeperService;
+import dev.vality.disputes.security.service.TokenKeeperService;
 import dev.vality.token.keeper.AuthData;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import dev.vality.token.keeper.TokenSourceContext;
@@ -42,7 +42,7 @@ public class TokenKeeperServiceImpl implements TokenKeeperService {
                 || ObjectUtils.isEmpty(attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION))) {
             return Optional.empty();
         }
-        String token = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION).substring(bearerPrefix.length());
+        var token = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION).substring(bearerPrefix.length());
         return Optional.of(token);
     }
 }

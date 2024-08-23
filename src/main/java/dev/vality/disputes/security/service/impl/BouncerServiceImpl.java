@@ -1,4 +1,4 @@
-package dev.vality.disputes.service.external.impl;
+package dev.vality.disputes.security.service.impl;
 
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.bouncer.decisions.Resolution;
@@ -6,7 +6,7 @@ import dev.vality.disputes.config.properties.BouncerProperties;
 import dev.vality.disputes.exception.BouncerException;
 import dev.vality.disputes.security.AccessData;
 import dev.vality.disputes.security.BouncerContextFactory;
-import dev.vality.disputes.service.external.BouncerService;
+import dev.vality.disputes.security.service.BouncerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;

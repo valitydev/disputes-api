@@ -1,7 +1,6 @@
 package dev.vality.disputes.config;
 
 import dev.vality.woody.api.flow.WFlow;
-import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,8 +31,8 @@ public class WebConfig {
 
     @Bean
     public FilterRegistrationBean woodyFilter() {
-        WFlow woodyFlow = new WFlow();
-        Filter filter = new OncePerRequestFilter() {
+        var woodyFlow = new WFlow();
+        var filter = new OncePerRequestFilter() {
 
             @Override
             protected void doFilterInternal(HttpServletRequest request,
@@ -56,7 +55,7 @@ public class WebConfig {
             }
         };
 
-        FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
+        var filterRegistrationBean = new FilterRegistrationBean();
         filterRegistrationBean.setFilter(filter);
         filterRegistrationBean.setOrder(-50);
         filterRegistrationBean.setName("woodyFilter");

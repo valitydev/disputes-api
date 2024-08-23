@@ -20,4 +20,5 @@ public class BouncerProperties {
     private String ruleSetId;
     @NotEmpty
     private String operationId;
+
 }

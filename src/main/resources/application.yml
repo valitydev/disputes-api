@@ -37,9 +37,6 @@ service:
       providers:
         poolSize: 20
         ttlSec: 300
-      payment_services:
-        poolSize: 30
-        ttlSec: 300
       proxies:
         poolSize: 30
         ttlSec: 300
@@ -70,10 +67,6 @@ service:
         initialDelaySec: 1
 
 spring:
-  servlet:
-    multipart:
-      max-request-size: 10MB
-      max-file-size: 10MB
   application:
     name: ${project.name}
   output:
@@ -98,3 +91,5 @@ auth:
 
 dispute:
   batchSize: 1
+  fixedDelayCreated: 5000
+  fixedDelayPending: 5000

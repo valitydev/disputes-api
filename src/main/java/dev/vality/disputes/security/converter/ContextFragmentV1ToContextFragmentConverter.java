@@ -1,4 +1,4 @@
-package dev.vality.disputes.converter;
+package dev.vality.disputes.security.converter;
 
 import dev.vality.bouncer.ctx.ContextFragment;
 import dev.vality.bouncer.ctx.ContextFragmentType;

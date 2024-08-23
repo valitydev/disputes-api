@@ -4,9 +4,9 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.BouncerException;
 import dev.vality.disputes.exception.NotFoundException;
-import dev.vality.disputes.service.external.BouncerService;
+import dev.vality.disputes.security.service.BouncerService;
+import dev.vality.disputes.security.service.TokenKeeperService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.service.external.TokenKeeperService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,15 @@ public class AccessService {
     @Value("${service.bouncer.auth.enabled}")
     private boolean authEnabled;
 
-    public AccessData buildAccessData(String invoiceId, String paymentId) {
+    public AccessData approveUserAccess(String invoiceId, String paymentId) {
+        log.debug("Start building AccessData");
+        var accessData = buildAccessData(invoiceId, paymentId);
+        checkUserAccessData(accessData);
+        log.debug("Finish building AccessData");
+        return accessData;
+    }
+
+    private AccessData buildAccessData(String invoiceId, String paymentId) {
         var invoice = invoicingService.getInvoice(invoiceId);
         return AccessData.builder()
                 .invoice(invoice)
@@ -33,7 +41,7 @@ public class AccessService {
                 .build();
     }
 
-    public void checkUserAccess(AccessData accessData) {
+    private void checkUserAccessData(AccessData accessData) {
         log.info("Check the user's rights to perform dispute operation");
         try {
             var resolution = bouncerService.getResolution(accessData);
