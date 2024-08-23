@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.domain.*;
+import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.disputes.DisputeStatusResult;
 import dev.vality.disputes.constant.ErrorReason;
@@ -8,6 +9,7 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
 import dev.vality.disputes.schedule.converter.DisputeContextConverter;
 import dev.vality.disputes.schedule.converter.InvoicePaymentAdjustmentParamsConverter;
 import dev.vality.disputes.service.external.DominantService;
@@ -16,7 +18,6 @@ import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -38,7 +39,7 @@ public class PendingDisputeService {
     private final InvoicingService invoicingService;
     private final DisputeContextConverter disputeContextConverter;
     private final InvoicePaymentAdjustmentParamsConverter invoicePaymentAdjustmentParamsConverter;
-    private final RetryTemplate retryDbTemplate;
+    private final AdjustmentExtractor adjustmentExtractor;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
@@ -81,20 +82,40 @@ public class PendingDisputeService {
     void finishTask(Dispute dispute, DisputeStatusResult result) {
         switch (result.getSetField()) {
             case STATUS_SUCCESS -> {
-                var params = invoicePaymentAdjustmentParamsConverter.convert(dispute, result);
-                var paymentAdjustment = createAdjustment(dispute, params);
-                if (paymentAdjustment == null) {
-                    log.error("Trying to set failed Dispute status with INVOICE_NOT_FOUND error reason {}", dispute);
-                    disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.INVOICE_NOT_FOUND, null);
+                var invoicePayment = getInvoicePayment(dispute);
+                if (invoicePayment == null || !invoicePayment.isSetRoute()) {
+                    log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
+                    disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND, null);
                     log.debug("Dispute status has been set to failed {}", dispute);
                     return;
                 }
+                var invoicePaymentAdjustment = adjustmentExtractor.searchAdjustmentByDispute(invoicePayment, dispute);
+                if (invoicePaymentAdjustment.isPresent()) {
+                    var changedAmount = adjustmentExtractor.getChangedAmount(invoicePaymentAdjustment.get(), result);
+                    log.debug("Trying to set succeeded Dispute status {}, {}", dispute, result);
+                    disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.succeeded, null, changedAmount);
+                    log.debug("Dispute status has been set to succeeded {}", dispute);
+                    return;
+                }
+                try {
+                    var params = invoicePaymentAdjustmentParamsConverter.convert(dispute, result);
+                    var paymentAdjustment = createAdjustment(dispute, params);
+                    if (paymentAdjustment == null) {
+                        log.error("Trying to set failed Dispute status with INVOICE_NOT_FOUND error reason {}", dispute);
+                        disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.INVOICE_NOT_FOUND, null);
+                        log.debug("Dispute status has been set to failed {}", dispute);
+                        return;
+                    }
+                } catch (InvoicingPaymentStatusPendingException e) {
+                    log.error("Error when hg.createPaymentAdjustment() {}", dispute, e);
+                    return;
+                }
                 log.debug("Trying to set succeeded Dispute status {}, {}", dispute, result);
-                retryDbTemplate.execute(c -> disputeDao.changeDisputeStatus(
+                disputeDao.changeDisputeStatus(
                         dispute.getId(),
                         DisputeStatus.succeeded,
                         null,
-                        result.getStatusSuccess().getChangedAmount().orElse(null)));
+                        result.getStatusSuccess().getChangedAmount().orElse(null));
                 log.debug("Dispute status has been set to succeeded {}", dispute);
             }
             case STATUS_FAIL -> {
@@ -116,5 +137,9 @@ public class PendingDisputeService {
 
     private InvoicePaymentAdjustment createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
         return invoicingService.createPaymentAdjustment(dispute.getInvoiceId(), dispute.getPaymentId(), params);
+    }
+
+    private InvoicePayment getInvoicePayment(Dispute dispute) {
+        return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 }

@@ -12,16 +12,21 @@ import java.util.Optional;
 @Component
 public class InvoicePaymentAdjustmentParamsConverter {
 
+    public static final String DISPUTE_MASK = "disputeId=%s";
+
     public InvoicePaymentAdjustmentParams convert(Dispute dispute, DisputeStatusResult result) {
         var captured = new InvoicePaymentCaptured();
-        captured.setReason(Optional.ofNullable(dispute.getReason()).orElse("dispute"));
+        var reason = Optional.ofNullable(dispute.getReason())
+                .map(s -> String.format(DISPUTE_MASK + ", reason=%s", dispute.getId(), s))
+                .orElse(String.format(DISPUTE_MASK, dispute.getId()));
+        captured.setReason(reason);
         var changedAmount = result.getStatusSuccess().getChangedAmount();
         if (changedAmount.isPresent()) {
             var cost = new Cash(changedAmount.get(), new CurrencyRef(dispute.getCurrencySymbolicCode()));
             captured.setCost(cost);
         }
         var params = new InvoicePaymentAdjustmentParams();
-        params.setReason(Optional.ofNullable(dispute.getReason()).orElse("dispute"));
+        params.setReason(reason);
         params.setScenario(getInvoicePaymentAdjustmentScenario(captured));
         return params;
     }

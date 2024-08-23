@@ -4,6 +4,7 @@ import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.damsel.domain.ProxyDefinition;
 import dev.vality.damsel.domain.Terminal;
 import dev.vality.damsel.domain.TerminalRef;
+import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.DisputeCreatedResult;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
@@ -13,6 +14,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.schedule.converter.DisputeParamsConverter;
 import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -36,6 +38,7 @@ public class CreatedDisputeService {
     private final ProviderRouting providerRouting;
     private final CreatedAttachmentsService createdAttachmentsService;
     private final DominantService dominantService;
+    private final InvoicingService invoicingService;
     private final DisputeParamsConverter disputeParamsConverter;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -52,6 +55,17 @@ public class CreatedDisputeService {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
         if (forUpdate == null || forUpdate.getStatus() != DisputeStatus.created) {
+            return;
+        }
+        var invoicePayment = getInvoicePayment(dispute);
+        if (invoicePayment == null || !invoicePayment.isSetRoute()) {
+            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
+            disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND, null);
+            log.debug("Dispute status has been set to failed {}", dispute);
+            return;
+        }
+        var status = invoicePayment.getPayment().getStatus();
+        if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
             return;
         }
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
@@ -96,5 +110,9 @@ public class CreatedDisputeService {
 
     private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
         return dominantService.getProxy(new ProviderRef(providerId));
+    }
+
+    private InvoicePayment getInvoicePayment(Dispute dispute) {
+        return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 }

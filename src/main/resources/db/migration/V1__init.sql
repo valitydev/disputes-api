@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS dspt;
 
-CREATE TYPE dspt.dispute_status AS ENUM ('created','pending', 'succeeded', 'failed');
+CREATE TYPE dspt.dispute_status AS ENUM ('created', 'pending', 'succeeded', 'failed');
 
 CREATE TABLE dspt.dispute
 (

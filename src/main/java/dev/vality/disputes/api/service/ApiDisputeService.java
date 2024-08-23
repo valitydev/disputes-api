@@ -41,7 +41,8 @@ public class ApiDisputeService {
         // http 404,500
         var dispute = disputeDao.get(Long.parseLong(disputeId), invoiceId, paymentId);
         if (ErrorReason.NO_ATTACHMENTS.equals(dispute.getErrorMessage())
-                || ErrorReason.INVOICE_NOT_FOUND.equals(dispute.getErrorMessage())) {
+                || ErrorReason.INVOICE_NOT_FOUND.equals(dispute.getErrorMessage())
+                || ErrorReason.PAYMENT_NOT_FOUND.equals(dispute.getErrorMessage())) {
             // NO_ATTACHMENTS|... нет резона отдавать наружу по http, тк она не является смысловой для юзера
             // это внутренний флаг, что получили 500 при работе с внутренними данными и лучше создать диспут заново
             // http 404
