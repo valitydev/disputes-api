@@ -22,9 +22,14 @@ public class TaskPendingDisputesService {
     private final PendingDisputeService pendingDisputeService;
     @Value("${dispute.batchSize}")
     private int batchSize;
+    @Value("${dispute.isSchedulePendingEnabled}")
+    private boolean isSchedulePendingEnabled;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}")
     public void processPending() {
+        if (!isSchedulePendingEnabled) {
+            return;
+        }
         log.info("Processing pending disputes get started");
         try {
             var disputes = pendingDisputeService.getPendingDisputesForUpdateSkipLocked(batchSize);

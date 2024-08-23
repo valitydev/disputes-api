@@ -22,9 +22,14 @@ public class TaskCreatedDisputesService {
     private final CreatedDisputeService createdDisputeService;
     @Value("${dispute.batchSize}")
     private int batchSize;
+    @Value("${dispute.isScheduleCreatedEnabled}")
+    private boolean isScheduleCreatedEnabled;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}")
     public void processCreated() {
+        if (!isScheduleCreatedEnabled) {
+            return;
+        }
         log.info("Processing created disputes get started");
         try {
             var disputes = createdDisputeService.getCreatedDisputesForUpdateSkipLocked(batchSize);

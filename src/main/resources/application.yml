@@ -93,3 +93,5 @@ dispute:
   batchSize: 1
   fixedDelayCreated: 5000
   fixedDelayPending: 5000
+  isScheduleCreatedEnabled: true
+  isSchedulePendingEnabled: true
