@@ -28,7 +28,6 @@ public class TaskPendingDisputesService {
         log.info("Processing pending disputes get started");
         try {
             var disputes = pendingDisputeService.getPendingDisputesForUpdateSkipLocked(batchSize);
-            log.debug("Trying to process {} pending disputes", disputes.size());
             var callables = disputes.stream()
                     .map(this::handlePending)
                     .collect(Collectors.toList());

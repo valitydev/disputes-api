@@ -44,7 +44,7 @@ public class CreatedDisputeService {
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
         log.debug("Trying to getCreatedDisputesForUpdateSkipLocked");
-        var locked = disputeDao.getCreatedDisputesForUpdateSkipLocked(batchSize);
+        var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.created);
         log.debug("CreatedDisputesForUpdateSkipLocked has been found, size={}", locked.size());
         return locked;
     }
@@ -55,8 +55,10 @@ public class CreatedDisputeService {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
         if (forUpdate == null || forUpdate.getStatus() != DisputeStatus.created) {
+            log.debug("Dispute locked or wrong status {}", forUpdate);
             return;
         }
+        log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
             log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
@@ -66,9 +68,10 @@ public class CreatedDisputeService {
         }
         var status = invoicePayment.getPayment().getStatus();
         if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
+            // не создаем диспут, пока платеж не финален
+            log.warn("Payment has non-final status {} {}", status, dispute);
             return;
         }
-        log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var attachments = createdAttachmentsService.getAttachments(dispute);
         if (attachments == null || attachments.isEmpty()) {
             log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute);
@@ -80,9 +83,9 @@ public class CreatedDisputeService {
         var proxy = getProxy(dispute.getProviderId());
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.get().getOptions());
         var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
-        log.debug("Trying to routed remote provider's createDispute() call {}", dispute);
+        log.info("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
-        log.debug("Routed remote provider's createDispute() has been called {}", result);
+        log.debug("Routed remote provider's createDispute() has been called {}", dispute);
         finishTask(dispute, result);
     }
 
@@ -90,14 +93,14 @@ public class CreatedDisputeService {
     void finishTask(Dispute dispute, DisputeCreatedResult result) {
         switch (result.getSetField()) {
             case SUCCESS_RESULT -> {
-                log.debug("Trying to set pending Dispute status {}, {}", dispute, result);
+                log.info("Trying to set pending Dispute status {}, {}", dispute, result);
                 providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getDisputeId(), dispute.getId()));
                 disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.pending, null, null);
                 log.debug("Dispute status has been set to pending {}", dispute);
             }
             case FAIL_RESULT -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getFailResult().getFailure());
-                log.debug("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
+                log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
                 disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, errorMessage, null);
                 log.debug("Dispute status has been set to failed {}", dispute);
             }

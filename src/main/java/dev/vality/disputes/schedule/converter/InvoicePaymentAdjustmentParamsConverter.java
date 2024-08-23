@@ -16,9 +16,7 @@ public class InvoicePaymentAdjustmentParamsConverter {
 
     public InvoicePaymentAdjustmentParams convert(Dispute dispute, DisputeStatusResult result) {
         var captured = new InvoicePaymentCaptured();
-        var reason = Optional.ofNullable(dispute.getReason())
-                .map(s -> String.format(DISPUTE_MASK + ", reason=%s", dispute.getId(), s))
-                .orElse(String.format(DISPUTE_MASK, dispute.getId()));
+        var reason = getReason(dispute);
         captured.setReason(reason);
         var changedAmount = result.getStatusSuccess().getChangedAmount();
         if (changedAmount.isPresent()) {
@@ -29,6 +27,12 @@ public class InvoicePaymentAdjustmentParamsConverter {
         params.setReason(reason);
         params.setScenario(getInvoicePaymentAdjustmentScenario(captured));
         return params;
+    }
+
+    private String getReason(Dispute dispute) {
+        return Optional.ofNullable(dispute.getReason())
+                .map(s -> String.format(DISPUTE_MASK + ", reason=%s", dispute.getId(), s))
+                .orElse(String.format(DISPUTE_MASK, dispute.getId()));
     }
 
     private InvoicePaymentAdjustmentScenario getInvoicePaymentAdjustmentScenario(InvoicePaymentCaptured captured) {

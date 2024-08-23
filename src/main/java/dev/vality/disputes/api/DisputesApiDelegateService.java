@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class DisputesApiDelegateService implements DisputesApiDelegate {
 
-    private final AccessService accessService;
     private final PaymentParamsBuilder paymentParamsBuilder;
+    private final AccessService accessService;
     private final ApiDisputeService apiDisputeService;
     private final Status200ResponseConverter status200ResponseConverter;
 

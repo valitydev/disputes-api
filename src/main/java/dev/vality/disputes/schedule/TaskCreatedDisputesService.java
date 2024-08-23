@@ -28,7 +28,6 @@ public class TaskCreatedDisputesService {
         log.info("Processing created disputes get started");
         try {
             var disputes = createdDisputeService.getCreatedDisputesForUpdateSkipLocked(batchSize);
-            log.debug("Trying to process {} created disputes", disputes.size());
             var callables = disputes.stream()
                     .map(this::handleCreated)
                     .collect(Collectors.toList());

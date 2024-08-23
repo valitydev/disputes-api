@@ -44,7 +44,7 @@ public class PendingDisputeService {
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
         log.debug("Trying to getPendingDisputesForUpdateSkipLocked");
-        var locked = disputeDao.getPendingDisputesForUpdateSkipLocked(batchSize);
+        var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.pending);
         log.debug("PendingDisputesForUpdateSkipLocked has been found, size={}", locked.size());
         return locked;
     }
@@ -55,26 +55,27 @@ public class PendingDisputeService {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
         if (forUpdate == null || forUpdate.getStatus() != DisputeStatus.pending) {
+            log.debug("Dispute locked or wrong status {}", forUpdate);
             return;
         }
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         log.debug("Trying to get ProviderDispute {}", dispute);
         var providerDispute = providerDisputeDao.get(dispute.getId());
         if (providerDispute == null) {
-            log.error("Trying to set created Dispute status {}", dispute);
             // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново
+            log.error("Trying to set created Dispute status, because createDispute() was not success {}", dispute);
             disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.created, null, null);
             log.debug("Dispute status has been set to created {}", dispute);
             return;
         }
+        log.debug("ProviderDispute has been found {}", dispute);
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        log.debug("ProviderDispute has been found {}", dispute);
         var disputeContext = disputeContextConverter.convert(providerDispute, terminal.get().getOptions());
         var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
-        log.debug("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
+        log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
         var result = remoteClient.checkDisputeStatus(disputeContext);
-        log.debug("Routed remote provider's checkDisputeStatus() has been called {}", result);
+        log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
         finishTask(dispute, result);
     }
 
@@ -92,7 +93,7 @@ public class PendingDisputeService {
                 var invoicePaymentAdjustment = adjustmentExtractor.searchAdjustmentByDispute(invoicePayment, dispute);
                 if (invoicePaymentAdjustment.isPresent()) {
                     var changedAmount = adjustmentExtractor.getChangedAmount(invoicePaymentAdjustment.get(), result);
-                    log.debug("Trying to set succeeded Dispute status {}, {}", dispute, result);
+                    log.info("Trying to set succeeded Dispute status {}, {}", dispute, result);
                     disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.succeeded, null, changedAmount);
                     log.debug("Dispute status has been set to succeeded {}", dispute);
                     return;
@@ -107,20 +108,18 @@ public class PendingDisputeService {
                         return;
                     }
                 } catch (InvoicingPaymentStatusPendingException e) {
+                    // платеж с не финальным статусом будет заблочен для создания корректировок на стороне хелгейта
                     log.error("Error when hg.createPaymentAdjustment() {}", dispute, e);
                     return;
                 }
-                log.debug("Trying to set succeeded Dispute status {}, {}", dispute, result);
-                disputeDao.changeDisputeStatus(
-                        dispute.getId(),
-                        DisputeStatus.succeeded,
-                        null,
-                        result.getStatusSuccess().getChangedAmount().orElse(null));
+                log.info("Trying to set succeeded Dispute status {}, {}", dispute, result);
+                var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
+                disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.succeeded, null, changedAmount);
                 log.debug("Dispute status has been set to succeeded {}", dispute);
             }
             case STATUS_FAIL -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getStatusFail().getFailure());
-                log.debug("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
+                log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
                 disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, errorMessage, null);
                 log.debug("Dispute status has been set to failed {}", dispute);
             }

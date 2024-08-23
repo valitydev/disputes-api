@@ -62,7 +62,7 @@ public class InvoicingServiceImpl implements InvoicingService {
             // закрываем диспут с фейлом если получили не преодолимый отказ внешних шлюзов с ключевыми данными
             return null;
         } catch (InvalidPaymentStatus | InvalidPaymentTargetStatus e) {
-            // pending платежа будет заблочен для корректировок
+            // платеж с не финальным статусом будет заблочен для создания корректировок на стороне хелгейта
             throw new InvoicingPaymentStatusPendingException(e);
         } catch (TException e2) {
             throw new InvoicingException(String.format("Failed to createPaymentAdjustment with id: %s", invoiceId), e2);

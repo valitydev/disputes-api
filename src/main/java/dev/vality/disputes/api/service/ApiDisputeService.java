@@ -46,7 +46,7 @@ public class ApiDisputeService {
             // NO_ATTACHMENTS|... нет резона отдавать наружу по http, тк она не является смысловой для юзера
             // это внутренний флаг, что получили 500 при работе с внутренними данными и лучше создать диспут заново
             // http 404
-            throw new NotFoundException(String.format("Dispute not found, disputeId='%s'", disputeId));
+            throw new NotFoundException(String.format("Dispute not found, disputeId='%s', error='%s'", disputeId, dispute.getErrorMessage()));
         }
         log.debug("Dispute has been found, disputeId={}", disputeId);
         return dispute;

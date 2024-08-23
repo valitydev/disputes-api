@@ -22,8 +22,8 @@ public class PaymentParamsBuilder {
 
     @SneakyThrows
     public PaymentParams buildGeneralPaymentContext(AccessData accessData) {
-        log.debug("Start building PaymentParams");
         var invoice = accessData.getInvoice();
+        log.debug("Start building PaymentParams id={}", invoice.getInvoice().getId());
         var payment = accessData.getPayment();
         // http 500
         var terminal = dominantService.getTerminal(payment.getRoute().getTerminal());

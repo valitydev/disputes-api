@@ -25,10 +25,10 @@ public class AccessService {
     private boolean authEnabled;
 
     public AccessData approveUserAccess(String invoiceId, String paymentId) {
-        log.debug("Start building AccessData");
+        log.info("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId);
         checkUserAccessData(accessData);
-        log.debug("Finish building AccessData");
+        log.debug("Finish building AccessData {}{}", invoiceId, paymentId);
         return accessData;
     }
 

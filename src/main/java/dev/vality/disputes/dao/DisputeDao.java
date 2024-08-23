@@ -18,6 +18,7 @@ import java.util.Optional;
 import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 
 @Component
+@SuppressWarnings({"ParameterName", "LineLength"})
 public class DisputeDao extends AbstractGenericDao {
 
     private final RowMapper<Dispute> disputeRowMapper;
@@ -48,22 +49,13 @@ public class DisputeDao extends AbstractGenericDao {
                         .and(DISPUTE.PAYMENT_ID.eq(paymentId)));
         return Optional.ofNullable(fetchOne(query, disputeRowMapper))
                 .orElseThrow(
-                        () -> new NotFoundException(String.format("Dispute not found, disputeId='%s'", disputeId)));
+                        () -> new NotFoundException(
+                                String.format("Dispute not found, disputeId='%s', invoiceId='%s', paymentId='%s'", disputeId, invoiceId, paymentId)));
     }
 
-    public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int limit) {
+    public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
         var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(DisputeStatus.created))
-                .limit(limit)
-                .forUpdate()
-                .skipLocked();
-        return Optional.ofNullable(fetch(query, disputeRowMapper))
-                .orElse(List.of());
-    }
-
-    public List<Dispute> getPendingDisputesForUpdateSkipLocked(int limit) {
-        var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(DisputeStatus.pending))
+                .where(DISPUTE.STATUS.eq(disputeStatus))
                 .limit(limit)
                 .forUpdate()
                 .skipLocked();

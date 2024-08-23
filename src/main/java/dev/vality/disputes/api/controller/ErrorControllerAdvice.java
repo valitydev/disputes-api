@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.InvalidMimeTypeException;
@@ -24,7 +23,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.context.request.WebRequest;
 
 import java.net.http.HttpTimeoutException;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.ResponseEntity.status;
@@ -130,7 +128,7 @@ public class ErrorControllerAdvice {
 
     private HttpHeaders httpHeaders(HttpMediaTypeNotSupportedException e) {
         var headers = new HttpHeaders();
-        List<MediaType> mediaTypes = e.getSupportedMediaTypes();
+        var mediaTypes = e.getSupportedMediaTypes();
         if (!CollectionUtils.isEmpty(mediaTypes)) {
             headers.setAccept(mediaTypes);
         }

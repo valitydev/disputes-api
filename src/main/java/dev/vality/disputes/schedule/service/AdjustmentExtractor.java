@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 import static dev.vality.disputes.schedule.converter.InvoicePaymentAdjustmentParamsConverter.DISPUTE_MASK;
 
 @Component
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"ParameterName", "LineLength"})
 public class AdjustmentExtractor {
 
     public Optional<InvoicePaymentAdjustment> searchAdjustmentByDispute(InvoicePayment invoicePayment, Dispute dispute) {
