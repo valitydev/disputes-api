@@ -96,7 +96,11 @@ public class PendingDisputeService {
                         return;
                     }
                 } catch (InvoicingPaymentStatusPendingException e) {
+                    // в теории 0%, что сюда попдает выполнение кода, но если попадет, то:
                     // платеж с не финальным статусом будет заблочен для создания корректировок на стороне хелгейта
+                    // и тогда диспут будет пулиться, пока платеж не зафиналится,
+                    // и тк никакой записи в коде выше нет, то пуллинг не проблема
+                    // а запрос в checkDisputeStatus по идемпотентности просто вернет тот же success
                     log.error("Error when hg.createPaymentAdjustment() {}", dispute, e);
                     return;
                 }
