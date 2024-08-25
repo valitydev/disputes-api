@@ -27,7 +27,8 @@ public class ApiAttachmentsService {
         for (CreateRequestAttachmentsInner attachment : req.getAttachments()) {
             MimeType.valueOf(attachment.getMimeType());
             // http 500
-            var fileMeta = new FileMeta(fileStorageService.saveFile(attachment.getData()), disputeId, attachment.getMimeType());
+            var fileId = fileStorageService.saveFile(attachment.getData());
+            var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());
             log.debug("Trying to save Attachment {}", fileMeta.getFileId());
             fileMetaDao.save(fileMeta);
         }
