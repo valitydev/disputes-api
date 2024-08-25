@@ -30,6 +30,7 @@ public class ApiAttachmentsService {
             var fileId = fileStorageService.saveFile(attachment.getData());
             var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());
             log.debug("Trying to save Attachment {}", fileMeta.getFileId());
+            // http 500
             fileMetaDao.save(fileMeta);
         }
         log.debug("Attachments have been saved {}", disputeId);
