@@ -1,6 +1,6 @@
 package dev.vality.disputes.config;
 
-import dev.vality.disputes.MDCTaskDecorator;
+import dev.vality.disputes.service.MDCTaskDecorator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
