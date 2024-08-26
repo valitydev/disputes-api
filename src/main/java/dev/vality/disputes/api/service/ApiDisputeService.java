@@ -4,6 +4,7 @@ import dev.vality.disputes.api.converter.DisputeConverter;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.swag.disputes.model.CreateRequest;
@@ -13,15 +14,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+import java.util.Set;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class ApiDisputeService {
 
+    private static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(DisputeStatus.created, DisputeStatus.pending);
     private final DisputeDao disputeDao;
     private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;
+
+    public Optional<Dispute> checkExistBeforeCreate(String invoiceId, String paymentId) {
+        log.debug("Trying to checkExistBeforeCreate() Dispute, invoiceId={}", invoiceId);
+        // http 500
+        var disputes = disputeDao.get(invoiceId, paymentId);
+        var first = disputes.stream()
+                .filter(dispute -> DISPUTE_PENDING.contains(dispute.getStatus()))
+                .findFirst();
+        log.debug("Done checkExistBeforeCreate(), invoiceId={}", invoiceId);
+        return first;
+    }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public Long createDispute(CreateRequest req, PaymentParams paymentParams) {

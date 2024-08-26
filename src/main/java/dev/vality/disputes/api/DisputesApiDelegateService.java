@@ -27,6 +27,11 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
     public ResponseEntity<Create200Response> create(String xRequestID, CreateRequest req) {
         log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
         var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId());
+        // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
+        var dispute = apiDisputeService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
+        if (dispute.isPresent()) {
+            return ResponseEntity.ok(new Create200Response(String.valueOf(dispute.get().getId())));
+        }
         var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var disputeId = apiDisputeService.createDispute(req, paymentParams);
         log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
