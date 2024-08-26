@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,7 +57,7 @@ public class DisputeDao extends AbstractGenericDao {
     public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.STATUS.eq(disputeStatus))
-                .orderBy(DISPUTE.CREATED_AT)
+                .orderBy(DISPUTE.NEXT_CHECK_AFTER)
                 .limit(limit)
                 .forUpdate()
                 .skipLocked();
@@ -73,9 +74,24 @@ public class DisputeDao extends AbstractGenericDao {
         return fetchOne(query, disputeRowMapper);
     }
 
-    public long changeDisputeStatus(long disputeId, DisputeStatus status, String errorMessage, Long changedAmount) {
+    public long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter) {
+        return update(disputeId, status, nextCheckAfter, null, null);
+    }
+
+    public long update(long disputeId, DisputeStatus status, String errorMessage) {
+        return update(disputeId, status, null, errorMessage, null);
+    }
+
+    public long update(long disputeId, DisputeStatus status, Long changedAmount) {
+        return update(disputeId, status, null, null, changedAmount);
+    }
+
+    private long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage, Long changedAmount) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
+        if (nextCheckAfter != null) {
+            set = set.set(DISPUTE.NEXT_CHECK_AFTER, nextCheckAfter);
+        }
         if (errorMessage != null) {
             set = set.set(DISPUTE.ERROR_MESSAGE, errorMessage);
         }

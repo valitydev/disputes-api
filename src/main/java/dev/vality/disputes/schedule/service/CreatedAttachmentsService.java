@@ -9,6 +9,8 @@ import dev.vality.disputes.service.external.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ public class CreatedAttachmentsService {
     private final FileMetaDao fileMetaDao;
     private final FileStorageService fileStorageService;
 
+    @Transactional(propagation = Propagation.REQUIRED)
     public List<Attachment> getAttachments(Dispute dispute) {
         log.debug("Trying to get Attachments {}", dispute);
         try {

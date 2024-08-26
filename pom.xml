@@ -82,6 +82,11 @@
             <artifactId>msgpack-proto</artifactId>
             <version>1.14-7e44749</version>
         </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>adapter-flow-lib</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <!--spring-->
         <dependency>

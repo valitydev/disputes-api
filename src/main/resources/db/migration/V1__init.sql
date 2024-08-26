@@ -6,6 +6,8 @@ CREATE TABLE dspt.dispute
 (
     id                     BIGSERIAL                   NOT NULL,
     created_at             TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    next_check_after TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    polling_before   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     invoice_id             CHARACTER VARYING           NOT NULL,
     payment_id             CHARACTER VARYING           NOT NULL,
     status                 dspt.dispute_status         NOT NULL DEFAULT 'created' :: dspt.dispute_status,

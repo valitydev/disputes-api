@@ -95,3 +95,12 @@ dispute:
   fixedDelayPending: 5000
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
+
+time:
+  config:
+    redirect-timeout-min: 15
+    max-time-polling-min: 600
+    polling-delay-ms: 30000
+    exponential: 2
+    default-initial-exponential: 2
+    max-time-back-off: 300

@@ -10,6 +10,8 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
+import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
+import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.schedule.converter.InvoicePaymentAdjustmentParamsConverter;
 import dev.vality.disputes.service.external.InvoicingService;
@@ -35,6 +37,8 @@ public class PendingDisputeService {
     private final InvoicingService invoicingService;
     private final InvoicePaymentAdjustmentParamsConverter invoicePaymentAdjustmentParamsConverter;
     private final AdjustmentExtractor adjustmentExtractor;
+    private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final PollingInfoService pollingInfoService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
@@ -56,10 +60,17 @@ public class PendingDisputeService {
         log.debug("Trying to get ProviderDispute {}", dispute);
         var providerDispute = providerDisputeDao.get(dispute.getId());
         if (providerDispute == null) {
+            var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
             // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново
             log.error("Trying to set created Dispute status, because createDispute() was not success {}", dispute);
-            disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.created, null, null);
+            disputeDao.update(dispute.getId(), DisputeStatus.created, nextCheckAfter);
             log.debug("Dispute status has been set to created {}", dispute);
+            return;
+        }
+        if (pollingInfoService.isDeadline(dispute)) {
+            log.error("Trying to set failed Dispute status with POOLING_EXPIRED error reason {}", dispute);
+            disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.POOLING_EXPIRED);
+            log.debug("Dispute status has been set to failed {}", dispute);
             return;
         }
         log.debug("ProviderDispute has been found {}", dispute);
@@ -74,7 +85,7 @@ public class PendingDisputeService {
                 var invoicePayment = getInvoicePayment(dispute);
                 if (invoicePayment == null || !invoicePayment.isSetRoute()) {
                     log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
-                    disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND, null);
+                    disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND);
                     log.debug("Dispute status has been set to failed {}", dispute);
                     return;
                 }
@@ -82,7 +93,7 @@ public class PendingDisputeService {
                 if (invoicePaymentAdjustment.isPresent()) {
                     var changedAmount = adjustmentExtractor.getChangedAmount(invoicePaymentAdjustment.get(), result);
                     log.info("Trying to set succeeded Dispute status {}, {}", dispute, result);
-                    disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.succeeded, null, changedAmount);
+                    disputeDao.update(dispute.getId(), DisputeStatus.succeeded, changedAmount);
                     log.debug("Dispute status has been set to succeeded {}", dispute);
                     return;
                 }
@@ -91,7 +102,7 @@ public class PendingDisputeService {
                     var paymentAdjustment = createAdjustment(dispute, params);
                     if (paymentAdjustment == null) {
                         log.error("Trying to set failed Dispute status with INVOICE_NOT_FOUND error reason {}", dispute);
-                        disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, ErrorReason.INVOICE_NOT_FOUND, null);
+                        disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.INVOICE_NOT_FOUND);
                         log.debug("Dispute status has been set to failed {}", dispute);
                         return;
                     }
@@ -106,14 +117,23 @@ public class PendingDisputeService {
                 }
                 log.info("Trying to set succeeded Dispute status {}, {}", dispute, result);
                 var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
-                disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.succeeded, null, changedAmount);
+                disputeDao.update(dispute.getId(), DisputeStatus.succeeded, changedAmount);
                 log.debug("Dispute status has been set to succeeded {}", dispute);
             }
             case STATUS_FAIL -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getStatusFail().getFailure());
                 log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
-                disputeDao.changeDisputeStatus(dispute.getId(), DisputeStatus.failed, errorMessage, null);
+                disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
                 log.debug("Dispute status has been set to failed {}", dispute);
+            }
+            case PENDING_SUCCESS -> {
+                // дергаем update() чтоб обновить время вызова next_check_after,
+                // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
+                // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
+                var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
+                log.info("Trying to set pending Dispute status {}, {}", dispute, result);
+                disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
+                log.debug("Dispute status has been set to pending {}", dispute);
             }
         }
     }
