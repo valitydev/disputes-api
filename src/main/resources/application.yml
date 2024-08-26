@@ -37,9 +37,6 @@ service:
       providers:
         poolSize: 20
         ttlSec: 300
-      payment_services:
-        poolSize: 30
-        ttlSec: 300
       proxies:
         poolSize: 30
         ttlSec: 300
@@ -55,6 +52,11 @@ service:
   tokenKeeper:
     url: http://localhost:8022/change_it
     networkTimeout: 5000
+  file-storage:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    urlLifeTimeDuration: 360
+    timeZone: Europe/Moscow
   adapters:
     connection:
       timeoutSec: 30
@@ -73,7 +75,7 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/daway
+    url: jdbc:postgresql://localhost:5432/dispute
     username: postgres
     password: postgres
   threads:
@@ -87,19 +89,13 @@ info:
 auth:
   enabled: true
 
-cascade:
-  max-time-polling-sec: 5
-  thread-sleep-ms: 100
+dispute:
+  batchSize: 1
+  fixedDelayCreated: 5000
+  fixedDelayPending: 5000
+  isScheduleCreatedEnabled: true
+  isSchedulePendingEnabled: true
 
-metrics:
-  woody:
-    name: p2p.api.woody.client.request
-
-bank-details:
-  bic:
-    alfabank: "044525593"
-    raiffeisen: "044525700"
-    sberbank: "044525225"
-    tinkoff: "044525974"
-  purpose:
-    sberbank: Перевод
+time:
+  config:
+    max-time-polling-min: 600
