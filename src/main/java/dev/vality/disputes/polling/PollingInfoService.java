@@ -1,7 +1,7 @@
 package dev.vality.disputes.polling;
 
 import dev.vality.adapter.flow.lib.model.PollingInfo;
-import dev.vality.adapter.flow.lib.utils.TimerProperties;
+import dev.vality.disputes.config.properties.DisputesTimerProperties;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import static dev.vality.disputes.utils.OptionsExtractors.extractMaxTimePolling;
 @RequiredArgsConstructor
 public class PollingInfoService {
 
-    private final TimerProperties timerProperties;
+    private final DisputesTimerProperties timerProperties;
 
     public PollingInfo initPollingInfo(Dispute dispute, Map<String, String> options) {
         return initPollingInfo(convert(dispute), options);

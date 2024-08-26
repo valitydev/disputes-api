@@ -99,3 +99,7 @@ dispute:
 time:
   config:
     max-time-polling-min: 600
+
+testcontainers:
+  postgresql:
+    tag: '11.4'
