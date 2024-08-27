@@ -21,7 +21,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class ApiDisputeService {
+public class ApiDisputesService {
 
     private static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(DisputeStatus.created, DisputeStatus.pending);
     private final DisputeDao disputeDao;

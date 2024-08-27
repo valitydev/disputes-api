@@ -26,7 +26,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class CreatedDisputeService {
+public class CreatedDisputesService {
 
     private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;

@@ -2,7 +2,7 @@ package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.handler.CreatedDisputeHandler;
-import dev.vality.disputes.schedule.service.CreatedDisputeService;
+import dev.vality.disputes.schedule.service.CreatedDisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class TaskCreatedDisputesService {
 
     private final ExecutorService disputesThreadPool;
-    private final CreatedDisputeService createdDisputeService;
+    private final CreatedDisputesService createdDisputesService;
     @Value("${dispute.batchSize}")
     private int batchSize;
     @Value("${dispute.isScheduleCreatedEnabled}")
@@ -32,7 +32,7 @@ public class TaskCreatedDisputesService {
         }
         log.info("Processing created disputes get started");
         try {
-            var disputes = createdDisputeService.getCreatedDisputesForUpdateSkipLocked(batchSize);
+            var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
                     .map(this::handleCreated)
                     .collect(Collectors.toList());
@@ -47,6 +47,6 @@ public class TaskCreatedDisputesService {
     }
 
     private Callable<Long> handleCreated(Dispute dispute) {
-        return () -> new CreatedDisputeHandler(createdDisputeService).handle(dispute);
+        return () -> new CreatedDisputeHandler(createdDisputesService).handle(dispute);
     }
 }

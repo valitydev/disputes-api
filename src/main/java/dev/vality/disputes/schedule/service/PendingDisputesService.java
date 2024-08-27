@@ -29,7 +29,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class PendingDisputeService {
+public class PendingDisputesService {
 
     private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;

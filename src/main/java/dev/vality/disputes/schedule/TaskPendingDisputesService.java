@@ -2,7 +2,7 @@ package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.handler.PendingDisputeHandler;
-import dev.vality.disputes.schedule.service.PendingDisputeService;
+import dev.vality.disputes.schedule.service.PendingDisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class TaskPendingDisputesService {
 
     private final ExecutorService disputesThreadPool;
-    private final PendingDisputeService pendingDisputeService;
+    private final PendingDisputesService pendingDisputesService;
     @Value("${dispute.batchSize}")
     private int batchSize;
     @Value("${dispute.isSchedulePendingEnabled}")
@@ -32,7 +32,7 @@ public class TaskPendingDisputesService {
         }
         log.info("Processing pending disputes get started");
         try {
-            var disputes = pendingDisputeService.getPendingDisputesForUpdateSkipLocked(batchSize);
+            var disputes = pendingDisputesService.getPendingDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
                     .map(this::handlePending)
                     .collect(Collectors.toList());
@@ -47,6 +47,6 @@ public class TaskPendingDisputesService {
     }
 
     private Callable<Long> handlePending(Dispute dispute) {
-        return () -> new PendingDisputeHandler(pendingDisputeService).handle(dispute);
+        return () -> new PendingDisputeHandler(pendingDisputesService).handle(dispute);
     }
 }
