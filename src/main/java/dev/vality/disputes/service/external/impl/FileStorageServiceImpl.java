@@ -37,7 +37,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         log.debug("Trying to create new file to file-storage");
         var result = fileStorageClient.createNewFile(Collections.emptyMap(), getTime().toString());
         var fileDataId = result.getFileDataId();
-        log.debug("Trying to upload data to file-storage with id: {}", fileDataId);
+        log.debug("Trying to upload data to s3 with id: {}", fileDataId);
         var requestPut = new HttpPut(result.getUploadUrl());
         requestPut.setEntity(HttpEntities.create(data, null));
         // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
