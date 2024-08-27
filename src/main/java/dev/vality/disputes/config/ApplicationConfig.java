@@ -8,7 +8,7 @@ import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,7 +73,7 @@ public class ApplicationConfig {
 
     @Bean
     public CloseableHttpClient httpClient() {
-        return HttpClientBuilder.create().build();
+        return HttpClients.createDefault();
     }
 
     @Bean

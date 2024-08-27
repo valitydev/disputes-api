@@ -42,7 +42,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>swag-disputes</artifactId>
-            <version>1.16-063c381-server</version>
+            <version>1.17-8e552ef-server</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -253,7 +253,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>testcontainers-annotations</artifactId>
-            <version>2.0.3</version>
+            <version>2.0.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

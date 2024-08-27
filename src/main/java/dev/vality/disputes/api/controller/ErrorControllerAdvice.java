@@ -3,7 +3,7 @@ package dev.vality.disputes.api.controller;
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.TokenKeeperException;
-import dev.vality.swag.disputes.model.DefaultLogicError;
+import dev.vality.swag.disputes.model.GeneralError;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +38,7 @@ public class ErrorControllerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleInvalidMimeTypeException(InvalidMimeTypeException e) {
         log.warn("<- Res [400]: MimeType not valid", e);
-        return new DefaultLogicError()
-                .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
+        return new GeneralError()
                 .message(e.getMessage());
     }
 
@@ -50,17 +49,15 @@ public class ErrorControllerAdvice {
         var errorMessage = e.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
-        return new DefaultLogicError()
-                .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
-                .message(errorMessage);
+        return new GeneralError()
+                .message(e.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.warn("<- Res [400]: MethodArgument not valid", e);
-        return new DefaultLogicError()
-                .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
+        return new GeneralError()
                 .message(e.getMessage());
     }
 
@@ -68,8 +65,7 @@ public class ErrorControllerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("<- Res [400]: Missing ServletRequestParameter", e);
-        return new DefaultLogicError()
-                .code(DefaultLogicError.CodeEnum.INVALIDREQUEST)
+        return new GeneralError()
                 .message(e.getMessage());
     }
 

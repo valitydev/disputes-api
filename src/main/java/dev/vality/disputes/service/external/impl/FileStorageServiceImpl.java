@@ -11,9 +11,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.HttpResponse;
-import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
@@ -41,8 +40,8 @@ public class FileStorageServiceImpl implements FileStorageService {
         log.debug("Trying to upload data to file-storage with id: {}", fileDataId);
         var requestPut = new HttpPut(result.getUploadUrl());
         requestPut.setEntity(HttpEntities.create(data, null));
-        var response = httpClient.execute(requestPut);
-        checkResponse(fileDataId, response);
+        // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
+        httpClient.execute(requestPut, new BasicHttpClientResponseHandler());
         log.debug("File has been successfully uploaded with id: {}", fileDataId);
         return fileDataId;
     }
@@ -61,13 +60,6 @@ public class FileStorageServiceImpl implements FileStorageService {
             throw new NotFoundException(String.format("File not found, fileId='%s'", fileId), e);
         } catch (TException e) {
             throw new FileStorageException(String.format("Failed to generateDownloadUrl, fileId='%s'", fileId), e);
-        }
-    }
-
-    private void checkResponse(String fileDataId, HttpResponse response) {
-        if (response.getCode() != HttpStatus.SC_OK) {
-            throw new FileStorageException(String.format(
-                    "Failed to upload file, fileDataId='%s', response='%s'", fileDataId, response));
         }
     }
 
