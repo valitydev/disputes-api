@@ -17,7 +17,7 @@ public class DisputeDaoTest {
     private DisputeDao disputeDao;
 
     @Test
-    public void insertAndFindAdjustmentEventTest() {
+    public void insertAndFindTest() {
         var random = random(Dispute.class);
         disputeDao.save(random);
         assertEquals(random,
