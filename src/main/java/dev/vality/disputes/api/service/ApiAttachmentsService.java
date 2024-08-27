@@ -7,10 +7,10 @@ import dev.vality.swag.disputes.model.CreateRequest;
 import dev.vality.swag.disputes.model.CreateRequestAttachmentsInner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.MimeType;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +25,8 @@ public class ApiAttachmentsService {
     public void createAttachments(CreateRequest req, Long disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
         for (CreateRequestAttachmentsInner attachment : req.getAttachments()) {
-            MimeType.valueOf(attachment.getMimeType());
+            // validate
+            MediaType.valueOf(attachment.getMimeType());
             // http 500
             var fileId = fileStorageService.saveFile(attachment.getData());
             var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());

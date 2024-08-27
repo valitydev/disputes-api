@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.InvalidMimeTypeException;
@@ -37,6 +38,14 @@ public class ErrorControllerAdvice {
     @ExceptionHandler({InvalidMimeTypeException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleInvalidMimeTypeException(InvalidMimeTypeException e) {
+        log.warn("<- Res [400]: MimeType not valid", e);
+        return new GeneralError()
+                .message(e.getMessage());
+    }
+
+    @ExceptionHandler({InvalidMediaTypeException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleInvalidMediaTypeException(InvalidMediaTypeException e) {
         log.warn("<- Res [400]: MimeType not valid", e);
         return new GeneralError()
                 .message(e.getMessage());
