@@ -52,7 +52,7 @@ public class RemoteClient {
     public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute) {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        var disputeContext = disputeContextConverter.convert(providerDispute, terminal.get().getOptions());
+        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.get().getOptions());
         var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
         log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
         var result = remoteClient.checkDisputeStatus(disputeContext);

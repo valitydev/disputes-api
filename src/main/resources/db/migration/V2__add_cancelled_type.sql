@@ -1,0 +1,1 @@
+alter type dspt.dispute_status add value 'cancelled';

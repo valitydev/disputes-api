@@ -25,7 +25,7 @@ public class Status200ResponseConverter {
         return switch (dispute.getStatus()) {
             case created, pending -> Status200Response.StatusEnum.PENDING;
             case succeeded -> Status200Response.StatusEnum.SUCCEEDED;
-            case failed -> Status200Response.StatusEnum.FAILED;
+            case cancelled, failed -> Status200Response.StatusEnum.FAILED;
         };
     }
 }

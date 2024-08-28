@@ -126,7 +126,7 @@ public class PendingDisputesService {
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
                 log.debug("Dispute status has been set to failed {}", dispute);
             }
-            case PENDING_SUCCESS -> {
+            case STATUS_PENDING -> {
                 // дергаем update() чтоб обновить время вызова next_check_after,
                 // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
                 // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
