@@ -16,7 +16,7 @@ public class AdminDisputesHandler implements AdminDisputesServiceSrv.Iface {
     private final DisputesService disputesService;
 
     @Override
-    public void cancelPending(String disputeId) throws TException {
-        disputesService.cancelPendingDispute(disputeId, null);
+    public void cancelPending(String disputeId, String cancelReason) throws TException {
+        disputesService.cancelPendingDispute(disputeId, cancelReason);
     }
 }
