@@ -128,7 +128,7 @@ public class CreatedDisputesService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments) {
-        manualParsingTopic.send(dispute, attachments);
+        manualParsingTopic.sendCreated(dispute, attachments);
         log.info("Trying to set manual_parsing_created Dispute status {}", dispute);
         disputeDao.update(dispute.getId(), DisputeStatus.manual_parsing_created);
         log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
