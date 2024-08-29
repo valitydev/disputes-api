@@ -11,7 +11,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.schedule.converter.DisputeContextConverter;
 import dev.vality.disputes.schedule.converter.DisputeParamsConverter;
-import dev.vality.disputes.schedule.service.ProviderRouting;
+import dev.vality.disputes.schedule.service.ProviderIfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class RemoteClient {
 
-    private final ProviderRouting providerRouting;
+    private final ProviderIfaceBuilder providerIfaceBuilder;
     private final DominantService dominantService;
     private final DisputeContextConverter disputeContextConverter;
     private final DisputeParamsConverter disputeParamsConverter;
@@ -40,7 +40,7 @@ public class RemoteClient {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.get().getOptions());
-        var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
+        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
         log.info("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
         log.debug("Routed remote provider's createDispute() has been called {}", dispute);
@@ -53,7 +53,7 @@ public class RemoteClient {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
         var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.get().getOptions());
-        var remoteClient = providerRouting.getConnection(terminal.get().getOptions(), proxy.get().getUrl());
+        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
         log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
         var result = remoteClient.checkDisputeStatus(disputeContext);
         log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
