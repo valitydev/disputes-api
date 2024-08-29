@@ -87,7 +87,7 @@ public class CreatedDisputesService {
             return;
         }
         if ((status.isSetCaptured() && isCapturedBlockedForDispute(dispute))
-                || !isProvidersDisputesApiExist(dispute)) {
+                || isNotProvidersDisputesApiExist(dispute)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
             finishTaskWithManualParsingFlowActivation(dispute, attachments);
@@ -141,8 +141,8 @@ public class CreatedDisputesService {
     }
 
     @SneakyThrows
-    private boolean isProvidersDisputesApiExist(Dispute dispute) {
-        return getTerminal(dispute.getTerminalId()).get().getOptions()
+    private boolean isNotProvidersDisputesApiExist(Dispute dispute) {
+        return !getTerminal(dispute.getTerminalId()).get().getOptions()
                 .containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 
