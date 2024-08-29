@@ -23,7 +23,8 @@ import java.util.Set;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class ApiDisputesService {
 
-    private static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(DisputeStatus.created, DisputeStatus.pending);
+    public static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(
+            DisputeStatus.created, DisputeStatus.pending, DisputeStatus.manual_parsing_created, DisputeStatus.manual_parsing_binded_pending);
     private final DisputeDao disputeDao;
     private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;

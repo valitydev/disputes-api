@@ -1,5 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.domain.Terminal;
+import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.DisputeCreatedResult;
 import dev.vality.disputes.constant.ErrorReason;
@@ -8,8 +10,10 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
+import dev.vality.disputes.manualparsing.ManualParsingTopic;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.schedule.client.RemoteClient;
+import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 
 @Slf4j
 @Service
@@ -34,6 +41,8 @@ public class CreatedDisputesService {
     private final CreatedAttachmentsService createdAttachmentsService;
     private final InvoicingService invoicingService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final DominantService dominantService;
+    private final ManualParsingTopic manualParsingTopic;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
@@ -73,6 +82,14 @@ public class CreatedDisputesService {
             log.debug("Dispute status has been set to failed {}", dispute);
             return;
         }
+        if (status.isSetCaptured() && isCapturedBlockedForDispute(dispute)) {
+            // отправлять на ручной разбор, если выставлена опция DISPUTE_FLOW_CAPTURED_BLOCKED
+            manualParsingTopic.send(dispute, attachments);
+            log.info("Trying to set manual_parsing_created Dispute status {}", dispute);
+            disputeDao.update(dispute.getId(), DisputeStatus.manual_parsing_created);
+            log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
+            return;
+        }
         var result = remoteClient.createDispute(dispute, attachments);
         finishTask(dispute, result);
     }
@@ -96,7 +113,17 @@ public class CreatedDisputesService {
         }
     }
 
+    @SneakyThrows
+    private boolean isCapturedBlockedForDispute(Dispute dispute) {
+        return getTerminal(dispute.getTerminalId()).get().getOptions()
+                .containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
+    }
+
     private InvoicePayment getInvoicePayment(Dispute dispute) {
         return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
+    }
+
+    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+        return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }
