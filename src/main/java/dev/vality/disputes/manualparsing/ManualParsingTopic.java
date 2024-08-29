@@ -33,9 +33,8 @@ public class ManualParsingTopic {
         var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
         contextMap.put("dispute_attachments", attachmentsCollect);
         contextMap.put("dispute_status", DisputeStatus.manual_parsing_created.name());
-        contextMap.put("@severity", "warn");
-        contextMap.put("message", "Manual parsing case");
         MDC.setContextMap(contextMap);
+        log.warn("Manual parsing case");
         MDC.clear(); //?? будет ли это работать и откатит ли лог при откате транзакции
     }
 
@@ -48,9 +47,8 @@ public class ManualParsingTopic {
         contextMap.put("dispute_id", dispute.getId().toString());
         contextMap.put("dispute_changed_amount", String.valueOf(changedAmount));
         contextMap.put("dispute_status", DisputeStatus.succeeded.name());
-        contextMap.put("@severity", "warn");
-        contextMap.put("message", "Manual parsing case");
         MDC.setContextMap(contextMap);
+        log.warn("Manual parsing case");
         MDC.clear(); //?? будет ли это работать и откатит ли лог при откате транзакции
     }
 }
