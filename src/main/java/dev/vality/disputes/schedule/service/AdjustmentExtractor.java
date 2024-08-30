@@ -4,7 +4,6 @@ import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.DisputeStatusResult;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
@@ -33,11 +32,11 @@ public class AdjustmentExtractor {
                         .findFirst());
     }
 
-    public Long getChangedAmount(@Nonnull InvoicePaymentAdjustment invoicePaymentAdjustment, DisputeStatusResult result) {
+    public Long getChangedAmount(@Nonnull InvoicePaymentAdjustment invoicePaymentAdjustment, Long changedAmount) {
         return Optional.of(invoicePaymentAdjustment)
                 .map(s -> getTargetStatus(s).getCaptured().getCost())
                 .map(Cash::getAmount)
-                .or(() -> result.getStatusSuccess().getChangedAmount())
+                .or(() -> Optional.ofNullable(changedAmount))
                 .orElse(null);
     }
 
