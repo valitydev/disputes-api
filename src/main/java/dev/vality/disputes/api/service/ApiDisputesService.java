@@ -23,12 +23,7 @@ import java.util.Set;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class ApiDisputesService {
 
-    public static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(
-            DisputeStatus.created,
-            DisputeStatus.pending,
-            DisputeStatus.manual_parsing_created,
-            DisputeStatus.manual_parsing_binded_pending,
-            DisputeStatus.create_adjustment);
+    public static final Set<DisputeStatus> DISPUTE_PENDING = pendings();
     private final DisputeDao disputeDao;
     private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;
@@ -71,5 +66,14 @@ public class ApiDisputesService {
         }
         log.debug("Dispute has been found, disputeId={}", disputeId);
         return dispute;
+    }
+
+    private static Set<DisputeStatus> pendings() {
+        return Set.of(
+                DisputeStatus.created,
+                DisputeStatus.pending,
+                DisputeStatus.manual_created,
+                DisputeStatus.manual_pending,
+                DisputeStatus.create_adjustment);
     }
 }

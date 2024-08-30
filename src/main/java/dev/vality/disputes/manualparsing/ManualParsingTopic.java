@@ -32,7 +32,7 @@ public class ManualParsingTopic {
         contextMap.put("dispute_id", dispute.getId().toString());
         var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
         contextMap.put("dispute_attachments", attachmentsCollect);
-        contextMap.put("dispute_status", DisputeStatus.manual_parsing_created.name());
+        contextMap.put("dispute_status", DisputeStatus.manual_created.name());
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");
         MDC.clear();

@@ -13,7 +13,7 @@ public class DisputeContextConverter {
 
     public DisputeContext convert(Dispute dispute, ProviderDispute providerDispute, Map<String, String> options) {
         var disputeContext = new DisputeContext();
-        disputeContext.setDisputeId(providerDispute.getProviderDisputeId());
+        disputeContext.setProviderDisputeId(providerDispute.getProviderDisputeId());
         var currency = new Currency();
         currency.setName(dispute.getCurrencyName());
         currency.setSymbolicCode(dispute.getCurrencySymbolicCode());

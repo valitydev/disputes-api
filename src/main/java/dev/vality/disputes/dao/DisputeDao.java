@@ -106,22 +106,26 @@ public class DisputeDao extends AbstractGenericDao {
     }
 
     public long update(long disputeId, DisputeStatus status) {
-        return update(disputeId, status, null, null, null);
+        return update(disputeId, status, null, null, null, null);
     }
 
     public long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter) {
-        return update(disputeId, status, nextCheckAfter, null, null);
+        return update(disputeId, status, nextCheckAfter, null, null, null);
     }
 
     public long update(long disputeId, DisputeStatus status, String errorMessage) {
-        return update(disputeId, status, null, errorMessage, null);
+        return update(disputeId, status, null, errorMessage, null, null);
     }
 
     public long update(long disputeId, DisputeStatus status, Long changedAmount) {
-        return update(disputeId, status, null, null, changedAmount);
+        return update(disputeId, status, null, null, changedAmount, null);
     }
 
-    private long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage, Long changedAmount) {
+    public long update(long disputeId, DisputeStatus status, Long changedAmount, Boolean skipCallHgForCreateAdjustment) {
+        return update(disputeId, status, null, null, changedAmount, skipCallHgForCreateAdjustment);
+    }
+
+    private long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage, Long changedAmount, Boolean skipCallHgForCreateAdjustment) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
@@ -132,6 +136,9 @@ public class DisputeDao extends AbstractGenericDao {
         }
         if (changedAmount != null) {
             set = set.set(DISPUTE.CHANGED_AMOUNT, changedAmount);
+        }
+        if (skipCallHgForCreateAdjustment != null) {
+            set = set.set(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT, skipCallHgForCreateAdjustment);
         }
         var query = set
                 .where(DISPUTE.ID.eq(disputeId));
