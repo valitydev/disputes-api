@@ -24,7 +24,11 @@ import java.util.Set;
 public class ApiDisputesService {
 
     public static final Set<DisputeStatus> DISPUTE_PENDING = Set.of(
-            DisputeStatus.created, DisputeStatus.pending, DisputeStatus.manual_parsing_created, DisputeStatus.manual_parsing_binded_pending);
+            DisputeStatus.created,
+            DisputeStatus.pending,
+            DisputeStatus.manual_parsing_created,
+            DisputeStatus.manual_parsing_binded_pending,
+            DisputeStatus.create_adjustment);
     private final DisputeDao disputeDao;
     private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;

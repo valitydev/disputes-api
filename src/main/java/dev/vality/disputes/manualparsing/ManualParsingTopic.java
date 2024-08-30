@@ -35,20 +35,6 @@ public class ManualParsingTopic {
         contextMap.put("dispute_status", DisputeStatus.manual_parsing_created.name());
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");
-        MDC.clear(); //?? будет ли это работать и откатит ли лог при откате транзакции
-    }
-
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void sendSucceeded(Dispute dispute, Long changedAmount) {
-        if (!enabled) {
-            return;
-        }
-        var contextMap = MDC.getCopyOfContextMap();
-        contextMap.put("dispute_id", dispute.getId().toString());
-        contextMap.put("dispute_changed_amount", String.valueOf(changedAmount));
-        contextMap.put("dispute_status", DisputeStatus.succeeded.name());
-        MDC.setContextMap(contextMap);
-        log.warn("Manual parsing case");
-        MDC.clear(); //?? будет ли это работать и откатит ли лог при откате транзакции
+        MDC.clear();
     }
 }

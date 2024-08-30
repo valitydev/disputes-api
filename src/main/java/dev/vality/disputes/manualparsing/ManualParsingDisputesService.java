@@ -44,10 +44,10 @@ public class ManualParsingDisputesService {
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_parsing_binded_pending) {
-            // переводим в успех только если диспут уже был создан на стороне провайдера
-            log.info("Trying to set succeeded Dispute status {}", dispute);
-            disputeDao.update(dispute.getId(), DisputeStatus.succeeded, changedAmount);
-            log.debug("Dispute status has been set to succeeded {}", dispute);
+            // переводим в create_adjustment только если диспут уже был создан на стороне провайдера
+            log.info("Trying to set create_adjustment Dispute status {}", dispute);
+            disputeDao.update(dispute.getId(), DisputeStatus.create_adjustment, changedAmount);
+            log.debug("Dispute status has been set to create_adjustment {}", dispute);
         } else {
             log.info("Request was skipped by inappropriate status {}", dispute);
         }
