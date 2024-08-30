@@ -75,12 +75,9 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/dispute
+    url: jdbc:postgresql://localhost:5432/disputes
     username: postgres
     password: postgres
-  threads:
-    virtual:
-      enabled: true
 
 info:
   version: ${project.version}

@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableAsync
 @ServletComponentScan
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"dev.vality.disputes", "dev.vality.swag"})
 public class DisputesApiApplication extends SpringApplication {
 
     public static void main(String[] args) {
