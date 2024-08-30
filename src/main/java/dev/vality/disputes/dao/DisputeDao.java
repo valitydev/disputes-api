@@ -93,6 +93,10 @@ public class DisputeDao extends AbstractGenericDao {
         return fetchOne(query, disputeRowMapper);
     }
 
+    public long update(long disputeId, DisputeStatus status) {
+        return update(disputeId, status, null, null, null);
+    }
+
     public long update(long disputeId, DisputeStatus status, LocalDateTime nextCheckAfter) {
         return update(disputeId, status, nextCheckAfter, null, null);
     }

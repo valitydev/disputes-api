@@ -59,7 +59,7 @@ public class ErrorControllerAdvice {
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
         return new GeneralError()
-                .message(e.getMessage());
+                .message(errorMessage);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
