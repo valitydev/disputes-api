@@ -1,6 +1,6 @@
 package dev.vality.disputes.manualparsing;
 
-import dev.vality.disputes.ManualParsingServiceSrv;
+import dev.vality.disputes.admin.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
@@ -15,17 +15,23 @@ public class ManualParsingHandler implements ManualParsingServiceSrv.Iface {
     private final ManualParsingDisputesService manualParsingDisputesService;
 
     @Override
-    public void cancelPending(String disputeId, String cancelReason) throws TException {
-        manualParsingDisputesService.cancelPendingDispute(disputeId, cancelReason);
+    public void cancelPending(CancelParamsRequest cancelParamsRequest) throws TException {
+        for (var cancelParam : cancelParamsRequest.getCancelParams()) {
+            manualParsingDisputesService.cancelPendingDispute(cancelParam);
+        }
     }
 
     @Override
-    public void approvePending(String disputeId, long changedAmount) throws TException {
-        manualParsingDisputesService.approvePendingDispute(disputeId, changedAmount);
+    public void approvePending(ApproveParamsRequest approveParamsRequest) throws TException {
+        for (var approveParam : approveParamsRequest.getApproveParams()) {
+            manualParsingDisputesService.approvePendingDispute(approveParam);
+        }
     }
 
     @Override
-    public void bindCreated(String disputeId, String providerDisputeId) throws TException {
-        manualParsingDisputesService.bindCreatedDispute(disputeId, providerDisputeId);
+    public void bindCreated(BindParamsRequest bindParamsRequest) throws TException {
+        for (BindParams bindParam : bindParamsRequest.getBindParams()) {
+            manualParsingDisputesService.bindCreatedDispute(bindParam);
+        }
     }
 }

@@ -113,7 +113,7 @@ public class CreatedDisputesService {
             case SUCCESS_RESULT -> {
                 var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
                 log.info("Trying to set pending Dispute status {}, {}", dispute, result);
-                providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getDisputeId(), dispute.getId()));
+                providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getProviderDisputeId(), dispute.getId()));
                 disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
                 log.debug("Dispute status has been set to pending {}", dispute);
             }
@@ -130,7 +130,7 @@ public class CreatedDisputesService {
     void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments) {
         manualParsingTopic.sendCreated(dispute, attachments);
         log.info("Trying to set manual_parsing_created Dispute status {}", dispute);
-        disputeDao.update(dispute.getId(), DisputeStatus.manual_parsing_created);
+        disputeDao.update(dispute.getId(), DisputeStatus.manual_created);
         log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
     }
 
