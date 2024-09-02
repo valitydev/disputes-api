@@ -41,7 +41,7 @@ public class ApiDisputesService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public Long createDispute(CreateRequest req, PaymentParams paymentParams) {
-        log.debug("Start creating Dispute {}", paymentParams);
+        log.debug("Start creating Dispute {}", paymentParams.toString());
         var dispute = disputeConverter.convert(paymentParams, req.getAmount(), req.getReason());
         log.debug("Trying to save Dispute {}", dispute);
         // http 500

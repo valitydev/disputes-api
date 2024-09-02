@@ -6,6 +6,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.service.external.FileStorageService;
 import dev.vality.file.storage.FileNotFound;
 import dev.vality.file.storage.FileStorageSrv;
+import dev.vality.swag.disputes.model.CreateRequestAttachmentsInner;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -13,14 +14,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,13 +38,16 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     @SneakyThrows
-    public String saveFile(byte[] data) {
+    public String saveFile(CreateRequestAttachmentsInner attachment) {
         log.debug("Trying to create new file to file-storage");
         var result = fileStorageClient.createNewFile(Collections.emptyMap(), getTime().toString());
         var fileDataId = result.getFileDataId();
         log.debug("Trying to upload data to s3 with id: {}", fileDataId);
         var requestPut = new HttpPut(result.getUploadUrl());
-        requestPut.setEntity(HttpEntities.create(data, null));
+        var encode = URLEncoder.encode("dispute-" + UUID.randomUUID(), StandardCharsets.UTF_8);
+        requestPut.setHeader("Content-Disposition", "attachment;filename=" + encode);
+        var contentType = ContentType.create(attachment.getMimeType(), StandardCharsets.UTF_8);
+        requestPut.setEntity(HttpEntities.create(attachment.getData(), contentType));
         // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
         httpClient.execute(requestPut, new BasicHttpClientResponseHandler());
         log.debug("File has been successfully uploaded with id: {}", fileDataId);

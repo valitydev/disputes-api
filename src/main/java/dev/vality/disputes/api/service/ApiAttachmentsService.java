@@ -4,7 +4,6 @@ import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.disputes.service.external.FileStorageService;
 import dev.vality.swag.disputes.model.CreateRequest;
-import dev.vality.swag.disputes.model.CreateRequestAttachmentsInner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -24,13 +23,13 @@ public class ApiAttachmentsService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void createAttachments(CreateRequest req, Long disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
-        for (CreateRequestAttachmentsInner attachment : req.getAttachments()) {
+        for (var attachment : req.getAttachments()) {
             // validate
             MediaType.valueOf(attachment.getMimeType());
             // http 500
-            var fileId = fileStorageService.saveFile(attachment.getData());
+            var fileId = fileStorageService.saveFile(attachment);
             var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());
-            log.debug("Trying to save Attachment {}", fileMeta.getFileId());
+            log.debug("Trying to save Attachment {}", fileMeta);
             // http 500
             fileMetaDao.save(fileMeta);
         }
