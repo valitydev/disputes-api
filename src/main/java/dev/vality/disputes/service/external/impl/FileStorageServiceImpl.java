@@ -18,6 +18,8 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +38,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     private final FileStorageSrv.Iface fileStorageClient;
     private final CloseableHttpClient httpClient;
 
+    @Transactional(propagation = Propagation.REQUIRED)
     @Override
     @SneakyThrows
     public String saveFile(CreateRequestAttachmentsInner attachment) {
