@@ -10,6 +10,7 @@ import java.util.Map;
 @Builder
 @Getter
 @Setter
+@ToString
 public class PaymentParams {
 
     private String invoiceId;

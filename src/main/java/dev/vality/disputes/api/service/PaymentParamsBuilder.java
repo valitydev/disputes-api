@@ -44,7 +44,7 @@ public class PaymentParamsBuilder {
                 .currencyExponent(currency.map(Currency::getExponent).map(Short::intValue).orElse(null))
                 .options(terminal.get().getOptions())
                 .build();
-        log.debug("Finish building PaymentParams {}", paymentParams.toString());
+        log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;
     }
 
