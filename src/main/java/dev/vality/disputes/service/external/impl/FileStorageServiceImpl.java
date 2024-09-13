@@ -14,22 +14,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.thrift.TException;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +32,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     private final FileStorageSrv.Iface fileStorageClient;
     private final CloseableHttpClient httpClient;
 
-    @Transactional(propagation = Propagation.REQUIRED)
     @Override
     @SneakyThrows
     public String saveFile(CreateRequestAttachmentsInner attachment) {
@@ -49,22 +40,9 @@ public class FileStorageServiceImpl implements FileStorageService {
         var fileDataId = result.getFileDataId();
         log.debug("Trying to upload data to s3 with id: {}", fileDataId);
         var requestPut = new HttpPut(result.getUploadUrl());
-        var fileName = "dispute-" + UUID.randomUUID();
-        var encode = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-        requestPut.setHeader("Content-Disposition", "attachment;filename=" + encode);
-        var tempFile = Files.createTempFile(fileName, MediaType.valueOf(attachment.getMimeType()).getSubtype());
-        try {
-            var data = attachment.getData();
-            var outputStream = Files.newOutputStream(tempFile);
-            outputStream.write(data);
-            outputStream.close();
-            var contentType = ContentType.create(attachment.getMimeType(), StandardCharsets.UTF_8);
-            requestPut.setEntity(HttpEntities.create(tempFile.toFile(), contentType));
-            // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
-            httpClient.execute(requestPut, new BasicHttpClientResponseHandler());
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+        requestPut.setEntity(HttpEntities.create(attachment.getData(), null));
+        // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
+        httpClient.execute(requestPut, new BasicHttpClientResponseHandler());
         log.debug("File has been successfully uploaded with id: {}", fileDataId);
         return fileDataId;
     }

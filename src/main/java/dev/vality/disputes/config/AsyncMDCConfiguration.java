@@ -13,7 +13,7 @@ public class AsyncMDCConfiguration {
 
     @Bean
     public Executor asyncExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        var executor = new ThreadPoolTaskExecutor();
         executor.setTaskDecorator(new MDCTaskDecorator());
         executor.initialize();
         return executor;
