@@ -25,7 +25,7 @@ public class TaskPendingDisputesService {
     @Value("${dispute.isSchedulePendingEnabled}")
     private boolean isSchedulePendingEnabled;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}")
+    @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}", initialDelayString = "${dispute.initialDelayPending}")
     public void processPending() {
         if (!isSchedulePendingEnabled) {
             return;
@@ -40,7 +40,7 @@ public class TaskPendingDisputesService {
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             log.error("Received exception while scheduler processed pending disputes", ex);
         }
         log.info("Pending disputes were processed");

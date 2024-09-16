@@ -65,22 +65,22 @@ public class CreatedDisputesService {
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
         var status = invoicePayment.getPayment().getStatus();
         if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
             // не создаем диспут, пока платеж не финален
-            log.warn("Payment has non-final status {} {}", status, dispute);
+            log.warn("Payment has non-final status {} {}", status, dispute.getId());
             return;
         }
         var attachments = createdAttachmentsService.getAttachments(dispute);
         if (attachments == null || attachments.isEmpty()) {
-            log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.NO_ATTACHMENTS);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
         if ((status.isSetCaptured() && isCapturedBlockedForDispute(dispute))
@@ -112,13 +112,13 @@ public class CreatedDisputesService {
                 log.info("Trying to set pending Dispute status {}, {}", dispute, result);
                 providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getProviderDisputeId(), dispute.getId()));
                 disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-                log.debug("Dispute status has been set to pending {}", dispute);
+                log.debug("Dispute status has been set to pending {}", dispute.getId());
             }
             case FAIL_RESULT -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getFailResult().getFailure());
-                log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
+                log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
-                log.debug("Dispute status has been set to failed {}", dispute);
+                log.debug("Dispute status has been set to failed {}", dispute.getId());
             }
         }
     }
@@ -128,7 +128,7 @@ public class CreatedDisputesService {
         manualParsingTopic.sendCreated(dispute, attachments);
         log.info("Trying to set manual_parsing_created Dispute status {}", dispute);
         disputeDao.update(dispute.getId(), DisputeStatus.manual_created);
-        log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
+        log.debug("Dispute status has been set to manual_parsing_created {}", dispute.getId());
     }
 
     private boolean isCapturedBlockedForDispute(Dispute dispute) {

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
 public class TaskCreateAdjustmentsService {
 
     private final ExecutorService disputesThreadPool;
@@ -25,7 +26,7 @@ public class TaskCreateAdjustmentsService {
     @Value("${dispute.isScheduleCreateAdjustmentsEnabled}")
     private boolean isScheduleCreateAdjustmentsEnabled;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreateAdjustments}")
+    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreateAdjustments}", initialDelayString = "${dispute.initialDelayCreateAdjustments}")
     public void processPending() {
         if (!isScheduleCreateAdjustmentsEnabled) {
             return;
@@ -40,7 +41,7 @@ public class TaskCreateAdjustmentsService {
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             log.error("Received exception while scheduler processed create adjustments", ex);
         }
         log.info("Create adjustments were processed");

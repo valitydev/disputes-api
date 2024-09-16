@@ -91,6 +91,9 @@ dispute:
   fixedDelayCreated: 5000
   fixedDelayPending: 5000
   fixedDelayCreateAdjustments: 5000
+  initialDelayCreated: 5000
+  initialDelayPending: 5000
+  initialDelayCreateAdjustments: 5000
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true

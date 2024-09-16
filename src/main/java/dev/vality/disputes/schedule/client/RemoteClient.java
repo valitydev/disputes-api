@@ -33,35 +33,36 @@ public class RemoteClient {
 
     @SneakyThrows
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments) {
-        log.debug("Trying to call dominant for RemoteClient {}", dispute);
+        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        log.debug("Trying to build disputeParams {} {} {}", dispute, terminal, proxy);
+        log.debug("Trying to build disputeParams {}", dispute.getId());
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
-        log.debug("Trying to call ProviderIfaceBuilder {} {} {}", dispute, terminal, proxy);
+        log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());
         var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
-        log.debug("Trying to routed remote provider's createDispute() call {}", dispute);
+        log.debug("Trying to routed remote provider's createDispute() call {}", dispute.getId());
         var result = remoteClient.createDispute(disputeParams);
-        log.info("Routed remote provider's createDispute() has been called {}", dispute);
+        log.info("Routed remote provider's createDispute() has been called {} {}", dispute.getId(), result);
         return result;
     }
 
     @SneakyThrows
     public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute) {
+        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
+        log.debug("Trying to build disputeContext {}", dispute.getId());
         var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.getOptions());
+        log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());
         var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
-        log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
+        log.debug("Trying to routed remote provider's checkDisputeStatus() call {}", dispute.getId());
         var result = remoteClient.checkDisputeStatus(disputeContext);
-        log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
+        log.info("Routed remote provider's checkDisputeStatus() has been called {} {}", dispute.getId(), result);
         return result;
     }
 
     private ProxyDefinition getProxy(Integer providerId) {
-        log.debug("Trying to call dominantService.getProvider for RemoteClient {}", providerId);
         var provider = dominantService.getProvider(new ProviderRef(providerId));
-        log.debug("Trying to call dominantService.getProxy for RemoteClient {}", provider);
         return dominantService.getProxy(provider.getProxy().getRef());
     }
 
