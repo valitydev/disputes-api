@@ -36,9 +36,9 @@ public class RemoteClient {
         log.debug("Trying to call dominant for RemoteClient {}", dispute);
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        log.debug("Trying to build disputeParams {}", dispute);
+        log.debug("Trying to build disputeParams {} {} {}", dispute, terminal, proxy);
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
-        log.debug("Trying to call ProviderIfaceBuilder {}", dispute);
+        log.debug("Trying to call ProviderIfaceBuilder {} {} {}", dispute, terminal, proxy);
         var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
         log.debug("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
@@ -59,7 +59,9 @@ public class RemoteClient {
     }
 
     private ProxyDefinition getProxy(Integer providerId) {
+        log.debug("Trying to call dominantService.getProvider for RemoteClient {}", providerId);
         var provider = dominantService.getProvider(new ProviderRef(providerId));
+        log.debug("Trying to call dominantService.getProxy for RemoteClient {}", provider);
         return dominantService.getProxy(provider.getProxy().getRef());
     }
 

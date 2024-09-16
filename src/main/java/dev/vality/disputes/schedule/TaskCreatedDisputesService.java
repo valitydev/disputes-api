@@ -41,7 +41,7 @@ public class TaskCreatedDisputesService {
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             log.error("Received exception while scheduler processed created disputes", ex);
         }
         log.info("Created disputes were processed");
