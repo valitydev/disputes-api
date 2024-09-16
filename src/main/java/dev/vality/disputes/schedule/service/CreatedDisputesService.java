@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
@@ -135,13 +136,13 @@ public class CreatedDisputesService {
 
     @SneakyThrows
     private boolean isCapturedBlockedForDispute(Dispute dispute) {
-        return getTerminal(dispute.getTerminalId()).getOptions()
+        return getTerminal(dispute.getTerminalId()).get().getOptions()
                 .containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
     }
 
     @SneakyThrows
     private boolean isNotProvidersDisputesApiExist(Dispute dispute) {
-        return !getTerminal(dispute.getTerminalId()).getOptions()
+        return !getTerminal(dispute.getTerminalId()).get().getOptions()
                 .containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 
@@ -149,7 +150,7 @@ public class CreatedDisputesService {
         return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
-    private Terminal getTerminal(Integer terminalId) {
+    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }

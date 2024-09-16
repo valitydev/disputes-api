@@ -42,7 +42,7 @@ public class PaymentParamsBuilder {
                 .currencySymbolicCode(currency.map(Currency::getSymbolicCode).orElse(null))
                 .currencyNumericCode(currency.map(Currency::getNumericCode).map(Short::intValue).orElse(null))
                 .currencyExponent(currency.map(Currency::getExponent).map(Short::intValue).orElse(null))
-                .options(terminal.getOptions())
+                .options(terminal.get().getOptions())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;

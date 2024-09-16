@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ExponentialBackOffPollingServiceWrapper {
@@ -40,11 +41,12 @@ public class ExponentialBackOffPollingServiceWrapper {
         pollingInfo.setStartDateTimePolling(startDateTimePolling);
         pollingInfo.setMaxDateTimePolling(dispute.getPollingBefore().toInstant(ZoneOffset.UTC));
         var terminal = getTerminal(dispute.getTerminalId());
-        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, terminal.getOptions());
+        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(
+                pollingInfo, terminal.get().getOptions());
         return getLocalDateTime(startDateTimePolling.plusSeconds(seconds));
     }
 
-    private Terminal getTerminal(Integer terminalId) {
+    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 
