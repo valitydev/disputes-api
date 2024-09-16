@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,7 +21,6 @@ public class ManualParsingTopic {
     @Value("${manual-parsing-topic.enabled}")
     private boolean enabled;
 
-    @Transactional(propagation = Propagation.REQUIRED)
     public void sendCreated(Dispute dispute, List<Attachment> attachments) {
         if (!enabled) {
             return;

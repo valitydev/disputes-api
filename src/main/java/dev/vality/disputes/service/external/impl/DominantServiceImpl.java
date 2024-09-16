@@ -6,10 +6,7 @@ import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.impl.dominant.DominantCacheServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -23,26 +20,18 @@ public class DominantServiceImpl implements DominantService {
         return dominantCacheService.getCurrency(currencyRef);
     }
 
-    @Async
     @Override
-    public CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef) {
-        try {
-            var terminal = dominantCacheService.getTerminal(terminalRef);
-            return CompletableFuture.completedFuture(terminal);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+    public Terminal getTerminal(TerminalRef terminalRef) {
+        return dominantCacheService.getTerminal(terminalRef);
     }
 
-    @Async
     @Override
-    public CompletableFuture<ProxyDefinition> getProxy(ProviderRef providerRef) {
-        try {
-            var provider = dominantCacheService.getProvider(providerRef);
-            var proxy = dominantCacheService.getProxy(provider.getProxy().getRef());
-            return CompletableFuture.completedFuture(proxy);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+    public ProxyDefinition getProxy(ProxyRef proxyRef) {
+        return dominantCacheService.getProxy(proxyRef);
+    }
+
+    @Override
+    public Provider getProvider(ProviderRef providerRef) {
+        return dominantCacheService.getProvider(providerRef);
     }
 }

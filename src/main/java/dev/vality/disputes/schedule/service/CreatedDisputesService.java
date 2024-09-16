@@ -19,7 +19,6 @@ import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
@@ -57,7 +55,6 @@ public class CreatedDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
-    @SneakyThrows
     public void callCreateDisputeRemotely(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -134,15 +131,13 @@ public class CreatedDisputesService {
         log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
     }
 
-    @SneakyThrows
     private boolean isCapturedBlockedForDispute(Dispute dispute) {
-        return getTerminal(dispute.getTerminalId()).get().getOptions()
+        return getTerminal(dispute.getTerminalId()).getOptions()
                 .containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
     }
 
-    @SneakyThrows
     private boolean isNotProvidersDisputesApiExist(Dispute dispute) {
-        return !getTerminal(dispute.getTerminalId()).get().getOptions()
+        return !getTerminal(dispute.getTerminalId()).getOptions()
                 .containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 
@@ -150,7 +145,7 @@ public class CreatedDisputesService {
         return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+    private Terminal getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }
