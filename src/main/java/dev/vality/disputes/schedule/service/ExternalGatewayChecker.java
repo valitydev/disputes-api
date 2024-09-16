@@ -18,8 +18,6 @@ import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -45,18 +43,18 @@ public class ExternalGatewayChecker {
 
     @SneakyThrows
     private String getRouteUrl(Dispute dispute) {
-        return providerRouting.getRouteUrl(getTerminal(dispute.getTerminalId()).get().getOptions(), getProxy(dispute.getProviderId()).get().getUrl());
+        return providerRouting.getRouteUrl(getTerminal(dispute.getTerminalId()).getOptions(), getProxy(dispute.getProviderId()).getUrl());
     }
 
     private HttpClientResponseHandler<Boolean> isNotFoundResponse() {
         return response -> response.getCode() == HttpStatus.SC_NOT_FOUND;
     }
 
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+    private Terminal getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 
-    private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
+    private ProxyDefinition getProxy(Integer providerId) {
         return dominantService.getProxy(new ProviderRef(providerId));
     }
 }

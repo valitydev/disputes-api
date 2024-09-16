@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -39,8 +38,8 @@ public class RemoteClient {
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments) {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.get().getOptions());
-        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
+        var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
+        var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
         log.info("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
         log.debug("Routed remote provider's createDispute() has been called {}", dispute);
@@ -52,19 +51,19 @@ public class RemoteClient {
     public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute) {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.get().getOptions());
-        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
+        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.getOptions());
+        var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
         log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
         var result = remoteClient.checkDisputeStatus(disputeContext);
         log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
         return result;
     }
 
-    private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
+    private ProxyDefinition getProxy(Integer providerId) {
         return dominantService.getProxy(new ProviderRef(providerId));
     }
 
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+    private Terminal getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }
