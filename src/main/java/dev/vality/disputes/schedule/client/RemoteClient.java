@@ -39,7 +39,7 @@ public class RemoteClient {
         log.debug("Trying to build disputeParams {} {} {}", dispute, terminal, proxy);
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
         log.debug("Trying to call ProviderIfaceBuilder {} {} {}", dispute, terminal, proxy);
-        var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
+        var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
         log.debug("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
         log.info("Routed remote provider's createDispute() has been called {}", dispute);
@@ -51,7 +51,7 @@ public class RemoteClient {
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
         var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.getOptions());
-        var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
+        var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
         log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
         var result = remoteClient.checkDisputeStatus(disputeContext);
         log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
