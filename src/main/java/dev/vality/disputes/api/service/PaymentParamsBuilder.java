@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -38,14 +39,29 @@ public class PaymentParamsBuilder {
                 .terminalId(payment.getRoute().getTerminal().getId())
                 .providerId(payment.getRoute().getProvider().getId())
                 .providerTrxId(getProviderTrxId(payment))
-                .currencyName(currency.map(Currency::getName).orElse(null))
-                .currencySymbolicCode(currency.map(Currency::getSymbolicCode).orElse(null))
-                .currencyNumericCode(currency.map(Currency::getNumericCode).map(Short::intValue).orElse(null))
-                .currencyExponent(currency.map(Currency::getExponent).map(Short::intValue).orElse(null))
+                .currencyName(getCurrency(currency)
+                        .map(Currency::getName).orElse(null))
+                .currencySymbolicCode(getCurrency(currency)
+                        .map(Currency::getSymbolicCode).orElse(null))
+                .currencyNumericCode(getCurrency(currency)
+                        .map(Currency::getNumericCode).map(Short::intValue).orElse(null))
+                .currencyExponent(getCurrency(currency)
+                        .map(Currency::getExponent).map(Short::intValue).orElse(null))
                 .options(terminal.get().getOptions())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;
+    }
+
+    @SneakyThrows
+    private Optional<Currency> getCurrency(Optional<CompletableFuture<Currency>> currency) {
+        return currency.map(currencyCompletableFuture -> {
+            try {
+                return currencyCompletableFuture.get();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private String getProviderTrxId(InvoicePayment payment) {

@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface DominantService {
 
-    Currency getCurrency(CurrencyRef currencyRef);
+    CompletableFuture<Currency> getCurrency(CurrencyRef currencyRef);
 
     CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef);
 

@@ -1,7 +1,6 @@
 package dev.vality.disputes.service.external.impl;
 
 import dev.vality.damsel.domain.*;
-import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.impl.dominant.DominantCacheServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +17,18 @@ public class DominantServiceImpl implements DominantService {
 
     private final DominantCacheServiceImpl dominantCacheService;
 
+    @Async("asyncDominantServiceExecutor")
     @Override
-    public Currency getCurrency(CurrencyRef currencyRef) throws NotFoundException {
-        return dominantCacheService.getCurrency(currencyRef);
+    public CompletableFuture<Currency> getCurrency(CurrencyRef currencyRef) {
+        try {
+            var currency = dominantCacheService.getCurrency(currencyRef);
+            return CompletableFuture.completedFuture(currency);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
-    @Async
+    @Async("asyncDominantServiceExecutor")
     @Override
     public CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef) {
         try {
@@ -34,7 +39,7 @@ public class DominantServiceImpl implements DominantService {
         }
     }
 
-    @Async
+    @Async("asyncDominantServiceExecutor")
     @Override
     public CompletableFuture<ProxyDefinition> getProxy(ProviderRef providerRef) {
         try {

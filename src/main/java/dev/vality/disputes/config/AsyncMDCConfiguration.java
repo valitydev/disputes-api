@@ -11,11 +11,12 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("AbbreviationAsWordInName")
 public class AsyncMDCConfiguration {
 
-    @Bean
-    public Executor asyncExecutor() {
+    @Bean("asyncDominantServiceExecutor")
+    public Executor asyncDominantServiceExecutor() {
         var executor = new ThreadPoolTaskExecutor();
         executor.setTaskDecorator(new MDCTaskDecorator());
         executor.initialize();
+        executor.setThreadNamePrefix("async-dominant-service-thread-");
         return executor;
     }
 }

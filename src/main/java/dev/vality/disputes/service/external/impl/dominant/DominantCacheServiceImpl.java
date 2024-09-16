@@ -19,12 +19,11 @@ public class DominantCacheServiceImpl {
     private final RepositoryClientSrv.Iface dominantClient;
 
     @Cacheable(value = "currencies", key = "#currencyRef.symbolic_code", cacheManager = "currenciesCacheManager")
-    public Currency getCurrency(CurrencyRef currencyRef) throws NotFoundException {
+    public Currency getCurrency(CurrencyRef currencyRef) {
         return getCurrency(currencyRef, Reference.head(new Head()));
     }
 
-    private Currency getCurrency(CurrencyRef currencyRef, Reference revisionReference)
-            throws NotFoundException {
+    private Currency getCurrency(CurrencyRef currencyRef, Reference revisionReference) {
         log.debug("Trying to get currency, currencyRef='{}', revisionReference='{}'", currencyRef, revisionReference);
         try {
             var reference = new dev.vality.damsel.domain.Reference();
@@ -48,8 +47,7 @@ public class DominantCacheServiceImpl {
         return getTerminal(terminalRef, Reference.head(new Head()));
     }
 
-    public Terminal getTerminal(TerminalRef terminalRef, Reference revisionReference)
-            throws NotFoundException {
+    public Terminal getTerminal(TerminalRef terminalRef, Reference revisionReference) {
         log.debug("Trying to get terminal from dominant, terminalRef='{}', revisionReference='{}'", terminalRef,
                 revisionReference);
         try {
@@ -74,8 +72,7 @@ public class DominantCacheServiceImpl {
         return getProvider(providerRef, Reference.head(new Head()));
     }
 
-    private Provider getProvider(ProviderRef providerRef, Reference revisionReference)
-            throws NotFoundException {
+    private Provider getProvider(ProviderRef providerRef, Reference revisionReference) {
         log.debug("Trying to get provider from dominant, providerRef='{}', revisionReference='{}'", providerRef,
                 revisionReference);
         try {
@@ -101,8 +98,7 @@ public class DominantCacheServiceImpl {
     }
 
 
-    private ProxyDefinition getProxy(ProxyRef proxyRef, Reference revisionReference)
-            throws NotFoundException {
+    private ProxyDefinition getProxy(ProxyRef proxyRef, Reference revisionReference) {
         log.debug("Trying to get proxy from dominant, proxyRef='{}', revisionReference='{}'", proxyRef,
                 revisionReference);
         try {
