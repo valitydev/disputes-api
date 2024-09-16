@@ -30,7 +30,7 @@ public class TaskCreatedDisputesService {
         if (!isScheduleCreatedEnabled) {
             return;
         }
-        log.info("Processing created disputes get started");
+        log.debug("Processing created disputes get started");
         try {
             var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()

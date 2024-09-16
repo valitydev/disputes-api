@@ -30,7 +30,7 @@ public class TaskCreateAdjustmentsService {
         if (!isScheduleCreateAdjustmentsEnabled) {
             return;
         }
-        log.info("Processing create adjustments get started");
+        log.debug("Processing create adjustments get started");
         try {
             var disputes = createAdjustmentsService.getDisputesForHgCall(batchSize);
             var callables = disputes.stream()

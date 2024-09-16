@@ -30,7 +30,7 @@ public class TaskPendingDisputesService {
         if (!isSchedulePendingEnabled) {
             return;
         }
-        log.info("Processing pending disputes get started");
+        log.debug("Processing pending disputes get started");
         try {
             var disputes = pendingDisputesService.getPendingDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
