@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,7 +26,7 @@ public class TaskCreatedDisputesService {
     @Value("${dispute.isScheduleCreatedEnabled}")
     private boolean isScheduleCreatedEnabled;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}")
+    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", timeUnit = TimeUnit.SECONDS, initialDelay = 3)
     public void processCreated() {
         if (!isScheduleCreatedEnabled) {
             return;

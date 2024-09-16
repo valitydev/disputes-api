@@ -33,13 +33,16 @@ public class RemoteClient {
 
     @SneakyThrows
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments) {
+        log.debug("Trying to call dominant for RemoteClient {}", dispute);
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
+        log.debug("Trying to build disputeParams {}", dispute);
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
+        log.debug("Trying to call ProviderIfaceBuilder {}", dispute);
         var remoteClient = providerIfaceBuilder.build(terminal.getOptions(), proxy.getUrl());
-        log.info("Trying to routed remote provider's createDispute() call {}", dispute);
+        log.debug("Trying to routed remote provider's createDispute() call {}", dispute);
         var result = remoteClient.createDispute(disputeParams);
-        log.debug("Routed remote provider's createDispute() has been called {}", dispute);
+        log.info("Routed remote provider's createDispute() has been called {}", dispute);
         return result;
     }
 
