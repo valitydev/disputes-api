@@ -30,8 +30,8 @@ public class DominantCacheServiceImpl {
             reference.setCurrency(currencyRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var currency = versionedObject.getObject().getCurrency().getData();
-            log.debug("Currency has been found, currencyRef='{}', revisionReference='{}', currency='{}'",
-                    currencyRef, revisionReference, currency);
+            log.debug("Currency has been found, currencyRef='{}', revisionReference='{}'",
+                    currencyRef, revisionReference);
             return currency;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, currencyRef='%s', revisionReference='%s'",
@@ -55,8 +55,8 @@ public class DominantCacheServiceImpl {
             reference.setTerminal(terminalRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var terminal = versionedObject.getObject().getTerminal().getData();
-            log.debug("Terminal has been found, terminalRef='{}', revisionReference='{}', terminal='{}'",
-                    terminalRef, revisionReference, terminal);
+            log.debug("Terminal has been found, terminalRef='{}', revisionReference='{}'",
+                    terminalRef, revisionReference);
             return terminal;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, terminalRef='%s', revisionReference='%s'",
@@ -80,8 +80,8 @@ public class DominantCacheServiceImpl {
             reference.setProvider(providerRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var provider = versionedObject.getObject().getProvider().getData();
-            log.debug("Provider has been found, providerRef='{}', revisionReference='{}', terminal='{}'",
-                    providerRef, revisionReference, provider);
+            log.debug("Provider has been found, providerRef='{}', revisionReference='{}'",
+                    providerRef, revisionReference);
             return provider;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, providerRef='%s', revisionReference='%s'",
