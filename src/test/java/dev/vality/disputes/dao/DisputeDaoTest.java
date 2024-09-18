@@ -44,13 +44,4 @@ public class DisputeDaoTest {
         assertEquals(3,
                 disputeDao.get(random.getInvoiceId(), random.getPaymentId()).size());
     }
-
-//    @Test
-//    @Transactional
-//    public void as() {
-//        var random = random(Dispute.class);
-//        disputeDao.save(random);
-//        assertEquals(random, disputeDao.getForUpdateSkipLocked(random.getId()));
-//        assertEquals(random, disputeDao.getForUpdateSkipLocked(random.getId()));
-//    }
 }

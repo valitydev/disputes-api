@@ -6,7 +6,6 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.service.external.FileStorageService;
 import dev.vality.file.storage.FileNotFound;
 import dev.vality.file.storage.FileStorageSrv;
-import dev.vality.swag.disputes.model.CreateRequestAttachmentsInner;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -34,13 +33,13 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     @SneakyThrows
-    public String saveFile(CreateRequestAttachmentsInner attachment) {
+    public String saveFile(byte[] data) {
         log.debug("Trying to create new file to file-storage");
         var result = fileStorageClient.createNewFile(Collections.emptyMap(), getTime().toString());
         var fileDataId = result.getFileDataId();
         log.debug("Trying to upload data to s3 with id: {}", fileDataId);
         var requestPut = new HttpPut(result.getUploadUrl());
-        requestPut.setEntity(HttpEntities.create(attachment.getData(), null));
+        requestPut.setEntity(HttpEntities.create(data, null));
         // execute() делает внутри try-with-resources + закрывает InputStream в EntityUtils.consume(entity)
         httpClient.execute(requestPut, new BasicHttpClientResponseHandler());
         log.debug("File has been successfully uploaded with id: {}", fileDataId);

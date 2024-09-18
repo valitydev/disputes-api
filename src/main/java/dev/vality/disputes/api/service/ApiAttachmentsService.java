@@ -27,7 +27,7 @@ public class ApiAttachmentsService {
             // validate
             MediaType.valueOf(attachment.getMimeType());
             // http 500
-            var fileId = fileStorageService.saveFile(attachment);
+            var fileId = fileStorageService.saveFile(attachment.getData());
             var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());
             log.debug("Trying to save Attachment {}", fileMeta);
             // http 500

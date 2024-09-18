@@ -77,10 +77,10 @@ public class ManualParsingDisputesService {
         if (dispute.getStatus() == DisputeStatus.manual_created) {
             // обрабатываем здесь только вручную созданные диспуты, у остальных предполагается,
             // что providerDisputeId будет сохранен после создания диспута по API провайдера
-            log.info("Trying to set manual_parsing_binded_pending Dispute status {}", dispute);
+            log.info("Trying to set manual_pending Dispute status {}", dispute);
             providerDisputeDao.save(new ProviderDispute(providerDisputeId, dispute.getId()));
             disputeDao.update(dispute.getId(), DisputeStatus.manual_pending);
-            log.debug("Dispute status has been set to manual_parsing_binded_pending {}", dispute);
+            log.debug("Dispute status has been set to manual_pending {}", dispute);
         } else {
             log.info("Request was skipped by inappropriate status {}", dispute);
         }

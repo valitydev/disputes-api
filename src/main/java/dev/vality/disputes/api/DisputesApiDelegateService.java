@@ -28,11 +28,11 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
         var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId());
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
-//        var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
-//        if (dispute.isPresent()) {
-//            log.info("<- Res existing: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
-//            return ResponseEntity.ok(new Create200Response(String.valueOf(dispute.get().getId())));
-//        }
+        var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
+        if (dispute.isPresent()) {
+            log.info("<- Res existing: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
+            return ResponseEntity.ok(new Create200Response(String.valueOf(dispute.get().getId())));
+        }
         var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var disputeId = apiDisputesService.createDispute(req, paymentParams);
         log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
