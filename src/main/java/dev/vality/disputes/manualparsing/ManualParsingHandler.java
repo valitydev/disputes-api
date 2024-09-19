@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,8 +32,20 @@ public class ManualParsingHandler implements ManualParsingServiceSrv.Iface {
 
     @Override
     public void bindCreated(BindParamsRequest bindParamsRequest) throws TException {
-        for (BindParams bindParam : bindParamsRequest.getBindParams()) {
+        for (var bindParam : bindParamsRequest.getBindParams()) {
             manualParsingDisputesService.bindCreatedDispute(bindParam);
         }
+    }
+
+    @Override
+    public DisputeResult getDispute(DisputeParamsRequest disputeParamsRequest) throws TException {
+        var disputeResult = new DisputeResult(new ArrayList<>());
+        for (var disputeParams : disputeParamsRequest.getDisputeParams()) {
+            var dispute = manualParsingDisputesService.getDispute(disputeParams);
+            if (dispute != null) {
+                disputeResult.getDisputes().add(dispute);
+            }
+        }
+        return disputeResult;
     }
 }

@@ -21,7 +21,7 @@ public class ManualParsingTopic {
     @Value("${manual-parsing-topic.enabled}")
     private boolean enabled;
 
-    public void sendCreated(Dispute dispute, List<Attachment> attachments) {
+    public void sendCreated(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
         if (!enabled) {
             return;
         }
@@ -29,7 +29,7 @@ public class ManualParsingTopic {
         contextMap.put("dispute_id", dispute.getId().toString());
         var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
         contextMap.put("dispute_attachments", attachmentsCollect);
-        contextMap.put("dispute_status", DisputeStatus.manual_created.name());
+        contextMap.put("dispute_status", disputeStatus.name());
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");
         MDC.clear();

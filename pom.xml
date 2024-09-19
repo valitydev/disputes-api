@@ -47,7 +47,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>provider-disputes-proto</artifactId>
-            <version>1.16-61eff7c</version>
+            <version>1.18-6602d79</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -188,6 +188,10 @@
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>org.openapitools</groupId>

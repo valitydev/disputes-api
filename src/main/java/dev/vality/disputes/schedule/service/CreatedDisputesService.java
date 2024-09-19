@@ -87,17 +87,17 @@ public class CreatedDisputesService {
                 || isNotProvidersDisputesApiExist(dispute)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            finishTaskWithManualParsingFlowActivation(dispute, attachments);
+            finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
             return;
         }
         try {
             var result = remoteClient.createDispute(dispute, attachments);
-            finishTask(dispute, result);
+            finishTask(dispute, attachments, result);
         } catch (WRuntimeException e) {
             if (externalGatewayChecker.isNotProvidersDisputesApiExist(dispute, e)) {
                 // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
                 // (тогда при тесте соединения вернется 404)
-                finishTaskWithManualParsingFlowActivation(dispute, attachments);
+                finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
                 return;
             }
             throw e;
@@ -105,7 +105,7 @@ public class CreatedDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTask(Dispute dispute, DisputeCreatedResult result) {
+    void finishTask(Dispute dispute, List<Attachment> attachments, DisputeCreatedResult result) {
         switch (result.getSetField()) {
             case SUCCESS_RESULT -> {
                 var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
@@ -120,15 +120,17 @@ public class CreatedDisputesService {
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
                 log.debug("Dispute status has been set to failed {}", dispute.getId());
             }
+            case ALREADY_EXIST_RESULT ->
+                    finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.already_exist_created);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments) {
-        manualParsingTopic.sendCreated(dispute, attachments);
-        log.info("Trying to set manual_created Dispute status {}", dispute);
-        disputeDao.update(dispute.getId(), DisputeStatus.manual_created);
-        log.debug("Dispute status has been set to manual_created {}", dispute.getId());
+    void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
+        manualParsingTopic.sendCreated(dispute, attachments, disputeStatus);
+        log.info("Trying to set {} Dispute status {}", disputeStatus, dispute);
+        disputeDao.update(dispute.getId(), disputeStatus);
+        log.debug("Dispute status has been set to {} {}", disputeStatus, dispute.getId());
     }
 
     private boolean isCapturedBlockedForDispute(Dispute dispute) {

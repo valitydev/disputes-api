@@ -62,15 +62,18 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public Dispute getForUpdateSkipLocked(long disputeId) {
+    public Optional<Dispute> get(long disputeId) {
+        var query = getDslContext().selectFrom(DISPUTE)
+                .where(DISPUTE.ID.eq(disputeId));
+        return Optional.ofNullable(fetchOne(query, disputeRowMapper));
+    }
+
+    public Optional<Dispute> getForUpdateSkipLocked(long disputeId) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.ID.eq(disputeId))
                 .forUpdate()
                 .skipLocked();
-        return Optional.ofNullable(fetchOne(query, disputeRowMapper))
-                .orElseThrow(
-                        () -> new NotFoundException(
-                                String.format("Dispute not found, disputeId='%s'", disputeId)));
+        return Optional.ofNullable(fetchOne(query, disputeRowMapper));
     }
 
     public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
