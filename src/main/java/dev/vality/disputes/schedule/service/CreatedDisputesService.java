@@ -19,7 +19,6 @@ import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
@@ -57,7 +55,6 @@ public class CreatedDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
-    @SneakyThrows
     public void callCreateDisputeRemotely(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -68,39 +65,39 @@ public class CreatedDisputesService {
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
         var status = invoicePayment.getPayment().getStatus();
         if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
             // не создаем диспут, пока платеж не финален
-            log.warn("Payment has non-final status {} {}", status, dispute);
+            log.warn("Payment has non-final status {} {}", status, dispute.getId());
             return;
         }
         var attachments = createdAttachmentsService.getAttachments(dispute);
         if (attachments == null || attachments.isEmpty()) {
-            log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.NO_ATTACHMENTS);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
         if ((status.isSetCaptured() && isCapturedBlockedForDispute(dispute))
                 || isNotProvidersDisputesApiExist(dispute)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            finishTaskWithManualParsingFlowActivation(dispute, attachments);
+            finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
             return;
         }
         try {
             var result = remoteClient.createDispute(dispute, attachments);
-            finishTask(dispute, result);
+            finishTask(dispute, attachments, result);
         } catch (WRuntimeException e) {
             if (externalGatewayChecker.isNotProvidersDisputesApiExist(dispute, e)) {
                 // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
                 // (тогда при тесте соединения вернется 404)
-                finishTaskWithManualParsingFlowActivation(dispute, attachments);
+                finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
                 return;
             }
             throw e;
@@ -108,41 +105,41 @@ public class CreatedDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTask(Dispute dispute, DisputeCreatedResult result) {
+    void finishTask(Dispute dispute, List<Attachment> attachments, DisputeCreatedResult result) {
         switch (result.getSetField()) {
             case SUCCESS_RESULT -> {
                 var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
                 log.info("Trying to set pending Dispute status {}, {}", dispute, result);
                 providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getProviderDisputeId(), dispute.getId()));
                 disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-                log.debug("Dispute status has been set to pending {}", dispute);
+                log.debug("Dispute status has been set to pending {}", dispute.getId());
             }
             case FAIL_RESULT -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getFailResult().getFailure());
-                log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
+                log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
-                log.debug("Dispute status has been set to failed {}", dispute);
+                log.debug("Dispute status has been set to failed {}", dispute.getId());
             }
+            case ALREADY_EXIST_RESULT ->
+                    finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.already_exist_created);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments) {
-        manualParsingTopic.sendCreated(dispute, attachments);
-        log.info("Trying to set manual_parsing_created Dispute status {}", dispute);
-        disputeDao.update(dispute.getId(), DisputeStatus.manual_created);
-        log.debug("Dispute status has been set to manual_parsing_created {}", dispute);
+    void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
+        manualParsingTopic.sendCreated(dispute, attachments, disputeStatus);
+        log.info("Trying to set {} Dispute status {}", disputeStatus, dispute);
+        disputeDao.update(dispute.getId(), disputeStatus);
+        log.debug("Dispute status has been set to {} {}", disputeStatus, dispute.getId());
     }
 
-    @SneakyThrows
     private boolean isCapturedBlockedForDispute(Dispute dispute) {
-        return getTerminal(dispute.getTerminalId()).get().getOptions()
+        return getTerminal(dispute.getTerminalId()).getOptions()
                 .containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
     }
 
-    @SneakyThrows
     private boolean isNotProvidersDisputesApiExist(Dispute dispute) {
-        return !getTerminal(dispute.getTerminalId()).get().getOptions()
+        return !getTerminal(dispute.getTerminalId()).getOptions()
                 .containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 
@@ -150,7 +147,7 @@ public class CreatedDisputesService {
         return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+    private Terminal getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }

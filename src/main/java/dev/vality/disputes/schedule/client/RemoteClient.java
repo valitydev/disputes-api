@@ -17,11 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -34,37 +31,42 @@ public class RemoteClient {
     private final DisputeContextConverter disputeContextConverter;
     private final DisputeParamsConverter disputeParamsConverter;
 
-    @Transactional(propagation = Propagation.REQUIRED)
     @SneakyThrows
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments) {
+        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.get().getOptions());
-        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
-        log.info("Trying to routed remote provider's createDispute() call {}", dispute);
+        log.debug("Trying to build disputeParams {}", dispute.getId());
+        var disputeParams = disputeParamsConverter.convert(dispute, attachments, terminal.getOptions());
+        log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());
+        var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
+        log.debug("Trying to routed remote provider's createDispute() call {}", dispute.getId());
         var result = remoteClient.createDispute(disputeParams);
-        log.debug("Routed remote provider's createDispute() has been called {}", dispute);
+        log.info("Routed remote provider's createDispute() has been called {} {}", dispute.getId(), result);
         return result;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     @SneakyThrows
     public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute) {
+        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         var terminal = getTerminal(dispute.getTerminalId());
         var proxy = getProxy(dispute.getProviderId());
-        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.get().getOptions());
-        var remoteClient = providerIfaceBuilder.build(terminal.get().getOptions(), proxy.get().getUrl());
-        log.info("Trying to routed remote provider's checkDisputeStatus() call {}", dispute);
+        log.debug("Trying to build disputeContext {}", dispute.getId());
+        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, terminal.getOptions());
+        log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());
+        var remoteClient = providerIfaceBuilder.buildTHSpawnClient(terminal.getOptions(), proxy.getUrl());
+        log.debug("Trying to routed remote provider's checkDisputeStatus() call {}", dispute.getId());
         var result = remoteClient.checkDisputeStatus(disputeContext);
-        log.debug("Routed remote provider's checkDisputeStatus() has been called {}", dispute);
+        log.info("Routed remote provider's checkDisputeStatus() has been called {} {}", dispute.getId(), result);
         return result;
     }
 
-    private CompletableFuture<ProxyDefinition> getProxy(Integer providerId) {
-        return dominantService.getProxy(new ProviderRef(providerId));
+    private ProxyDefinition getProxy(Integer providerId) {
+        var provider = dominantService.getProvider(new ProviderRef(providerId));
+        return dominantService.getProxy(provider.getProxy().getRef());
     }
 
-    private CompletableFuture<Terminal> getTerminal(Integer terminalId) {
+    private Terminal getTerminal(Integer terminalId) {
         return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }

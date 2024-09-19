@@ -49,9 +49,9 @@ public class CreateAdjustmentsService {
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
         var invoicePaymentAdjustment = adjustmentExtractor.searchAdjustmentByDispute(invoicePayment, dispute);
@@ -59,16 +59,16 @@ public class CreateAdjustmentsService {
             var changedAmount = adjustmentExtractor.getChangedAmount(invoicePaymentAdjustment.get(), dispute.getChangedAmount());
             log.info("Trying to set succeeded Dispute status {}", dispute);
             disputeDao.update(dispute.getId(), DisputeStatus.succeeded, changedAmount);
-            log.debug("Dispute status has been set to succeeded {}", dispute);
+            log.debug("Dispute status has been set to succeeded {}", dispute.getId());
             return;
         }
         try {
             var params = invoicePaymentAdjustmentParamsConverter.convert(dispute);
             var paymentAdjustment = createAdjustment(dispute, params);
             if (paymentAdjustment == null) {
-                log.error("Trying to set failed Dispute status with INVOICE_NOT_FOUND error reason {}", dispute);
+                log.error("Trying to set failed Dispute status with INVOICE_NOT_FOUND error reason {}", dispute.getId());
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.INVOICE_NOT_FOUND);
-                log.debug("Dispute status has been set to failed {}", dispute);
+                log.debug("Dispute status has been set to failed {}", dispute.getId());
                 return;
             }
         } catch (InvoicingPaymentStatusPendingException e) {
@@ -77,12 +77,12 @@ public class CreateAdjustmentsService {
             // и тогда диспут будет пулиться, пока платеж не зафиналится,
             // и тк никакой записи в коде выше нет, то пуллинг не проблема
             // а запрос в checkDisputeStatus по идемпотентности просто вернет тот же success
-            log.error("Error when hg.createPaymentAdjustment() got payments status pending {}", dispute, e);
+            log.error("Error when hg.createPaymentAdjustment() got payments status pending {}", dispute.getId(), e);
             return;
         }
         log.info("Trying to set succeeded Dispute status {}", dispute);
         disputeDao.update(dispute.getId(), DisputeStatus.succeeded);
-        log.debug("Dispute status has been set to succeeded {}", dispute);
+        log.debug("Dispute status has been set to succeeded {}", dispute.getId());
     }
 
     private InvoicePaymentAdjustment createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {

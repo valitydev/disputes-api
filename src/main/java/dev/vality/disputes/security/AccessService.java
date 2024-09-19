@@ -90,7 +90,7 @@ public class AccessService {
     }
 
     private InvoicePayment getInvoicePayment(dev.vality.damsel.payment_processing.Invoice invoice, String paymentId) {
-        log.debug("Processing invoice: {}", invoice);
+        log.debug("Processing invoice: {}", invoice.getInvoice().getId());
         return invoice.getPayments().stream()
                 .filter(invoicePayment -> paymentId.equals(invoicePayment.getPayment().getId())
                         && invoicePayment.isSetRoute())

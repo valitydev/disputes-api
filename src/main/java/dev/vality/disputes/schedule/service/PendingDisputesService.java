@@ -48,23 +48,23 @@ public class PendingDisputesService {
             return;
         }
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
-        log.debug("Trying to get ProviderDispute {}", dispute);
+        log.debug("Trying to get ProviderDispute {}", dispute.getId());
         var providerDispute = providerDisputeDao.get(dispute.getId());
         if (providerDispute == null) {
             var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
             // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново
-            log.error("Trying to set created Dispute status, because createDispute() was not success {}", dispute);
+            log.error("Trying to set created Dispute status, because createDispute() was not success {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.created, nextCheckAfter);
-            log.debug("Dispute status has been set to created {}", dispute);
+            log.debug("Dispute status has been set to created {}", dispute.getId());
             return;
         }
         if (pollingInfoService.isDeadline(dispute)) {
-            log.error("Trying to set failed Dispute status with POOLING_EXPIRED error reason {}", dispute);
+            log.error("Trying to set failed Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.POOLING_EXPIRED);
-            log.debug("Dispute status has been set to failed {}", dispute);
+            log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
-        log.debug("ProviderDispute has been found {}", dispute);
+        log.debug("ProviderDispute has been found {}", dispute.getId());
         var result = remoteClient.checkDisputeStatus(dispute, providerDispute);
         finishTask(dispute, result);
     }
@@ -76,13 +76,13 @@ public class PendingDisputesService {
                 var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
                 log.info("Trying to set create_adjustment Dispute status {}, {}", dispute, result);
                 disputeDao.update(dispute.getId(), DisputeStatus.create_adjustment, changedAmount);
-                log.debug("Dispute status has been set to create_adjustment {}", dispute);
+                log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
             }
             case STATUS_FAIL -> {
                 var errorMessage = TErrorUtil.toStringVal(result.getStatusFail().getFailure());
-                log.warn("Trying to set failed Dispute status {}, {}", dispute, errorMessage);
+                log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
-                log.debug("Dispute status has been set to failed {}", dispute);
+                log.debug("Dispute status has been set to failed {}", dispute.getId());
             }
             case STATUS_PENDING -> {
                 // дергаем update() чтоб обновить время вызова next_check_after,
@@ -91,7 +91,7 @@ public class PendingDisputesService {
                 var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
                 log.info("Trying to set pending Dispute status {}, {}", dispute, result);
                 disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-                log.debug("Dispute status has been set to pending {}", dispute);
+                log.debug("Dispute status has been set to pending {}", dispute.getId());
             }
         }
     }

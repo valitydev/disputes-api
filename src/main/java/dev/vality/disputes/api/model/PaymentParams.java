@@ -1,15 +1,13 @@
 package dev.vality.disputes.api.model;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.ToString;
 
 import java.util.Map;
 
 @Builder
-@Getter
-@Setter
+@Data
 public class PaymentParams {
 
     private String invoiceId;

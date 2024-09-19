@@ -19,20 +19,19 @@ public class DominantCacheServiceImpl {
     private final RepositoryClientSrv.Iface dominantClient;
 
     @Cacheable(value = "currencies", key = "#currencyRef.symbolic_code", cacheManager = "currenciesCacheManager")
-    public Currency getCurrency(CurrencyRef currencyRef) throws NotFoundException {
+    public Currency getCurrency(CurrencyRef currencyRef) {
         return getCurrency(currencyRef, Reference.head(new Head()));
     }
 
-    private Currency getCurrency(CurrencyRef currencyRef, Reference revisionReference)
-            throws NotFoundException {
+    private Currency getCurrency(CurrencyRef currencyRef, Reference revisionReference) {
         log.debug("Trying to get currency, currencyRef='{}', revisionReference='{}'", currencyRef, revisionReference);
         try {
             var reference = new dev.vality.damsel.domain.Reference();
             reference.setCurrency(currencyRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var currency = versionedObject.getObject().getCurrency().getData();
-            log.debug("Currency has been found, currencyRef='{}', revisionReference='{}', currency='{}'",
-                    currencyRef, revisionReference, currency);
+            log.debug("Currency has been found, currencyRef='{}', revisionReference='{}'",
+                    currencyRef, revisionReference);
             return currency;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, currencyRef='%s', revisionReference='%s'",
@@ -48,8 +47,7 @@ public class DominantCacheServiceImpl {
         return getTerminal(terminalRef, Reference.head(new Head()));
     }
 
-    public Terminal getTerminal(TerminalRef terminalRef, Reference revisionReference)
-            throws NotFoundException {
+    public Terminal getTerminal(TerminalRef terminalRef, Reference revisionReference) {
         log.debug("Trying to get terminal from dominant, terminalRef='{}', revisionReference='{}'", terminalRef,
                 revisionReference);
         try {
@@ -57,8 +55,8 @@ public class DominantCacheServiceImpl {
             reference.setTerminal(terminalRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var terminal = versionedObject.getObject().getTerminal().getData();
-            log.debug("Terminal has been found, terminalRef='{}', revisionReference='{}', terminal='{}'",
-                    terminalRef, revisionReference, terminal);
+            log.debug("Terminal has been found, terminalRef='{}', revisionReference='{}'",
+                    terminalRef, revisionReference);
             return terminal;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, terminalRef='%s', revisionReference='%s'",
@@ -74,8 +72,7 @@ public class DominantCacheServiceImpl {
         return getProvider(providerRef, Reference.head(new Head()));
     }
 
-    private Provider getProvider(ProviderRef providerRef, Reference revisionReference)
-            throws NotFoundException {
+    private Provider getProvider(ProviderRef providerRef, Reference revisionReference) {
         log.debug("Trying to get provider from dominant, providerRef='{}', revisionReference='{}'", providerRef,
                 revisionReference);
         try {
@@ -83,8 +80,8 @@ public class DominantCacheServiceImpl {
             reference.setProvider(providerRef);
             var versionedObject = checkoutObject(revisionReference, reference);
             var provider = versionedObject.getObject().getProvider().getData();
-            log.debug("Provider has been found, providerRef='{}', revisionReference='{}', terminal='{}'",
-                    providerRef, revisionReference, provider);
+            log.debug("Provider has been found, providerRef='{}', revisionReference='{}'",
+                    providerRef, revisionReference);
             return provider;
         } catch (VersionNotFound | ObjectNotFound ex) {
             throw new NotFoundException(String.format("Version not found, providerRef='%s', revisionReference='%s'",
@@ -101,8 +98,7 @@ public class DominantCacheServiceImpl {
     }
 
 
-    private ProxyDefinition getProxy(ProxyRef proxyRef, Reference revisionReference)
-            throws NotFoundException {
+    private ProxyDefinition getProxy(ProxyRef proxyRef, Reference revisionReference) {
         log.debug("Trying to get proxy from dominant, proxyRef='{}', revisionReference='{}'", proxyRef,
                 revisionReference);
         try {

@@ -74,6 +74,7 @@ public class ApiDisputesService {
                 DisputeStatus.pending,
                 DisputeStatus.manual_created,
                 DisputeStatus.manual_pending,
-                DisputeStatus.create_adjustment);
+                DisputeStatus.create_adjustment,
+                DisputeStatus.already_exist_created);
     }
 }

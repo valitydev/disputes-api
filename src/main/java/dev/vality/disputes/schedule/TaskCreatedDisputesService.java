@@ -25,12 +25,12 @@ public class TaskCreatedDisputesService {
     @Value("${dispute.isScheduleCreatedEnabled}")
     private boolean isScheduleCreatedEnabled;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}")
+    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", initialDelayString = "${dispute.initialDelayCreated}")
     public void processCreated() {
         if (!isScheduleCreatedEnabled) {
             return;
         }
-        log.info("Processing created disputes get started");
+        log.debug("Processing created disputes get started");
         try {
             var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
@@ -40,7 +40,7 @@ public class TaskCreatedDisputesService {
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             log.error("Received exception while scheduler processed created disputes", ex);
         }
         log.info("Created disputes were processed");
