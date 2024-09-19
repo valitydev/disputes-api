@@ -118,7 +118,7 @@ public class ManualParsingDisputesService {
     }
 
     @SneakyThrows
-    public Dispute getDispute(DisputeParams disputeParams) {
+    public Dispute getDispute(DisputeParams disputeParams, boolean withAttachments) {
         var disputeId = disputeParams.getDisputeId();
         var disputeOptional = disputeDao.get(Long.parseLong(disputeId));
         if (disputeOptional.isEmpty()) {
@@ -143,7 +143,7 @@ public class ManualParsingDisputesService {
         disputeResult.setSkipCallHgForCreateAdjustment(dispute.getSkipCallHgForCreateAdjustment());
         log.debug("Dispute getDispute {}", disputeResult);
         var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
-        if (disputeFiles == null) {
+        if (disputeFiles == null || !withAttachments) {
             return disputeResult;
         }
         disputeResult.setAttachments(new ArrayList<>());

@@ -55,7 +55,7 @@ public class DebugManualParsingController {
     @SneakyThrows
     public DisputeResult getDisputes(@RequestBody String body) {
         log.debug("getDispute {}", body);
-        var dispute = manualParsingHandler.getDispute(objectMapper.readValue(body, DisputeParamsRequest.class));
+        var dispute = manualParsingHandler.getDisputes(objectMapper.readValue(body, DisputeParamsRequest.class));
         return objectMapper.convertValue(dispute, new TypeReference<>() {
         });
     }

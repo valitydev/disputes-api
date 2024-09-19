@@ -38,10 +38,10 @@ public class ManualParsingHandler implements ManualParsingServiceSrv.Iface {
     }
 
     @Override
-    public DisputeResult getDispute(DisputeParamsRequest disputeParamsRequest) throws TException {
+    public DisputeResult getDisputes(DisputeParamsRequest disputeParamsRequest) throws TException {
         var disputeResult = new DisputeResult(new ArrayList<>());
         for (var disputeParams : disputeParamsRequest.getDisputeParams()) {
-            var dispute = manualParsingDisputesService.getDispute(disputeParams);
+            var dispute = manualParsingDisputesService.getDispute(disputeParams, disputeParamsRequest.isWithAttachments());
             if (dispute != null) {
                 disputeResult.getDisputes().add(dispute);
             }
