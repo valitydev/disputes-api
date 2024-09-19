@@ -36,7 +36,7 @@ public class ExponentialBackOffPollingServiceWrapper {
         pollingInfo.setMaxDateTimePolling(dispute.getPollingBefore().toInstant(ZoneOffset.UTC));
         var terminal = getTerminal(dispute.getTerminalId());
         var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, terminal.getOptions());
-        return getLocalDateTime(startDateTimePolling.plusSeconds(seconds));
+        return getLocalDateTime(dispute.getNextCheckAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
     }
 
     private Terminal getTerminal(Integer terminalId) {

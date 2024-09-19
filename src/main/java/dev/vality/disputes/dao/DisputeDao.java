@@ -13,6 +13,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,7 +79,8 @@ public class DisputeDao extends AbstractGenericDao {
 
     public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
         var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(disputeStatus))
+                .where(DISPUTE.STATUS.eq(disputeStatus)
+                        .and(DISPUTE.NEXT_CHECK_AFTER.le(LocalDateTime.now(ZoneOffset.UTC))))
                 .orderBy(DISPUTE.NEXT_CHECK_AFTER)
                 .limit(limit)
                 .forUpdate()

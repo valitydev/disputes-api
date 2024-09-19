@@ -6,11 +6,13 @@ import dev.vality.disputes.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateLong;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @PostgresqlSpringBootITest
 public class DisputeDaoTest {
@@ -43,5 +45,18 @@ public class DisputeDaoTest {
         disputeDao.save(random);
         assertEquals(3,
                 disputeDao.get(random.getInvoiceId(), random.getPaymentId()).size());
+    }
+
+    @Test
+    public void asd() {
+        var random = random(Dispute.class);
+        var createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        random.setCreatedAt(createdAt);
+        random.setPollingBefore(createdAt.plusSeconds(10));
+        random.setNextCheckAfter(createdAt.plusSeconds(5));
+        disputeDao.save(random);
+        assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+        disputeDao.update(random.getId(), random.getStatus(), createdAt.plusSeconds(0));
+        assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
     }
 }
