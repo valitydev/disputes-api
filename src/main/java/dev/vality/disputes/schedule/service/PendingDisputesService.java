@@ -9,7 +9,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.schedule.client.RemoteClient;
-import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
+import dev.vality.disputes.schedule.handler.DisputeStatusResultHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +30,7 @@ public class PendingDisputesService {
     private final ProviderDisputeDao providerDisputeDao;
     private final PollingInfoService pollingInfoService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final DisputeStatusResultHandler disputeStatusResultHandler;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
@@ -72,27 +73,9 @@ public class PendingDisputesService {
     @Transactional(propagation = Propagation.REQUIRED)
     void finishTask(Dispute dispute, DisputeStatusResult result) {
         switch (result.getSetField()) {
-            case STATUS_SUCCESS -> {
-                var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
-                log.info("Trying to set create_adjustment Dispute status {}, {}", dispute, result);
-                disputeDao.update(dispute.getId(), DisputeStatus.create_adjustment, changedAmount);
-                log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
-            }
-            case STATUS_FAIL -> {
-                var errorMessage = TErrorUtil.toStringVal(result.getStatusFail().getFailure());
-                log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
-                disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
-                log.debug("Dispute status has been set to failed {}", dispute.getId());
-            }
-            case STATUS_PENDING -> {
-                // дергаем update() чтоб обновить время вызова next_check_after,
-                // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
-                // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
-                var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
-                log.info("Trying to set pending Dispute status {}, {}", dispute, result);
-                disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-                log.debug("Dispute status has been set to pending {}", dispute.getId());
-            }
+            case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);
+            case STATUS_FAIL -> disputeStatusResultHandler.handleStatusFail(dispute, result);
+            case STATUS_PENDING -> disputeStatusResultHandler.handleStatusPending(dispute, result);
         }
     }
 }
