@@ -1,6 +1,5 @@
 package dev.vality.disputes.dao;
 
-import dev.vality.disputes.dao.config.PostgresqlSpringBootITest;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
@@ -14,8 +13,7 @@ import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generat
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateLong;
 import static org.junit.jupiter.api.Assertions.*;
 
-@PostgresqlSpringBootITest
-public class DisputeDaoTest {
+public abstract class DisputeDaoTest {
 
     @Autowired
     private DisputeDao disputeDao;
@@ -48,7 +46,7 @@ public class DisputeDaoTest {
     }
 
     @Test
-    public void asd() {
+    public void testNextCheckAfter() {
         var random = random(Dispute.class);
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);
         random.setCreatedAt(createdAt);

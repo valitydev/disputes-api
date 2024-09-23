@@ -1,9 +1,7 @@
-package dev.vality.disputes.dao.config;
+package dev.vality.disputes.config;
 
-import dev.vality.disputes.dao.config.testconfiguration.MockedUnimportantServicesConfig;
 import dev.vality.testcontainers.annotations.DefaultSpringBootTest;
 import dev.vality.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
-import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,7 +11,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @PostgresqlTestcontainerSingleton
+@DisableScheduling
 @DefaultSpringBootTest
-@Import(MockedUnimportantServicesConfig.class)
 public @interface PostgresqlSpringBootITest {
 }
