@@ -1,6 +1,5 @@
 package dev.vality.disputes.dao;
 
-import com.zaxxer.hikari.HikariDataSource;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.mapper.RecordRowMapper;
@@ -9,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.util.List;
 
 import static dev.vality.disputes.domain.tables.FileMeta.FILE_META;
@@ -19,7 +19,7 @@ public class FileMetaDao extends AbstractGenericDao {
     private final RowMapper<FileMeta> fileMetaRowMapper;
 
     @Autowired
-    public FileMetaDao(HikariDataSource dataSource) {
+    public FileMetaDao(DataSource dataSource) {
         super(dataSource);
         fileMetaRowMapper = new RecordRowMapper<>(FILE_META, FileMeta.class);
     }

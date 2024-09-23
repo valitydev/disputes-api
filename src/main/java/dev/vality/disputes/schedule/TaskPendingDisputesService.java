@@ -6,6 +6,7 @@ import dev.vality.disputes.schedule.service.PendingDisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Slf4j
+@ConditionalOnProperty(value = "dispute.isSchedulePendingEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
 public class TaskPendingDisputesService {
@@ -22,14 +24,9 @@ public class TaskPendingDisputesService {
     private final PendingDisputesService pendingDisputesService;
     @Value("${dispute.batchSize}")
     private int batchSize;
-    @Value("${dispute.isSchedulePendingEnabled}")
-    private boolean isSchedulePendingEnabled;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}", initialDelayString = "${dispute.initialDelayPending}")
     public void processPending() {
-        if (!isSchedulePendingEnabled) {
-            return;
-        }
         log.debug("Processing pending disputes get started");
         try {
             var disputes = pendingDisputesService.getPendingDisputesForUpdateSkipLocked(batchSize);

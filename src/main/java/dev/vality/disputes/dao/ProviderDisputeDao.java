@@ -1,6 +1,5 @@
 package dev.vality.disputes.dao;
 
-import com.zaxxer.hikari.HikariDataSource;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.mapper.RecordRowMapper;
@@ -8,6 +7,8 @@ import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+
+import javax.sql.DataSource;
 
 import static dev.vality.disputes.domain.tables.ProviderDispute.PROVIDER_DISPUTE;
 
@@ -17,7 +18,7 @@ public class ProviderDisputeDao extends AbstractGenericDao {
     private final RowMapper<ProviderDispute> providerDisputeRowMapper;
 
     @Autowired
-    public ProviderDisputeDao(HikariDataSource dataSource) {
+    public ProviderDisputeDao(DataSource dataSource) {
         super(dataSource);
         providerDisputeRowMapper = new RecordRowMapper<>(PROVIDER_DISPUTE, ProviderDispute.class);
     }

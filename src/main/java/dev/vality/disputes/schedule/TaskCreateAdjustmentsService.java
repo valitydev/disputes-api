@@ -6,6 +6,7 @@ import dev.vality.disputes.schedule.service.CreateAdjustmentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Slf4j
+@ConditionalOnProperty(value = "dispute.isScheduleCreateAdjustmentsEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
@@ -23,14 +25,9 @@ public class TaskCreateAdjustmentsService {
     private final CreateAdjustmentsService createAdjustmentsService;
     @Value("${dispute.batchSize}")
     private int batchSize;
-    @Value("${dispute.isScheduleCreateAdjustmentsEnabled}")
-    private boolean isScheduleCreateAdjustmentsEnabled;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreateAdjustments}", initialDelayString = "${dispute.initialDelayCreateAdjustments}")
     public void processPending() {
-        if (!isScheduleCreateAdjustmentsEnabled) {
-            return;
-        }
         log.debug("Processing create adjustments get started");
         try {
             var disputes = createAdjustmentsService.getDisputesForHgCall(batchSize);

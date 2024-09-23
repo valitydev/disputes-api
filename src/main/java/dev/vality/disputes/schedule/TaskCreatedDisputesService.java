@@ -6,6 +6,7 @@ import dev.vality.disputes.schedule.service.CreatedDisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Slf4j
+@ConditionalOnProperty(value = "dispute.isScheduleCreatedEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
 public class TaskCreatedDisputesService {
@@ -22,14 +24,9 @@ public class TaskCreatedDisputesService {
     private final CreatedDisputesService createdDisputesService;
     @Value("${dispute.batchSize}")
     private int batchSize;
-    @Value("${dispute.isScheduleCreatedEnabled}")
-    private boolean isScheduleCreatedEnabled;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", initialDelayString = "${dispute.initialDelayCreated}")
     public void processCreated() {
-        if (!isScheduleCreatedEnabled) {
-            return;
-        }
         log.debug("Processing created disputes get started");
         try {
             var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);

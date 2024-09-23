@@ -1,6 +1,5 @@
 package dev.vality.disputes.dao;
 
-import com.zaxxer.hikari.HikariDataSource;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
@@ -12,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -26,7 +26,7 @@ public class DisputeDao extends AbstractGenericDao {
     private final RowMapper<Dispute> disputeRowMapper;
 
     @Autowired
-    public DisputeDao(HikariDataSource dataSource) {
+    public DisputeDao(DataSource dataSource) {
         super(dataSource);
         disputeRowMapper = new RecordRowMapper<>(DISPUTE, Dispute.class);
     }

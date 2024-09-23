@@ -38,6 +38,7 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
                 || !Objects.equals(providerDispute.getProviderDisputeId(), disputeCallbackParams.getProviderDisputeId())) {
             return;
         }
+        log.info("ProviderDisputesCallbackHandler {}", disputeCallbackParams);
         var result = disputeCallbackParams.getDisputeStatusResult();
         switch (result.getSetField()) {
             case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);
