@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -157,7 +156,7 @@ public class ManualParsingDisputesService {
                             return EntityUtils.toByteArray(entity);
                         }
                     });
-            disputeResult.getAttachments().get().add(new Attachment(ByteBuffer.wrap(data)));
+            disputeResult.getAttachments().get().add(new Attachment().setData(data));
         }
         return disputeResult;
     }

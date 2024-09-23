@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import dev.vality.disputes.admin.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -31,7 +33,7 @@ import java.util.List;
 public class DebugManualParsingController {
 
     private final ManualParsingServiceSrv.Iface manualParsingHandler;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
 
     @PostMapping("/cancel")
     @SneakyThrows
@@ -98,7 +100,7 @@ public class DebugManualParsingController {
         @JsonProperty("skipCallHgForCreateAdjustment")
         private boolean skipCallHgForCreateAdjustment; // required
         @JsonProperty("attachments")
-        @JsonDeserialize(using = AttachmentDeserializer.class)
+        @JsonDeserialize(using = AttachmentsDeserializer.class)
         public List<Attachment> attachments;
     }
 
@@ -111,19 +113,24 @@ public class DebugManualParsingController {
 
     }
 
-    public static class AttachmentDeserializer extends JsonDeserializer<Attachment> {
-
-        private final ObjectMapper mapper = new ObjectMapper();
+    public static class AttachmentsDeserializer extends JsonDeserializer<List<Attachment>> {
 
         @Override
-        public Attachment deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException {
+        public List<Attachment> deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException {
             var node = (JsonNode) parser.getCodec().readTree(parser);
-            if (node.isObject()) {
-                var attachment = mapper.convertValue(node, new TypeReference<dev.vality.disputes.admin.Attachment>() {
-                });
-                var attachmentResult = new Attachment();
-                attachmentResult.setData(Base64.getEncoder().encodeToString(attachment.getData()));
-                return attachmentResult;
+            if (node.isArray()) {
+                var attachments = new ArrayList<Attachment>();
+                for (JsonNode jsonNode : node) {
+                    if (jsonNode.isObject()) {
+                        var data = jsonNode.get("data");
+                        if (data.isBinary()) {
+                            var attachmentResult = new Attachment();
+                            attachmentResult.setData(Base64.getEncoder().encodeToString(data.binaryValue().clone()));
+                            attachments.add(attachmentResult);
+                        }
+                    }
+                }
+                return attachments;
             }
             return null;
         }
