@@ -4,14 +4,12 @@ import dev.vality.bouncer.ctx.ContextFragment;
 import dev.vality.bouncer.decisions.Judgement;
 import dev.vality.bouncer.decisions.Resolution;
 import dev.vality.bouncer.decisions.ResolutionAllowed;
+import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.proxy_provider.Shop;
-import dev.vality.disputes.DisputeAlreadyExistResult;
-import dev.vality.disputes.DisputeCreatedFailResult;
-import dev.vality.disputes.DisputeCreatedResult;
-import dev.vality.disputes.DisputeCreatedSuccessResult;
+import dev.vality.disputes.*;
 import dev.vality.disputes.constant.TerminalOptionsField;
 import dev.vality.file.storage.NewFileResult;
 import dev.vality.geck.common.util.TypeUtil;
@@ -153,6 +151,18 @@ public class MockUtil {
 
     public static DisputeCreatedResult createDisputeAlreadyExistResult(String providerDisputeId) {
         return DisputeCreatedResult.alreadyExistResult(new DisputeAlreadyExistResult());
+    }
+
+    public static DisputeStatusResult createDisputeStatusSuccessResult() {
+        return DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(100));
+    }
+
+    public static DisputeStatusResult createDisputeStatusFailResult() {
+        return DisputeStatusResult.statusFail(new DisputeStatusFailResult(createFailure()));
+    }
+
+    public static DisputeStatusResult createDisputeStatusPendingResult() {
+        return DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
     }
 
     public static Failure createFailure() {
