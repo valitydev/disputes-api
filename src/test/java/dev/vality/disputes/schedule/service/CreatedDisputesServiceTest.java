@@ -129,7 +129,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult(providerDisputeId));
+        when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
         var dispute = disputeDao.get(Long.parseLong(disputeId));
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
@@ -153,7 +153,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult(providerDisputeId));
+        when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
         var dispute = disputeDao.get(Long.parseLong(disputeId));
         createdDisputesService.callCreateDisputeRemotely(dispute.get());

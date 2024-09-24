@@ -55,9 +55,9 @@ public class InvoicingServiceImpl implements InvoicingService {
             InvoicePaymentAdjustmentParams params) {
         try {
             log.debug("createPaymentAdjustment with id: {}", invoiceId);
-            var invoice = invoicingClient.createPaymentAdjustment(invoiceId, paymentId, params);
+            var invoicePaymentAdjustment = invoicingClient.createPaymentAdjustment(invoiceId, paymentId, params);
             log.debug("Done createPaymentAdjustment with id: {}", invoiceId);
-            return invoice;
+            return invoicePaymentAdjustment;
         } catch (InvoiceNotFound | InvoicePaymentNotFound e) {
             // закрываем диспут с фейлом если получили не преодолимый отказ внешних шлюзов с ключевыми данными
             return null;

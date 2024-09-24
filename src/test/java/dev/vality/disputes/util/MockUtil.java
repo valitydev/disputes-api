@@ -8,7 +8,6 @@ import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.damsel.proxy_provider.Shop;
 import dev.vality.disputes.*;
 import dev.vality.disputes.constant.TerminalOptionsField;
 import dev.vality.file.storage.NewFileResult;
@@ -75,19 +74,6 @@ public class MockUtil {
         return new Judgement().setResolution(resolution);
     }
 
-    public static Shop createShop(String shopId) {
-        var location = new ShopLocation();
-        location.setUrl("http://google.com");
-        return new Shop()
-                .setId(shopId)
-                .setLocation(location)
-                .setDetails(new ShopDetails().setName("shop")
-                        .setDescription("desc"))
-                .setCategory(new Category().setType(CategoryType.test)
-                        .setName("test")
-                        .setDescription("desc"));
-    }
-
     public static CompletableFuture<Provider> createProvider() {
         return CompletableFuture.completedFuture(new Provider()
                 .setName("propropro")
@@ -145,11 +131,11 @@ public class MockUtil {
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(providerDisputeId));
     }
 
-    public static DisputeCreatedResult createDisputeCreatedFailResult(String providerDisputeId) {
+    public static DisputeCreatedResult createDisputeCreatedFailResult() {
         return DisputeCreatedResult.failResult(new DisputeCreatedFailResult(createFailure()));
     }
 
-    public static DisputeCreatedResult createDisputeAlreadyExistResult(String providerDisputeId) {
+    public static DisputeCreatedResult createDisputeAlreadyExistResult() {
         return DisputeCreatedResult.alreadyExistResult(new DisputeAlreadyExistResult());
     }
 
@@ -163,6 +149,16 @@ public class MockUtil {
 
     public static DisputeStatusResult createDisputeStatusPendingResult() {
         return DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
+    }
+
+    public static InvoicePaymentAdjustment getInvoicePaymentAdjustment(String adjustmentId, String reason) {
+        return new InvoicePaymentAdjustment()
+                .setId(adjustmentId)
+                .setState(InvoicePaymentAdjustmentState.status_change(new InvoicePaymentAdjustmentStatusChangeState()
+                        .setScenario(new InvoicePaymentAdjustmentStatusChange()
+                                .setTargetStatus(new InvoicePaymentStatus(InvoicePaymentStatus.captured(
+                                        new InvoicePaymentCaptured()
+                                                .setReason(reason)))))));
     }
 
     public static Failure createFailure() {
