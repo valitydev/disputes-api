@@ -1,4 +1,4 @@
-package dev.vality.disputes.config.testconfiguration;
+package dev.vality.disputes.config;
 
 import io.zonky.test.db.postgres.embedded.FlywayPreparer;
 import io.zonky.test.db.postgres.embedded.PreparedDbProvider;

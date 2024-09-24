@@ -28,7 +28,7 @@ public class InvoicePaymentAdjustmentParamsConverter {
         return params;
     }
 
-    private String getReason(Dispute dispute) {
+    public String getReason(Dispute dispute) {
         return Optional.ofNullable(dispute.getReason())
                 .map(s -> String.format(DISPUTE_MASK + ", reason=%s", dispute.getId(), s))
                 .orElse(String.format(DISPUTE_MASK, dispute.getId()));

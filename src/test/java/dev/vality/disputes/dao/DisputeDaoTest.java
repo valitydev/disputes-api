@@ -1,5 +1,6 @@
 package dev.vality.disputes.dao;
 
+import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testInsertAndFind() {
         var random = random(Dispute.class);
+        random.setStatus(DisputeStatus.failed);
         disputeDao.save(random);
         assertEquals(random,
                 disputeDao.get(random.getId(), random.getInvoiceId(), random.getPaymentId()));
@@ -38,6 +40,7 @@ public abstract class DisputeDaoTest {
         random.setId(null);
         random.setInvoiceId("setInvoiceId");
         random.setPaymentId("setPaymentId");
+        random.setStatus(DisputeStatus.failed);
         disputeDao.save(random);
         disputeDao.save(random);
         disputeDao.save(random);
@@ -48,6 +51,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testNextCheckAfter() {
         var random = random(Dispute.class);
+        random.setStatus(DisputeStatus.already_exist_created);
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);
         random.setCreatedAt(createdAt);
         random.setPollingBefore(createdAt.plusSeconds(10));
@@ -56,5 +60,24 @@ public abstract class DisputeDaoTest {
         assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
         disputeDao.update(random.getId(), random.getStatus(), createdAt.plusSeconds(0));
         assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+        disputeDao.update(random.getId(), DisputeStatus.failed);
+    }
+
+    @Test
+    public void testGetDisputesForHgCall() {
+        var random = random(Dispute.class);
+        random.setId(null);
+        random.setInvoiceId("setInvoiceId");
+        random.setPaymentId("setPaymentId");
+        random.setSkipCallHgForCreateAdjustment(true);
+        random.setStatus(DisputeStatus.create_adjustment);
+        disputeDao.save(random);
+        disputeDao.save(random);
+        random.setSkipCallHgForCreateAdjustment(false);
+        disputeDao.save(random);
+        assertEquals(1, disputeDao.getDisputesForHgCall(10).size());
+        for (var dispute : disputeDao.get("setInvoiceId", "setPaymentId")) {
+            disputeDao.update(dispute.getId(), DisputeStatus.failed);
+        }
     }
 }

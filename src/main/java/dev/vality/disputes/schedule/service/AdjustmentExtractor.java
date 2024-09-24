@@ -6,6 +6,7 @@ import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import jakarta.annotation.Nonnull;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,14 +22,14 @@ public class AdjustmentExtractor {
     public Optional<InvoicePaymentAdjustment> searchAdjustmentByDispute(InvoicePayment invoicePayment, Dispute dispute) {
         return getInvoicePaymentAdjustmentStream(invoicePayment)
                 .filter(adj -> adj.getReason() != null)
-                .filter(adj -> isDisputesAdjustment(adj, dispute))
+                .filter(adj -> isDisputesAdjustment(adj.getReason(), dispute))
                 .findFirst()
                 .or(() -> getInvoicePaymentAdjustmentStream(invoicePayment)
                         .filter(s -> s.getState() != null)
                         .filter(s -> s.getState().isSetStatusChange())
                         .filter(s -> getTargetStatus(s).isSetCaptured())
                         .filter(s -> getTargetStatus(s).getCaptured().getReason() != null)
-                        .filter(s -> isDisputesAdjustment(s, dispute))
+                        .filter(s -> isDisputesAdjustment(getTargetStatus(s).getCaptured().getReason(), dispute))
                         .findFirst());
     }
 
@@ -48,7 +49,7 @@ public class AdjustmentExtractor {
         return s.getState().getStatusChange().getScenario().getTargetStatus();
     }
 
-    private boolean isDisputesAdjustment(InvoicePaymentAdjustment adj, Dispute dispute) {
-        return adj.getReason().contains(String.format(DISPUTE_MASK, dispute.getId()));
+    private boolean isDisputesAdjustment(String reason, Dispute dispute) {
+        return !StringUtils.isBlank(reason) && reason.contains(String.format(DISPUTE_MASK, dispute.getId()));
     }
 }

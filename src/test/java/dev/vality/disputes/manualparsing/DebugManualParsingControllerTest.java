@@ -23,7 +23,6 @@ public class DebugManualParsingControllerTest {
 
     @MockBean
     private ManualParsingServiceSrv.Iface manualParsingHandler;
-
     @Autowired
     private DebugManualParsingController debugManualParsingController;
 
