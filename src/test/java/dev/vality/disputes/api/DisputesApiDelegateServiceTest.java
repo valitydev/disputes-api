@@ -88,7 +88,7 @@ public class DisputesApiDelegateServiceTest {
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
-        WiremockUtils.mockS3Attachment();
+        WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
@@ -155,7 +155,7 @@ public class DisputesApiDelegateServiceTest {
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(OpenApiUtil.getContentInvalidCreateRequest(invoiceId, paymentId)))
+                        .content(OpenApiUtil.getContentInvalidCreateRequest(paymentId)))
                 .andExpect(status().is4xxClientError());
     }
 

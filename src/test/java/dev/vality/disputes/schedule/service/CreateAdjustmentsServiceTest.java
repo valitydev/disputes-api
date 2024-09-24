@@ -77,8 +77,8 @@ public class CreateAdjustmentsServiceTest {
     @Test
     @SneakyThrows
     public void testInvoiceNotFound() {
-        var paymentId = "1";
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var paymentId = "1";
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         var dispute = disputeDao.get(Long.parseLong(disputeId));
@@ -90,8 +90,8 @@ public class CreateAdjustmentsServiceTest {
     @Test
     @SneakyThrows
     public void testFullSuccessFlow() {
-        var paymentId = "1";
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var paymentId = "1";
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         var dispute = disputeDao.get(Long.parseLong(disputeId));

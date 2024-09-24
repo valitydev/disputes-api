@@ -33,7 +33,7 @@ public class OpenApiUtil {
         return params;
     }
 
-    public String getContentInvalidCreateRequest(String invoiceId, String paymentId) {
+    public String getContentInvalidCreateRequest(String paymentId) {
         return String.format("""
                 {
                   "paymentId": "%s",
@@ -47,5 +47,57 @@ public class OpenApiUtil {
                   "reason": "string"
                 }
                 """, paymentId);
+    }
+
+    public static String getCancelRequest(String disputeId) {
+        return String.format("""
+                {
+                  "cancelParams": [
+                    {
+                      "disputeId": "%s",
+                      "cancelReason": "test endpoint"
+                    }
+                  ]
+                }
+                """, disputeId);
+    }
+
+    public static String getApproveRequest(String disputeId, boolean skipHg) {
+        return String.format("""
+                {
+                  "approveParams": [
+                    {
+                      "disputeId": "%s",
+                      "skipCallHgForCreateAdjustment": %s
+                    }
+                  ]
+                }
+                """, disputeId, skipHg);
+    }
+
+    public static String getBindCreatedRequest(String disputeId, String providerDisputeId) {
+        return String.format("""
+                  {
+                    "bindParams": [
+                      {
+                        "disputeId": "%s",
+                        "providerDisputeId": "%s"
+                      }
+                    ]
+                  }
+                """, disputeId, providerDisputeId);
+    }
+
+    public static String getGetDisputeRequest(String disputeId, boolean withAttachments) {
+        return String.format("""
+                  {
+                    "disputeParams": [
+                      {
+                        "disputeId": "%s"
+                      }
+                    ],
+                    "withAttachments": %s
+                  }
+                """, disputeId, withAttachments);
     }
 }

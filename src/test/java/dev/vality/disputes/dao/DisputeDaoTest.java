@@ -51,7 +51,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testNextCheckAfter() {
         var random = random(Dispute.class);
-        random.setStatus(DisputeStatus.failed);
+        random.setStatus(DisputeStatus.already_exist_created);
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);
         random.setCreatedAt(createdAt);
         random.setPollingBefore(createdAt.plusSeconds(10));
@@ -60,6 +60,7 @@ public abstract class DisputeDaoTest {
         assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
         disputeDao.update(random.getId(), random.getStatus(), createdAt.plusSeconds(0));
         assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+        disputeDao.update(random.getId(), DisputeStatus.failed);
     }
 
     @Test

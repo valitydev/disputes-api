@@ -11,10 +11,10 @@ public class WiremockAddressesHolder {
     private int wiremockPort;
 
     public String getDownloadUrl() {
-        return getUploadUrl();
+        return String.format("http://127.0.0.1:%s%s%s", wiremockPort, TestUrlPaths.S3_PATH, TestUrlPaths.MOCK_DOWNLOAD);
     }
 
     public String getUploadUrl() {
-        return String.format("http://127.0.0.1:%s%s%s", wiremockPort, TestUrlPaths.S3_URL, TestUrlPaths.MOCK);
+        return String.format("http://127.0.0.1:%s%s%s", wiremockPort, TestUrlPaths.S3_PATH, TestUrlPaths.MOCK_UPLOAD);
     }
 }

@@ -1,6 +1,7 @@
 package dev.vality.disputes.config;
 
 import dev.vality.disputes.DisputesApiApplication;
+import dev.vality.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
@@ -13,8 +14,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @DisableScheduling
-@EmbeddedPostgresWithFlyway
-//@PostgresqlTestcontainerSingleton
+@PostgresqlTestcontainerSingleton
 @AutoConfigureMockMvc
 @AutoConfigureWireMock(port = 0)
 @SpringBootTest(

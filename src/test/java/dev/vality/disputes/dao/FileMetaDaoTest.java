@@ -1,6 +1,6 @@
 package dev.vality.disputes.dao;
 
-import dev.vality.disputes.config.EmbeddedPostgresWithFlywaySpringBootITest;
+import dev.vality.disputes.config.PostgresqlSpringBootITest;
 import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +9,7 @@ import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@EmbeddedPostgresWithFlywaySpringBootITest
-//@PostgresqlSpringBootITest
+@PostgresqlSpringBootITest
 public class FileMetaDaoTest {
 
     @Autowired
