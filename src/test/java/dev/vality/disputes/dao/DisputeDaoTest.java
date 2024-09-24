@@ -1,5 +1,6 @@
 package dev.vality.disputes.dao;
 
+import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
@@ -56,5 +57,20 @@ public abstract class DisputeDaoTest {
         assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
         disputeDao.update(random.getId(), random.getStatus(), createdAt.plusSeconds(0));
         assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+    }
+
+    @Test
+    public void testGetDisputesForHgCall() {
+        var random = random(Dispute.class);
+        random.setId(null);
+        random.setInvoiceId("setInvoiceId");
+        random.setPaymentId("setPaymentId");
+        random.setSkipCallHgForCreateAdjustment(true);
+        random.setStatus(DisputeStatus.create_adjustment);
+        disputeDao.save(random);
+        disputeDao.save(random);
+        random.setSkipCallHgForCreateAdjustment(false);
+        disputeDao.save(random);
+        assertEquals(1, disputeDao.getDisputesForHgCall(10).size());
     }
 }

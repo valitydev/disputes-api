@@ -42,12 +42,11 @@ public class ManualParsingDisputesService {
     public void cancelPendingDispute(CancelParams cancelParams) {
         var disputeId = cancelParams.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var disputeOptional = disputeDao.getForUpdateSkipLocked(Long.parseLong(disputeId));
-        if (disputeOptional.isEmpty()) {
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        if (dispute == null) {
             return;
         }
         var cancelReason = cancelParams.getCancelReason().orElse(null);
-        var dispute = disputeOptional.get();
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (DISPUTE_PENDING.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
@@ -63,11 +62,10 @@ public class ManualParsingDisputesService {
     public void approvePendingDispute(ApproveParams approveParam) {
         var disputeId = approveParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var disputeOptional = disputeDao.getForUpdateSkipLocked(Long.parseLong(disputeId));
-        if (disputeOptional.isEmpty()) {
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        if (dispute == null) {
             return;
         }
-        var dispute = disputeOptional.get();
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         var skipCallHg = approveParam.isSkipCallHgForCreateAdjustment();
         var targetStatus = skipCallHg ? DisputeStatus.succeeded : DisputeStatus.create_adjustment;
@@ -92,12 +90,11 @@ public class ManualParsingDisputesService {
     public void bindCreatedDispute(BindParams bindParam) {
         var disputeId = bindParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var disputeOptional = disputeDao.getForUpdateSkipLocked(Long.parseLong(disputeId));
-        if (disputeOptional.isEmpty()) {
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        if (dispute == null) {
             return;
         }
         var providerDisputeId = bindParam.getProviderDisputeId();
-        var dispute = disputeOptional.get();
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (dispute.getStatus() == DisputeStatus.manual_created) {
             // обрабатываем здесь только вручную созданные диспуты, у остальных предполагается,
