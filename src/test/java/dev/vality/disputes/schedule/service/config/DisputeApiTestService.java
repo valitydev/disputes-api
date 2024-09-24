@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @TestComponent
-@Import({DisputeApiTestServiceConfig.class, WiremockAddressesHolder.class})
+@Import({DisputeApiTestConfig.class, WiremockAddressesHolder.class})
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class DisputeApiTestService {
 

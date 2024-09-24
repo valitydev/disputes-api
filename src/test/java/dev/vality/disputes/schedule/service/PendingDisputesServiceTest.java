@@ -6,6 +6,7 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
+import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.service.external.DominantService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@Import({CreatedDisputesTestService.class})
+@Import({PendingDisputesTestService.class})
 public class PendingDisputesServiceTest {
 
     @Autowired
@@ -34,6 +35,8 @@ public class PendingDisputesServiceTest {
     private DisputeApiTestService disputeApiTestService;
     @Autowired
     private CreatedDisputesTestService createdDisputesTestService;
+    @Autowired
+    private PendingDisputesTestService pendingDisputesTestService;
 
     @Test
     @SneakyThrows
@@ -54,13 +57,7 @@ public class PendingDisputesServiceTest {
     @Test
     @SneakyThrows
     public void testDisputeStatusSuccessResult() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusSuccessResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
-        pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
     }
 
