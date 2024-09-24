@@ -20,6 +20,8 @@ import java.lang.annotation.Target;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         classes = DisputesApiApplication.class,
-        properties = {"wiremock.server.baseUrl=http://localhost:${wiremock.server.port}"})
+        properties = {
+                "wiremock.server.baseUrl=http://localhost:${wiremock.server.port}",
+                "logging.level.WireMock=WARN"})
 public @interface WireMockSpringBootITest {
 }

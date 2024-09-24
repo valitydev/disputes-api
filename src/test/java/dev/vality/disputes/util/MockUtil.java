@@ -1,4 +1,4 @@
-package dev.vality.disputes.testutil;
+package dev.vality.disputes.util;
 
 import dev.vality.bouncer.ctx.ContextFragment;
 import dev.vality.bouncer.decisions.Judgement;
@@ -20,7 +20,6 @@ import dev.vality.token.keeper.AuthDataStatus;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import org.apache.thrift.TSerializer;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -116,7 +115,6 @@ public class MockUtil {
                 .setOptions(new HashMap<>()));
     }
 
-    @NotNull
     public static Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
         options.put(TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN, "5");
@@ -141,23 +139,23 @@ public class MockUtil {
                 .setContext(createContextFragment());
     }
 
-    public NewFileResult createNewFileResult() {
-        return new NewFileResult(UUID.randomUUID().toString(), "http://localhost:8022/");
+    public static NewFileResult createNewFileResult(String uploadUrl) {
+        return new NewFileResult(UUID.randomUUID().toString(), uploadUrl);
     }
 
-    public DisputeCreatedResult createDisputeCreatedSuccessResult(String providerDisputeId) {
+    public static DisputeCreatedResult createDisputeCreatedSuccessResult(String providerDisputeId) {
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(providerDisputeId));
     }
 
-    public DisputeCreatedResult createDisputeCreatedFailResult(String providerDisputeId) {
+    public static DisputeCreatedResult createDisputeCreatedFailResult(String providerDisputeId) {
         return DisputeCreatedResult.failResult(new DisputeCreatedFailResult(createFailure()));
     }
 
-    public DisputeCreatedResult createDisputeAlreadyExistResult(String providerDisputeId) {
+    public static DisputeCreatedResult createDisputeAlreadyExistResult(String providerDisputeId) {
         return DisputeCreatedResult.alreadyExistResult(new DisputeAlreadyExistResult());
     }
 
-    private static Failure createFailure() {
+    public static Failure createFailure() {
         Failure failure = new Failure("some_error");
         failure.setSub(new SubFailure("some_suberror"));
         return failure;

@@ -1,4 +1,4 @@
-package dev.vality.disputes.testutil;
+package dev.vality.disputes.util;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.util.LinkedMultiValueMap;

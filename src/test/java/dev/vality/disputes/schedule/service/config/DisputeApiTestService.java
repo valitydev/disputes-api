@@ -5,21 +5,20 @@ import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.testutil.MockUtil;
-import dev.vality.disputes.testutil.OpenApiUtil;
+import dev.vality.disputes.util.MockUtil;
+import dev.vality.disputes.util.OpenApiUtil;
+import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import lombok.SneakyThrows;
-import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static dev.vality.disputes.testutil.MockUtil.*;
+import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -28,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @TestComponent
-@Import(DisputeApiTestServiceConfig.class)
+@Import({DisputeApiTestServiceConfig.class, WiremockAddressesHolder.class})
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class DisputeApiTestService {
 
@@ -43,11 +42,11 @@ public class DisputeApiTestService {
     @Autowired
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
-    private CloseableHttpClient httpClient;
-    @Autowired
     private JwtTokenBuilder tokenBuilder;
     @Autowired
     private MockMvc mvc;
+    @Autowired
+    private WiremockAddressesHolder wiremockAddressesHolder;
 
     @SneakyThrows
     public Create200Response createDisputeViaApi(String invoiceId, String paymentId) {
@@ -56,8 +55,8 @@ public class DisputeApiTestService {
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult());
-        when(httpClient.execute(any(), any(BasicHttpClientResponseHandler.class))).thenReturn("ok");
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
+        WiremockUtils.mockS3Attachment();
         var resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())

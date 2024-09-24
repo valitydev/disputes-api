@@ -1,4 +1,4 @@
-package dev.vality.disputes.testutil;
+package dev.vality.disputes.util;
 
 import dev.vality.geck.serializer.kit.mock.FieldHandler;
 import dev.vality.geck.serializer.kit.mock.MockMode;

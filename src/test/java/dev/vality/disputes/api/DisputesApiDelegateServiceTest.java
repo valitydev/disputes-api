@@ -7,25 +7,26 @@ import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.testutil.MockUtil;
-import dev.vality.disputes.testutil.OpenApiUtil;
+import dev.vality.disputes.util.MockUtil;
+import dev.vality.disputes.util.OpenApiUtil;
+import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import lombok.SneakyThrows;
-import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static dev.vality.disputes.testutil.MockUtil.*;
+import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -38,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WireMockSpringBootITest
 @SuppressWarnings({"ParameterName", "LineLength"})
+@Import(WiremockAddressesHolder.class)
 public class DisputesApiDelegateServiceTest {
 
     @MockBean
@@ -50,14 +52,14 @@ public class DisputesApiDelegateServiceTest {
     private DominantAsyncService dominantAsyncService;
     @MockBean
     private FileStorageSrv.Iface fileStorageClient;
-    @MockBean
-    private CloseableHttpClient httpClient;
     @Autowired
     private MockMvc mvc;
     @Autowired
     private JwtTokenBuilder tokenBuilder;
     @Autowired
     private DisputeDao disputeDao;
+    @Autowired
+    private WiremockAddressesHolder wiremockAddressesHolder;
     private AutoCloseable mocks;
     private Object[] preparedMocks;
 
@@ -65,7 +67,7 @@ public class DisputesApiDelegateServiceTest {
     public void init() {
         mocks = MockitoAnnotations.openMocks(this);
         preparedMocks = new Object[]{invoicingClient, tokenKeeperClient, bouncerClient,
-                fileStorageClient, httpClient, dominantAsyncService};
+                fileStorageClient, dominantAsyncService};
     }
 
     @AfterEach
@@ -85,8 +87,8 @@ public class DisputesApiDelegateServiceTest {
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult());
-        when(httpClient.execute(any(), any(BasicHttpClientResponseHandler.class))).thenReturn("ok");
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
+        WiremockUtils.mockS3Attachment();
         var resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
@@ -101,7 +103,6 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(1)).getTerminal(any());
         verify(dominantAsyncService, times(1)).getCurrency(any());
         verify(fileStorageClient, times(1)).createNewFile(any(), any());
-        verify(httpClient, times(1)).execute(any(), any(BasicHttpClientResponseHandler.class));
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
@@ -127,7 +128,7 @@ public class DisputesApiDelegateServiceTest {
         verify(bouncerClient, times(3)).judge(any(), any());
         disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
         // new after failed
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult());
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
@@ -142,7 +143,6 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getTerminal(any());
         verify(dominantAsyncService, times(2)).getCurrency(any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
-        verify(httpClient, times(2)).execute(any(), any(BasicHttpClientResponseHandler.class));
         disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
     }
 
@@ -164,7 +164,7 @@ public class DisputesApiDelegateServiceTest {
     void testNotFoundWhenUnknownDisputeId() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = "1";
+        var disputeId = String.valueOf(Long.MAX_VALUE);
         when(invoicingClient.get(any(), any()))
                 .thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
         when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());

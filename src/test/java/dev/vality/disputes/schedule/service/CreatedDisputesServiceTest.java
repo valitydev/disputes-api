@@ -10,8 +10,10 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestServiceConfig;
+import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.DominantService;
-import dev.vality.disputes.testutil.MockUtil;
+import dev.vality.disputes.util.MockUtil;
+import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.file.storage.FileStorageSrv;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -19,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 
-import static dev.vality.disputes.testutil.MockUtil.*;
+import static dev.vality.disputes.util.MockUtil.*;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,15 +29,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@Import({DisputeApiTestServiceConfig.class, DisputeApiTestService.class})
+@Import({DisputeApiTestServiceConfig.class, DisputeApiTestService.class, WiremockAddressesHolder.class})
 public class CreatedDisputesServiceTest {
 
     @MockBean
     private ProviderIfaceBuilder providerIfaceBuilder;
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
     @MockBean
     private DominantService dominantService;
+    @Autowired
+    private InvoicingSrv.Iface invoicingClient;
     @Autowired
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
@@ -44,6 +46,8 @@ public class CreatedDisputesServiceTest {
     private CreatedDisputesService createdDisputesService;
     @Autowired
     private DisputeApiTestService disputeApiTestService;
+    @Autowired
+    private WiremockAddressesHolder wiremockAddressesHolder;
 
     @Test
     @SneakyThrows
@@ -94,7 +98,7 @@ public class CreatedDisputesServiceTest {
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn("http://localhost:8022/");
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         var dispute = disputeDao.get(Long.parseLong(disputeId));
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
@@ -112,12 +116,12 @@ public class CreatedDisputesServiceTest {
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn("http://localhost:8022/");
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
@@ -137,7 +141,7 @@ public class CreatedDisputesServiceTest {
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn("http://localhost:8022/");
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
@@ -161,7 +165,7 @@ public class CreatedDisputesServiceTest {
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn("http://localhost:8022/");
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
