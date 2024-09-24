@@ -1,6 +1,5 @@
 package dev.vality.disputes.config;
 
-import dev.vality.disputes.config.testconfiguration.EmbeddedPostgresWithFlywayConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;

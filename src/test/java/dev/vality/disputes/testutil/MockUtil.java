@@ -8,6 +8,11 @@ import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.proxy_provider.Shop;
+import dev.vality.disputes.DisputeAlreadyExistResult;
+import dev.vality.disputes.DisputeCreatedFailResult;
+import dev.vality.disputes.DisputeCreatedResult;
+import dev.vality.disputes.DisputeCreatedSuccessResult;
+import dev.vality.disputes.constant.TerminalOptionsField;
 import dev.vality.file.storage.NewFileResult;
 import dev.vality.geck.common.util.TypeUtil;
 import dev.vality.token.keeper.AuthData;
@@ -15,8 +20,10 @@ import dev.vality.token.keeper.AuthDataStatus;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import org.apache.thrift.TSerializer;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -106,7 +113,15 @@ public class MockUtil {
         return CompletableFuture.completedFuture(new Terminal()
                 .setName("prprpr")
                 .setDescription("pepepepe")
-                .setOptions(Map.of()));
+                .setOptions(new HashMap<>()));
+    }
+
+    @NotNull
+    public static Map<String, String> getOptions() {
+        Map<String, String> options = new HashMap<>();
+        options.put(TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN, "5");
+        options.put(TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST, "true");
+        return options;
     }
 
     public static CompletableFuture<Currency> createCurrency() {
@@ -128,6 +143,18 @@ public class MockUtil {
 
     public NewFileResult createNewFileResult() {
         return new NewFileResult(UUID.randomUUID().toString(), "http://localhost:8022/");
+    }
+
+    public DisputeCreatedResult createDisputeCreatedSuccessResult(String providerDisputeId) {
+        return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(providerDisputeId));
+    }
+
+    public DisputeCreatedResult createDisputeCreatedFailResult(String providerDisputeId) {
+        return DisputeCreatedResult.failResult(new DisputeCreatedFailResult(createFailure()));
+    }
+
+    public DisputeCreatedResult createDisputeAlreadyExistResult(String providerDisputeId) {
+        return DisputeCreatedResult.alreadyExistResult(new DisputeAlreadyExistResult());
     }
 
     private static Failure createFailure() {

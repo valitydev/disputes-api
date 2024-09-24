@@ -22,6 +22,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testInsertAndFind() {
         var random = random(Dispute.class);
+        random.setStatus(DisputeStatus.failed);
         disputeDao.save(random);
         assertEquals(random,
                 disputeDao.get(random.getId(), random.getInvoiceId(), random.getPaymentId()));
@@ -39,6 +40,7 @@ public abstract class DisputeDaoTest {
         random.setId(null);
         random.setInvoiceId("setInvoiceId");
         random.setPaymentId("setPaymentId");
+        random.setStatus(DisputeStatus.failed);
         disputeDao.save(random);
         disputeDao.save(random);
         disputeDao.save(random);
@@ -49,6 +51,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testNextCheckAfter() {
         var random = random(Dispute.class);
+        random.setStatus(DisputeStatus.failed);
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);
         random.setCreatedAt(createdAt);
         random.setPollingBefore(createdAt.plusSeconds(10));
@@ -72,5 +75,8 @@ public abstract class DisputeDaoTest {
         random.setSkipCallHgForCreateAdjustment(false);
         disputeDao.save(random);
         assertEquals(1, disputeDao.getDisputesForHgCall(10).size());
+        for (var dispute : disputeDao.get("setInvoiceId", "setPaymentId")) {
+            disputeDao.update(dispute.getId(), DisputeStatus.failed);
+        }
     }
 }

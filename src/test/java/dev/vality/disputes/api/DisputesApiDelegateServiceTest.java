@@ -33,7 +33,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,13 +41,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class DisputesApiDelegateServiceTest {
 
     @MockBean
-    public InvoicingSrv.Iface invoicingClient;
+    private InvoicingSrv.Iface invoicingClient;
     @MockBean
-    public TokenAuthenticatorSrv.Iface tokenKeeperClient;
+    private TokenAuthenticatorSrv.Iface tokenKeeperClient;
     @MockBean
-    public ArbiterSrv.Iface bouncerClient;
+    private ArbiterSrv.Iface bouncerClient;
     @MockBean
-    public DominantAsyncService dominantAsyncService;
+    private DominantAsyncService dominantAsyncService;
     @MockBean
     private FileStorageSrv.Iface fileStorageClient;
     @MockBean
@@ -93,7 +92,6 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
-                .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         var response = new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class);
@@ -110,7 +108,6 @@ public class DisputesApiDelegateServiceTest {
                         .params(OpenApiUtil.getStatusRequiredParams(response.getDisputeId(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
-                .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.status").isNotEmpty());
         verify(invoicingClient, times(2)).get(any(), any());
@@ -122,22 +119,20 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
-                .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         assertEquals(response.getDisputeId(), new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class).getDisputeId());
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
         verify(bouncerClient, times(3)).judge(any(), any());
-        disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.succeeded);
-        // new after succeeded
+        disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
+        // new after failed
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult());
         resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
-                .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         assertNotEquals(response.getDisputeId(), new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class).getDisputeId());
@@ -148,6 +143,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getCurrency(any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
         verify(httpClient, times(2)).execute(any(), any(BasicHttpClientResponseHandler.class));
+        disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
     }
 
     @Test
@@ -160,7 +156,6 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentInvalidCreateRequest(invoiceId, paymentId)))
-                .andDo(print())
                 .andExpect(status().is4xxClientError());
     }
 
@@ -180,7 +175,6 @@ public class DisputesApiDelegateServiceTest {
                         .params(OpenApiUtil.getStatusRequiredParams(disputeId, invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
-                .andDo(print())
                 .andExpect(status().is4xxClientError());
         verify(invoicingClient, times(1)).get(any(), any());
         verify(tokenKeeperClient, times(1)).authenticate(any(), any());
