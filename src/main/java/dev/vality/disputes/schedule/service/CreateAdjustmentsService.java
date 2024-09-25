@@ -39,9 +39,9 @@ public class CreateAdjustmentsService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public List<Dispute> getReadyDisputesForCreateAdjustment(int batchSize) {
+    public List<Dispute> getReadyDisputesForCreateAdjustment() {
         log.debug("Trying to getReadyDisputesForCreateAdjustment");
-        var locked = disputeDao.getReadyDisputesForCreateAdjustment(batchSize);
+        var locked = disputeDao.getReadyDisputesForCreateAdjustment();
         log.debug("getReadyDisputesForCreateAdjustment has been found, size={}", locked.size());
         return locked;
     }
