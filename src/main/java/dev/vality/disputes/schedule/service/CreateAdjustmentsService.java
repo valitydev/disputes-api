@@ -38,6 +38,14 @@ public class CreateAdjustmentsService {
         return locked;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<Dispute> getReadyDisputesForCreateAdjustment() {
+        log.debug("Trying to getReadyDisputesForCreateAdjustment");
+        var locked = disputeDao.getReadyDisputesForCreateAdjustment();
+        log.debug("getReadyDisputesForCreateAdjustment has been found, size={}", locked.size());
+        return locked;
+    }
+
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public void callHgForCreateAdjustment(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
