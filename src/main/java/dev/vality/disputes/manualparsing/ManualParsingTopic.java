@@ -34,4 +34,16 @@ public class ManualParsingTopic {
         log.warn("Manual parsing case");
         MDC.clear();
     }
+
+    public void sendReadyForCreateAdjustments(List<Dispute> disputes) {
+        if (!enabled || disputes.isEmpty()) {
+            return;
+        }
+        var contextMap = MDC.getCopyOfContextMap();
+        contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
+        contextMap.put("dispute_status", DisputeStatus.create_adjustment.name());
+        MDC.setContextMap(contextMap);
+        log.warn("Ready for CreateAdjustments case");
+        MDC.clear();
+    }
 }
