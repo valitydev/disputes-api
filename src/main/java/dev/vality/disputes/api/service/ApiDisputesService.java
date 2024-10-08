@@ -52,10 +52,13 @@ public class ApiDisputesService {
         return disputeId;
     }
 
-    public Dispute getDispute(String disputeId, String invoiceId, String paymentId) {
+    public Dispute getDispute(String disputeId) {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
         // http 404,500
-        var dispute = disputeDao.get(Long.parseLong(disputeId), invoiceId, paymentId);
+        var dispute = disputeDao.get(Long.parseLong(disputeId))
+                .orElseThrow(
+                        () -> new NotFoundException(
+                                String.format("Dispute not found, disputeId='%s'", disputeId)));
         if (ErrorReason.NO_ATTACHMENTS.equals(dispute.getErrorMessage())
                 || ErrorReason.INVOICE_NOT_FOUND.equals(dispute.getErrorMessage())
                 || ErrorReason.PAYMENT_NOT_FOUND.equals(dispute.getErrorMessage())) {

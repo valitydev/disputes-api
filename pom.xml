@@ -42,12 +42,12 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>swag-disputes</artifactId>
-            <version>1.17-8e552ef-server</version>
+            <version>1.18-fc22f97-server</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>provider-disputes-proto</artifactId>
-            <version>1.19-20c6285</version>
+            <version>1.20-31f31f2</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>

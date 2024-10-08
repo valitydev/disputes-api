@@ -40,12 +40,12 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Status200Response> status(String xRequestID, String invoiceId, String paymentId, String disputeId) {
-        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, invoiceId, paymentId, disputeId);
-        accessService.approveUserAccess(invoiceId, paymentId);
-        var dispute = apiDisputesService.getDispute(disputeId, invoiceId, paymentId);
+    public ResponseEntity<Status200Response> status(String xRequestID, String disputeId) {
+        var dispute = apiDisputesService.getDispute(disputeId);
+        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId);
+        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId());
         var body = status200ResponseConverter.convert(dispute);
-        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, invoiceId, paymentId, disputeId);
+        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId);
         return ResponseEntity.ok(body);
     }
 }
