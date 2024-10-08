@@ -1,9 +1,9 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.disputes.ProviderDisputesServiceSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
