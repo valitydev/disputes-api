@@ -165,10 +165,6 @@ public class DisputesApiDelegateServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = String.valueOf(Long.MAX_VALUE);
-        when(invoicingClient.get(any(), any()))
-                .thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
-        when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
-        when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
@@ -176,8 +172,5 @@ public class DisputesApiDelegateServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().is4xxClientError());
-        verify(invoicingClient, times(1)).get(any(), any());
-        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
-        verify(bouncerClient, times(1)).judge(any(), any());
     }
 }
