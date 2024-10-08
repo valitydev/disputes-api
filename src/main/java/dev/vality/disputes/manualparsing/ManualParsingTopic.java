@@ -1,8 +1,8 @@
 package dev.vality.disputes.manualparsing;
 
-import dev.vality.disputes.Attachment;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.provider.Attachment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;

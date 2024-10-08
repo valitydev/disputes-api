@@ -1,7 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.disputes.ProviderDisputesServiceSrv;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
+import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

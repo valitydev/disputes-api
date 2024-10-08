@@ -1,6 +1,5 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.disputes.DisputeStatusResult;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
@@ -8,6 +7,7 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.polling.PollingInfoService;
+import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.schedule.handler.DisputeStatusResultHandler;
 import lombok.RequiredArgsConstructor;
