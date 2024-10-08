@@ -1,10 +1,10 @@
 package dev.vality.disputes.schedule.handler;
 
-import dev.vality.disputes.DisputeStatusResult;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
+import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

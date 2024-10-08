@@ -1,9 +1,9 @@
 package dev.vality.disputes.schedule.converter;
 
 import dev.vality.damsel.domain.Currency;
-import dev.vality.disputes.DisputeContext;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
+import dev.vality.disputes.provider.DisputeContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

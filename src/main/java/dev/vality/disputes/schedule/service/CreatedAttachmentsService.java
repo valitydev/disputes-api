@@ -1,10 +1,10 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.disputes.Attachment;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.service.external.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,11 +1,11 @@
 package dev.vality.disputes.schedule.converter;
 
 import dev.vality.damsel.domain.Currency;
-import dev.vality.disputes.Attachment;
-import dev.vality.disputes.Cash;
-import dev.vality.disputes.DisputeParams;
-import dev.vality.disputes.TransactionContext;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.provider.Attachment;
+import dev.vality.disputes.provider.Cash;
+import dev.vality.disputes.provider.DisputeParams;
+import dev.vality.disputes.provider.TransactionContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
