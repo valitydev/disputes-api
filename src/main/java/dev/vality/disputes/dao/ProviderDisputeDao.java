@@ -9,7 +9,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-
 import java.util.UUID;
 
 import static dev.vality.disputes.domain.tables.ProviderDispute.PROVIDER_DISPUTE;

@@ -12,7 +12,6 @@ import java.util.UUID;
 
 import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
-import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateLong;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class DisputeDaoTest {
