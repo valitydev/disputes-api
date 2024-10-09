@@ -24,22 +24,24 @@ public class AccessService {
     @Value("${service.bouncer.auth.enabled}")
     private boolean authEnabled;
 
-    public AccessData approveUserAccess(String invoiceId, String paymentId) {
+    public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData) {
         log.info("Start building AccessData {}{}", invoiceId, paymentId);
-        var accessData = buildAccessData(invoiceId, paymentId);
-        checkUserAccessData(accessData);
+        var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
+        if (checkUserAccessData) {
+            checkUserAccessData(accessData);
+        }
         log.debug("Finish building AccessData {}{}", invoiceId, paymentId);
         return accessData;
     }
 
-    private AccessData buildAccessData(String invoiceId, String paymentId) {
+    private AccessData buildAccessData(String invoiceId, String paymentId, boolean checkUserAccessData) {
         // http 500
         var invoice = invoicingService.getInvoice(invoiceId);
         return AccessData.builder()
                 .invoice(invoice)
                 .payment(getInvoicePayment(invoice, paymentId))
                 // http 500
-                .authData(tokenKeeperService.getAuthData())
+                .authData(checkUserAccessData ? tokenKeeperService.getAuthData() : null)
                 .build();
     }
 
