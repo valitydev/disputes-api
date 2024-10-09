@@ -19,7 +19,7 @@ public class FileMetaDaoTest {
 
     @Test
     public void testInsertAndFind() {
-        UUID disputeId = UUID.fromString("bfdf1dfc-cf66-4d8d-bc34-4d987b3f7351");
+        var disputeId = UUID.fromString("bfdf1dfc-cf66-4d8d-bc34-4d987b3f7351");
         var random = random(FileMeta.class);
         random.setFileId(generateId());
         random.setDisputeId(disputeId);

@@ -56,7 +56,7 @@ public class ApiDisputesService {
     public Dispute getDispute(String disputeId) {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
         // http 404,500
-        var dispute = disputeDao.get(UUID.fromString(disputeId))
+        var dispute = disputeDao.get(parseFormat(disputeId))
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format("Dispute not found, disputeId='%s'", disputeId)));
@@ -70,6 +70,14 @@ public class ApiDisputesService {
         }
         log.debug("Dispute has been found, disputeId={}", disputeId);
         return dispute;
+    }
+
+    private UUID parseFormat(String disputeId) {
+        try {
+            return UUID.fromString(disputeId);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(String.format("Dispute not found, disputeId='%s'", disputeId));
+        }
     }
 
     private static Set<DisputeStatus> pendings() {

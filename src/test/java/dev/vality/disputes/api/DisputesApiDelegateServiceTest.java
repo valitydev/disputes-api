@@ -151,7 +151,6 @@ public class DisputesApiDelegateServiceTest {
     @Test
     @SneakyThrows
     void testBadRequestWhenInvalidCreateRequest() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
@@ -166,11 +165,10 @@ public class DisputesApiDelegateServiceTest {
     void testNotFoundWhenUnknownDisputeId() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.randomUUID().toString();
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
-                        .params(OpenApiUtil.getStatusRequiredParams(disputeId, invoiceId, paymentId))
+                        .params(OpenApiUtil.getStatusRequiredParams(randomUUID().toString(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().is4xxClientError());
