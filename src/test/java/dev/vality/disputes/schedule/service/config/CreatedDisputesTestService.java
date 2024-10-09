@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.context.annotation.Import;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.*;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,11 +49,11 @@ public class CreatedDisputesTestService {
     private WiremockAddressesHolder wiremockAddressesHolder;
 
     @SneakyThrows
-    public String callCreateDisputeRemotely() {
+    public UUID callCreateDisputeRemotely() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var providerDisputeId = generateId();
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
@@ -64,9 +66,9 @@ public class CreatedDisputesTestService {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.pending, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());
         return disputeId;
     }
 }

@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,22 +45,22 @@ public class PendingDisputesServiceTest {
     public void testProviderDisputeNotFound() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.pending);
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        disputeDao.update(disputeId, DisputeStatus.pending);
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.created, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     @SneakyThrows
     public void testDisputeStatusSuccessResult() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
@@ -68,9 +70,9 @@ public class PendingDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusFailResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
@@ -80,9 +82,9 @@ public class PendingDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.pending, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 }

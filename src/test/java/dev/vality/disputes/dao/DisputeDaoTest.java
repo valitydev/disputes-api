@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
@@ -31,7 +32,7 @@ public abstract class DisputeDaoTest {
     @Test
     public void testNotFoundException() {
         assertThrows(NotFoundException.class,
-                () -> disputeDao.get(generateLong(), generateId(), generateId()));
+                () -> disputeDao.get(UUID.randomUUID(), generateId(), generateId()));
     }
 
     @Test

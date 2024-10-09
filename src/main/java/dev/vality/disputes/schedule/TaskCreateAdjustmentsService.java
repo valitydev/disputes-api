@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class TaskCreateAdjustmentsService {
         log.info("Create adjustments were processed");
     }
 
-    private Callable<Long> handleCreateAdjustment(Dispute dispute) {
+    private Callable<UUID> handleCreateAdjustment(Dispute dispute) {
         return () -> new CreateAdjustmentHandler(createAdjustmentsService).handle(dispute);
     }
 }

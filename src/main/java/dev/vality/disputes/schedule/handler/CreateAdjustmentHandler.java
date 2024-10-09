@@ -5,13 +5,15 @@ import dev.vality.disputes.schedule.service.CreateAdjustmentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 @Slf4j
 public class CreateAdjustmentHandler {
 
     private final CreateAdjustmentsService createAdjustmentsService;
 
-    public Long handle(Dispute dispute) {
+    public UUID handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
         currentThread.setName("dispute-created-adjustment-id-" + dispute.getId() + "-" + oldName);

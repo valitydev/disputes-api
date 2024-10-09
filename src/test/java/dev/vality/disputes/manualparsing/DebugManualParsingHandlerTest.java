@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.OpenApiUtil.*;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,73 +36,73 @@ public class DebugManualParsingHandlerTest {
     @Test
     public void testCancelCreateAdjustment() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugManualParsingController.cancelPending(getCancelRequest(disputeId));
-        assertEquals(DisputeStatus.cancelled, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        debugManualParsingController.cancelPending(getCancelRequest(disputeId.toString()));
+        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
     public void testCancelPending() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugManualParsingController.cancelPending(getCancelRequest(disputeId));
-        assertEquals(DisputeStatus.cancelled, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        debugManualParsingController.cancelPending(getCancelRequest(disputeId.toString()));
+        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
     public void testCancelFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
-        debugManualParsingController.cancelPending(getCancelRequest(disputeId));
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugManualParsingController.cancelPending(getCancelRequest(disputeId.toString()));
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
     public void testApproveCreateAdjustmentWithCallHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugManualParsingController.approvePending(getApproveRequest(disputeId, false));
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        debugManualParsingController.approvePending(getApproveRequest(disputeId.toString(), false));
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     public void testApproveCreateAdjustmentWithSkipHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugManualParsingController.approvePending(getApproveRequest(disputeId, true));
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        debugManualParsingController.approvePending(getApproveRequest(disputeId.toString(), true));
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     public void testApprovePendingWithSkipHg() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugManualParsingController.approvePending(getApproveRequest(disputeId, true));
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        debugManualParsingController.approvePending(getApproveRequest(disputeId.toString(), true));
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     public void testApproveFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
-        debugManualParsingController.approvePending(getApproveRequest(disputeId, true));
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugManualParsingController.approvePending(getApproveRequest(disputeId.toString(), true));
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
     public void testBindCreatedCreateAdjustment() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         var providerDisputeId = generateId();
-        debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId.toString(), providerDisputeId));
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     public void testBindCreatedPending() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerDisputeId = generateId();
-        debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.pending, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId.toString(), providerDisputeId));
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
@@ -109,10 +111,10 @@ public class DebugManualParsingHandlerTest {
         var paymentId = "1";
         var providerDisputeId = generateId();
         var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.manual_created);
+        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.manual_created);
         debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.manual_pending, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(UUID.fromString(disputeId)).get().getStatus());
+        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.failed);
     }
 
     @Test
@@ -121,10 +123,10 @@ public class DebugManualParsingHandlerTest {
         var paymentId = "1";
         var providerDisputeId = generateId();
         var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.already_exist_created);
+        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.already_exist_created);
         debugManualParsingController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.pending, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.pending, disputeDao.get(UUID.fromString(disputeId)).get().getStatus());
+        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.failed);
     }
 
     @Test
@@ -132,8 +134,8 @@ public class DebugManualParsingHandlerTest {
     public void testGetDispute() {
         WiremockUtils.mockS3AttachmentDownload();
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        var disputes = debugManualParsingController.getDisputes(getGetDisputeRequest(disputeId, true));
+        var disputes = debugManualParsingController.getDisputes(getGetDisputeRequest(disputeId.toString(), true));
         assertEquals(1, disputes.getDisputes().size());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 }
