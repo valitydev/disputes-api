@@ -22,6 +22,7 @@ public class DisputeConverter {
     public Dispute convert(PaymentParams paymentParams, Long amount, String reason) {
         var pollingInfo = pollingInfoService.initPollingInfo((Dispute) null, paymentParams.getOptions());
         var dispute = new Dispute();
+        dispute.setId(IDTools.generate());
         dispute.setCreatedAt(getLocalDateTime(pollingInfo.getStartDateTimePolling()));
         dispute.setNextCheckAfter(getNextCheckAfter(paymentParams, pollingInfo));
         dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));

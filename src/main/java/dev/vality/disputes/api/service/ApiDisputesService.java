@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -55,7 +56,7 @@ public class ApiDisputesService {
     public Dispute getDispute(String disputeId) {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
         // http 404,500
-        var dispute = disputeDao.get(Long.parseLong(disputeId))
+        var dispute = disputeDao.get(UUID.fromString(disputeId))
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format("Dispute not found, disputeId='%s'", disputeId)));
