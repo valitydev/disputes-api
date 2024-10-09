@@ -166,7 +166,7 @@ public class DisputesApiDelegateServiceTest {
     void testNotFoundWhenUnknownDisputeId() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = String.valueOf(Long.MAX_VALUE);
+        var disputeId = UUID.randomUUID().toString();
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())

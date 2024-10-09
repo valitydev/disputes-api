@@ -1,10 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE SCHEMA IF NOT EXISTS dspt;
 
 CREATE TYPE dspt.dispute_status AS ENUM ('created', 'pending', 'succeeded', 'failed');
 
 CREATE TABLE dspt.dispute
 (
-    id                     UUID                NOT NULL,
+    id                     UUID                NOT NULL DEFAULT gen_random_uuid(),
     created_at             TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     next_check_after       TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     polling_before         TIMESTAMP WITHOUT TIME ZONE NOT NULL,
