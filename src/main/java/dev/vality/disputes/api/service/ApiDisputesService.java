@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -40,7 +41,7 @@ public class ApiDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Long createDispute(CreateRequest req, PaymentParams paymentParams) {
+    public UUID createDispute(CreateRequest req, PaymentParams paymentParams) {
         log.debug("Start creating Dispute {}", paymentParams);
         var dispute = disputeConverter.convert(paymentParams, req.getAmount(), req.getReason());
         log.debug("Trying to save Dispute {}", dispute);
@@ -55,7 +56,7 @@ public class ApiDisputesService {
     public Dispute getDispute(String disputeId) {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
         // http 404,500
-        var dispute = disputeDao.get(Long.parseLong(disputeId))
+        var dispute = disputeDao.get(parseFormat(disputeId))
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format("Dispute not found, disputeId='%s'", disputeId)));
@@ -69,6 +70,14 @@ public class ApiDisputesService {
         }
         log.debug("Dispute has been found, disputeId={}", disputeId);
         return dispute;
+    }
+
+    private UUID parseFormat(String disputeId) {
+        try {
+            return UUID.fromString(disputeId);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(String.format("Dispute not found, disputeId='%s'", disputeId));
+        }
     }
 
     private static Set<DisputeStatus> pendings() {

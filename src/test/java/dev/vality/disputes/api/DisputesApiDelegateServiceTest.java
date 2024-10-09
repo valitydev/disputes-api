@@ -26,6 +26,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -126,7 +128,7 @@ public class DisputesApiDelegateServiceTest {
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
         verify(bouncerClient, times(3)).judge(any(), any());
-        disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
         // new after failed
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
@@ -143,13 +145,12 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getTerminal(any());
         verify(dominantAsyncService, times(2)).getCurrency(any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
-        disputeDao.update(Long.parseLong(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
     }
 
     @Test
     @SneakyThrows
     void testBadRequestWhenInvalidCreateRequest() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
@@ -164,11 +165,10 @@ public class DisputesApiDelegateServiceTest {
     void testNotFoundWhenUnknownDisputeId() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = String.valueOf(Long.MAX_VALUE);
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
-                        .params(OpenApiUtil.getStatusRequiredParams(disputeId, invoiceId, paymentId))
+                        .params(OpenApiUtil.getStatusRequiredParams(randomUUID().toString(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().is4xxClientError());

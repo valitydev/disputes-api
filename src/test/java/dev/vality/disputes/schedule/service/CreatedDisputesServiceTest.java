@@ -19,8 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.*;
-import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -54,11 +55,11 @@ public class CreatedDisputesServiceTest {
     public void testPaymentNotFound() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        assertEquals(ErrorReason.PAYMENT_NOT_FOUND, disputeDao.get(Long.parseLong(disputeId)).get().getErrorMessage());
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
+        assertEquals(ErrorReason.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).get().getErrorMessage());
     }
 
     @Test
@@ -66,12 +67,12 @@ public class CreatedDisputesServiceTest {
     public void testSkipDisputeWhenPaymentNonFinalStatus() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.created, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
@@ -79,14 +80,14 @@ public class CreatedDisputesServiceTest {
     public void testNoAttachments() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        assertEquals(ErrorReason.NO_ATTACHMENTS, disputeDao.get(Long.parseLong(disputeId)).get().getErrorMessage());
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
+        assertEquals(ErrorReason.NO_ATTACHMENTS, disputeDao.get(disputeId).get().getErrorMessage());
     }
 
     @Test
@@ -94,22 +95,22 @@ public class CreatedDisputesServiceTest {
     public void testManualCreatedWhenIsNotProvidersDisputesApiExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
     public void testDisputeCreatedSuccessResult() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test
@@ -117,8 +118,7 @@ public class CreatedDisputesServiceTest {
     public void testDisputeCreatedFailResult() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var providerDisputeId = generateId();
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
@@ -131,9 +131,9 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
     }
 
     @Test
@@ -141,8 +141,7 @@ public class CreatedDisputesServiceTest {
     public void testDisputeCreatedAlreadyExistResult() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var providerDisputeId = generateId();
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var invoicePayment = MockUtil.createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
@@ -155,9 +154,9 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.already_exist_created, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
-        disputeDao.update(Long.parseLong(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 }

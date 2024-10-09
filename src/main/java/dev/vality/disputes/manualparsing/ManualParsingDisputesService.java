@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 import static dev.vality.disputes.api.service.ApiDisputesService.DISPUTE_PENDING;
 
@@ -42,7 +43,7 @@ public class ManualParsingDisputesService {
     public void cancelPendingDispute(CancelParams cancelParams) {
         var disputeId = cancelParams.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
         if (dispute == null) {
             return;
         }
@@ -62,7 +63,7 @@ public class ManualParsingDisputesService {
     public void approvePendingDispute(ApproveParams approveParam) {
         var disputeId = approveParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
         if (dispute == null) {
             return;
         }
@@ -90,7 +91,7 @@ public class ManualParsingDisputesService {
     public void bindCreatedDispute(BindParams bindParam) {
         var disputeId = bindParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(Long.parseLong(disputeId));
+        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
         if (dispute == null) {
             return;
         }
@@ -116,7 +117,7 @@ public class ManualParsingDisputesService {
     @SneakyThrows
     public Dispute getDispute(DisputeParams disputeParams, boolean withAttachments) {
         var disputeId = disputeParams.getDisputeId();
-        var disputeOptional = disputeDao.get(Long.parseLong(disputeId));
+        var disputeOptional = disputeDao.get(UUID.fromString(disputeId));
         if (disputeOptional.isEmpty()) {
             log.debug("Trying to get Dispute but null {}", disputeId);
             return null;

@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.context.annotation.Import;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.createDisputeStatusSuccessResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,14 +33,14 @@ public class PendingDisputesTestService {
     private CreatedDisputesTestService createdDisputesTestService;
 
     @SneakyThrows
-    public String callPendingDisputeRemotely() {
+    public UUID callPendingDisputeRemotely() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusSuccessResult());
         when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(Long.parseLong(disputeId));
+        var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(Long.parseLong(disputeId)).get().getStatus());
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
         return disputeId;
     }
 }

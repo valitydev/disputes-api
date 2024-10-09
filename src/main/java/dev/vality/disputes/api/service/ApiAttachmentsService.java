@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -21,7 +23,7 @@ public class ApiAttachmentsService {
     private final FileStorageService fileStorageService;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void createAttachments(CreateRequest req, Long disputeId) {
+    public void createAttachments(CreateRequest req, UUID disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
         for (var attachment : req.getAttachments()) {
             // validate

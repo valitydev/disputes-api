@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.UUID;
 
 import static dev.vality.disputes.domain.tables.FileMeta.FILE_META;
 
@@ -33,7 +34,7 @@ public class FileMetaDao extends AbstractGenericDao {
     }
 
     @Nullable
-    public List<FileMeta> getDisputeFiles(long disputeId) {
+    public List<FileMeta> getDisputeFiles(UUID disputeId) {
         var query = getDslContext().selectFrom(FILE_META)
                 .where(FILE_META.DISPUTE_ID.eq(disputeId));
         return fetch(query, fileMetaRowMapper);

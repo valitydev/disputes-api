@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.util.UUID;
 
 import static dev.vality.disputes.domain.tables.ProviderDispute.PROVIDER_DISPUTE;
 
@@ -23,7 +24,7 @@ public class ProviderDisputeDao extends AbstractGenericDao {
         providerDisputeRowMapper = new RecordRowMapper<>(PROVIDER_DISPUTE, ProviderDispute.class);
     }
 
-    public Long save(ProviderDispute providerDispute) {
+    public UUID save(ProviderDispute providerDispute) {
         var record = getDslContext().newRecord(PROVIDER_DISPUTE, providerDispute);
         var query = getDslContext().insertInto(PROVIDER_DISPUTE)
                 .set(record);
@@ -32,7 +33,7 @@ public class ProviderDisputeDao extends AbstractGenericDao {
     }
 
     @Nullable
-    public ProviderDispute get(long disputeId) {
+    public ProviderDispute get(UUID disputeId) {
         var query = getDslContext().selectFrom(PROVIDER_DISPUTE)
                 .where(PROVIDER_DISPUTE.DISPUTE_ID.eq(disputeId));
         return fetchOne(query, providerDisputeRowMapper);
