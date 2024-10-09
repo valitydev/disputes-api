@@ -25,8 +25,13 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
 
     @Override
     public ResponseEntity<Create200Response> create(String xRequestID, CreateRequest req) {
-        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
-        var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId());
+        return create(xRequestID, req, true);
+    }
+
+    @Override
+    public ResponseEntity<Create200Response> create(String xRequestID, CreateRequest req, boolean checkUserAccessData) {
+        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}, source={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
+        var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData);
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
         var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
         if (dispute.isPresent()) {
@@ -35,17 +40,22 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         }
         var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var disputeId = apiDisputesService.createDispute(req, paymentParams);
-        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId());
+        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, source={}", "/create", xRequestID, req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(new Create200Response(String.valueOf(disputeId)));
     }
 
     @Override
     public ResponseEntity<Status200Response> status(String xRequestID, String disputeId) {
+        return status(xRequestID, disputeId, true);
+    }
+
+    @Override
+    public ResponseEntity<Status200Response> status(String xRequestID, String disputeId, boolean checkUserAccessData) {
         var dispute = apiDisputesService.getDispute(disputeId);
-        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId);
-        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId());
+        log.info("-> Req: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
+        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData);
         var body = status200ResponseConverter.convert(dispute);
-        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId);
+        log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(body);
     }
 }
