@@ -53,6 +53,7 @@ public class PaymentParamsBuilder {
                 .options(terminal.get().getOptions())
                 .shopId(invoice.getShopId())
                 .shopDetailsName(shop.get().getDetails().getName())
+                .invoiceAmount(payment.getPayment().getCost().getAmount())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;

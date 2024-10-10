@@ -9,6 +9,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,7 +40,7 @@ public class ManualParsingTopic {
         if (!enabled || disputes.isEmpty()) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap();
+        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
         contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
         contextMap.put("dispute_status", DisputeStatus.create_adjustment.name());
         MDC.setContextMap(contextMap);

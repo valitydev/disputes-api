@@ -30,7 +30,7 @@ public class DisputeConverter {
         dispute.setProviderId(paymentParams.getProviderId());
         dispute.setTerminalId(paymentParams.getTerminalId());
         dispute.setProviderTrxId(paymentParams.getProviderTrxId());
-        dispute.setAmount(amount);
+        dispute.setAmount(amount == null ? paymentParams.getInvoiceAmount() : amount);
         dispute.setCurrencyName(paymentParams.getCurrencyName());
         dispute.setCurrencySymbolicCode(paymentParams.getCurrencySymbolicCode());
         dispute.setCurrencyNumericCode(paymentParams.getCurrencyNumericCode());

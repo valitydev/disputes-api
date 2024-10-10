@@ -23,5 +23,6 @@ public class PaymentParams {
     private Map<String, String> options;
     private String shopId;
     private String shopDetailsName;
+    private Long invoiceAmount;
 
 }

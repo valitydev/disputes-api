@@ -1,5 +1,9 @@
 package dev.vality.disputes.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import dev.vality.disputes.admin.CancelParamsRequest;
+import dev.vality.disputes.admin.ManualParsingServiceSrv;
 import dev.vality.disputes.api.converter.Status200ResponseConverter;
 import dev.vality.disputes.api.service.ApiDisputesService;
 import dev.vality.disputes.api.service.PaymentParamsBuilder;
@@ -8,9 +12,12 @@ import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.swag.disputes.model.CreateRequest;
 import dev.vality.swag.disputes.model.Status200Response;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Slf4j
 @Service
@@ -57,5 +64,15 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         var body = status200ResponseConverter.convert(dispute);
         log.info("<- Res: {}, xRequestID={}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", xRequestID, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(body);
+    }
+
+    private final ManualParsingServiceSrv.Iface manualParsingHandler;
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
+
+    @PostMapping("/cancel")
+    @SneakyThrows
+    public void cancelPending(@RequestBody String body) {
+        log.debug("cancelPending {}", body);
+        manualParsingHandler.cancelPending(objectMapper.readValue(body, CancelParamsRequest.class));
     }
 }

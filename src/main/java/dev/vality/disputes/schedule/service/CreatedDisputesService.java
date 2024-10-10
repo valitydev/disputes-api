@@ -16,7 +16,7 @@ import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
+import dev.vality.disputes.utils.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +87,7 @@ public class CreatedDisputesService {
                 || isNotProvidersDisputesApiExist(dispute)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
+            log.warn("finishTaskWithManualParsingFlowActivation, options capt={}, apiExist={}", isCapturedBlockedForDispute(dispute), isNotProvidersDisputesApiExist(dispute));
             finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
             return;
         }
@@ -97,6 +98,7 @@ public class CreatedDisputesService {
             if (externalGatewayChecker.isNotProvidersDisputesApiExist(dispute, e)) {
                 // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
                 // (тогда при тесте соединения вернется 404)
+                log.warn("finishTaskWithManualParsingFlowActivation with externalGatewayChecker", e);
                 finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
                 return;
             }
@@ -115,7 +117,7 @@ public class CreatedDisputesService {
                 log.debug("Dispute status has been set to pending {}", dispute.getId());
             }
             case FAIL_RESULT -> {
-                var errorMessage = TErrorUtil.toStringVal(result.getFailResult().getFailure());
+                var errorMessage = ErrorFormatter.getErrorMessage(result.getFailResult().getFailure());
                 log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
                 disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
                 log.debug("Dispute status has been set to failed {}", dispute.getId());

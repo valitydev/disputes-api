@@ -5,7 +5,7 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.DisputeStatusResult;
-import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
+import dev.vality.disputes.utils.ErrorFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class DisputeStatusResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleStatusFail(Dispute dispute, DisputeStatusResult result) {
-        var errorMessage = TErrorUtil.toStringVal(result.getStatusFail().getFailure());
+        var errorMessage = ErrorFormatter.getErrorMessage(result.getStatusFail().getFailure());
         log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
         disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
         log.debug("Dispute status has been set to failed {}", dispute.getId());

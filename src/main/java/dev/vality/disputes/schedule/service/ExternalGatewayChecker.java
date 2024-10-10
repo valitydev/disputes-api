@@ -42,11 +42,16 @@ public class ExternalGatewayChecker {
     }
 
     private String getRouteUrl(Dispute dispute) {
-        return providerRouting.getRouteUrl(getTerminal(dispute.getTerminalId()).getOptions(), getProxy(dispute.getProviderId()).getUrl());
+        var routeUrl = providerRouting.getRouteUrl(getTerminal(dispute.getTerminalId()).getOptions(), getProxy(dispute.getProviderId()).getUrl());
+        log.debug("Check adapter connection, routeUrl={}", routeUrl);
+        return routeUrl;
     }
 
     private HttpClientResponseHandler<Boolean> isNotFoundResponse() {
-        return response -> response.getCode() == HttpStatus.SC_NOT_FOUND;
+        return response -> {
+            log.debug("Check adapter connection, resp={}", response);
+            return response.getCode() == HttpStatus.SC_NOT_FOUND;
+        };
     }
 
     private Terminal getTerminal(Integer terminalId) {
