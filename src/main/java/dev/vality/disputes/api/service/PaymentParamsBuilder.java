@@ -25,8 +25,8 @@ public class PaymentParamsBuilder {
 
     @SneakyThrows
     public PaymentParams buildGeneralPaymentContext(AccessData accessData) {
-        var invoice = accessData.getInvoice();
-        log.debug("Start building PaymentParams id={}", invoice.getInvoice().getId());
+        var invoice = accessData.getInvoice().getInvoice();
+        log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
         // http 500
         var terminal = dominantAsyncService.getTerminal(payment.getRoute().getTerminal());
@@ -35,9 +35,9 @@ public class PaymentParamsBuilder {
                 .map(p -> p.getPayment().getCost())
                 // http 500
                 .map(cost -> dominantAsyncService.getCurrency(cost.getCurrency()));
-        var shop = partyManagementAsyncService.getShop(invoice.getInvoice().getOwnerId(), invoice.getInvoice().getShopId());
+        var shop = partyManagementAsyncService.getShop(invoice.getOwnerId(), invoice.getShopId());
         var paymentParams = PaymentParams.builder()
-                .invoiceId(invoice.getInvoice().getId())
+                .invoiceId(invoice.getId())
                 .paymentId(payment.getPayment().getId())
                 .terminalId(payment.getRoute().getTerminal().getId())
                 .providerId(payment.getRoute().getProvider().getId())
@@ -51,7 +51,7 @@ public class PaymentParamsBuilder {
                 .currencyExponent(getCurrency(currency)
                         .map(Currency::getExponent).map(Short::intValue).orElse(null))
                 .options(terminal.get().getOptions())
-                .shopId(invoice.getInvoice().getShopId())
+                .shopId(invoice.getShopId())
                 .shopDetailsName(shop.get().getDetails().getName())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
