@@ -21,5 +21,7 @@ public class PaymentParams {
     private Integer currencyExponent;
     @ToString.Exclude
     private Map<String, String> options;
+    private String shopId;
+    private String shopDetailsName;
 
 }

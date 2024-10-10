@@ -114,6 +114,13 @@ public class MockUtil {
                 .setNumericCode((short) 643));
     }
 
+    public static CompletableFuture<Shop> createShop() {
+        return CompletableFuture.completedFuture(new Shop()
+                .setId("sjop_id")
+                .setDetails(new ShopDetails("shop_details_name"))
+        );
+    }
+
     public static AuthData createAuthData() {
         return new AuthData()
                 .setId(UUID.randomUUID().toString())
