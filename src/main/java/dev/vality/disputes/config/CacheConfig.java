@@ -3,7 +3,6 @@ package dev.vality.disputes.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
 import dev.vality.disputes.config.properties.DominantCacheProperties;
-import dev.vality.disputes.config.properties.PartyManagementCacheProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -22,7 +21,6 @@ public class CacheConfig {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
     private final DominantCacheProperties dominantCacheProperties;
-    private final PartyManagementCacheProperties partyManagementCacheProperties;
 
     @Bean
     @Primary
@@ -65,22 +63,6 @@ public class CacheConfig {
         return caffeineCacheManager;
     }
 
-    @Bean
-    public CacheManager partiesCacheManager() {
-        var caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getParties()));
-        caffeineCacheManager.setCacheNames(List.of("parties"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager partyRevisionsCacheManager() {
-        var caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getPartyRevisions()));
-        caffeineCacheManager.setCacheNames(List.of("partyRevisions"));
-        return caffeineCacheManager;
-    }
-
     private Caffeine adaptersConnectionsCacheConfig() {
         return Caffeine.newBuilder()
                 .expireAfterAccess(adaptersConnectionProperties.getTtlMin(), TimeUnit.MINUTES)
@@ -88,12 +70,6 @@ public class CacheConfig {
     }
 
     private Caffeine getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
-        return Caffeine.newBuilder()
-                .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
-                .maximumSize(cacheConfig.getPoolSize());
-    }
-
-    private Caffeine getCacheConfig(PartyManagementCacheProperties.CacheConfig cacheConfig) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
                 .maximumSize(cacheConfig.getPoolSize());

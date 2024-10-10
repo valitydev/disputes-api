@@ -4,7 +4,7 @@ import dev.vality.damsel.domain.Party;
 import dev.vality.damsel.domain.Shop;
 import dev.vality.damsel.payment_processing.PartyRevisionParam;
 
-public interface PartyService {
+public interface PartyManagementService {
 
     Shop getShop(String partyId, String shopId);
 

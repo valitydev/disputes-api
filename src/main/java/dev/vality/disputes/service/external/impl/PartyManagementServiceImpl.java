@@ -1,4 +1,4 @@
-package dev.vality.disputes.service.external.impl.partymgnt;
+package dev.vality.disputes.service.external.impl;
 
 import dev.vality.damsel.domain.Party;
 import dev.vality.damsel.domain.Shop;
@@ -8,23 +8,24 @@ import dev.vality.damsel.payment_processing.PartyNotFound;
 import dev.vality.damsel.payment_processing.PartyRevisionParam;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.PartyException;
+import dev.vality.disputes.service.external.PartyManagementService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class PartyManagementCacheServiceImpl {
+public class PartyManagementServiceImpl implements PartyManagementService {
 
     private final PartyManagementSrv.Iface partyManagementClient;
 
     @Autowired
-    public PartyManagementCacheServiceImpl(PartyManagementSrv.Iface partyManagementClient) {
+    public PartyManagementServiceImpl(PartyManagementSrv.Iface partyManagementClient) {
         this.partyManagementClient = partyManagementClient;
     }
 
+    @Override
     public Shop getShop(String partyId, String shopId) {
         log.info("Trying to get shop, partyId='{}', shopId='{}'", partyId, shopId);
         var party = getParty(partyId);
@@ -37,17 +38,17 @@ public class PartyManagementCacheServiceImpl {
         return shop;
     }
 
-
+    @Override
     public Party getParty(String partyId) {
         return getParty(partyId, getPartyRevision(partyId));
     }
 
-
+    @Override
     public Party getParty(String partyId, long partyRevision) {
         return getParty(partyId, PartyRevisionParam.revision(partyRevision));
     }
 
-    @Cacheable(value = "parties", key = "#root.args[0]", cacheManager = "partiesCacheManager")
+    @Override
     public Party getParty(String partyId, PartyRevisionParam partyRevisionParam) {
         log.info("Trying to get party, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
         try {
@@ -72,7 +73,7 @@ public class PartyManagementCacheServiceImpl {
         }
     }
 
-    @Cacheable(value = "partyRevisions", key = "#root.args[0]", cacheManager = "partyRevisionsCacheManager")
+    @Override
     public long getPartyRevision(String partyId) {
         try {
             log.info("Trying to get revision, partyId='{}'", partyId);
