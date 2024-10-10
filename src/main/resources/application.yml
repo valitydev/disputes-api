@@ -57,6 +57,16 @@ service:
     networkTimeout: 5000
     urlLifeTimeDuration: 360
     timeZone: Europe/Moscow
+  party-management:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    cache:
+      parties:
+        poolSize: 10
+        ttlSec: 86400
+      partyRevisions:
+        poolSize: 10
+        ttlSec: 86400
   adapters:
     connection:
       timeoutSec: 30
