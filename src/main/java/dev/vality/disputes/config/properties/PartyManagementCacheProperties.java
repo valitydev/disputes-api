@@ -13,8 +13,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "service.party-management.cache")
 public class PartyManagementCacheProperties {
 
-    private CacheConfig parties;
-    private CacheConfig partyRevisions;
+    private CacheConfig shops;
 
     @Getter
     @Setter

@@ -73,7 +73,7 @@ public class ApplicationConfig {
     @Bean
     public PartyManagementSrv.Iface partyManagementClient(
             @Value("${service.party-management.url}") Resource resource,
-            @Value("${service.party-management.timeout}") int timeout
+            @Value("${service.party-management.networkTimeout}") int timeout
     ) throws IOException {
         return new THSpawnClientBuilder()
                 .withAddress(resource.getURI())

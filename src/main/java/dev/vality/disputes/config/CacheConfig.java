@@ -66,18 +66,10 @@ public class CacheConfig {
     }
 
     @Bean
-    public CacheManager partiesCacheManager() {
+    public CacheManager shopsCacheManager() {
         var caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getParties()));
-        caffeineCacheManager.setCacheNames(List.of("parties"));
-        return caffeineCacheManager;
-    }
-
-    @Bean
-    public CacheManager partyRevisionsCacheManager() {
-        var caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getPartyRevisions()));
-        caffeineCacheManager.setCacheNames(List.of("partyRevisions"));
+        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getShops()));
+        caffeineCacheManager.setCacheNames(List.of("shops"));
         return caffeineCacheManager;
     }
 

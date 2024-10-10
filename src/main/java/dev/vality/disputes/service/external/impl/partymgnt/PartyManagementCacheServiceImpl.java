@@ -25,6 +25,7 @@ public class PartyManagementCacheServiceImpl {
         this.partyManagementClient = partyManagementClient;
     }
 
+    @Cacheable(value = "shops", key = "#root.args[1]", cacheManager = "shopsCacheManager")
     public Shop getShop(String partyId, String shopId) {
         log.info("Trying to get shop, partyId='{}', shopId='{}'", partyId, shopId);
         var party = getParty(partyId);
@@ -37,18 +38,15 @@ public class PartyManagementCacheServiceImpl {
         return shop;
     }
 
-
-    public Party getParty(String partyId) {
+    private Party getParty(String partyId) {
         return getParty(partyId, getPartyRevision(partyId));
     }
 
-
-    public Party getParty(String partyId, long partyRevision) {
+    private Party getParty(String partyId, long partyRevision) {
         return getParty(partyId, PartyRevisionParam.revision(partyRevision));
     }
 
-    @Cacheable(value = "parties", key = "#root.args[0]", cacheManager = "partiesCacheManager")
-    public Party getParty(String partyId, PartyRevisionParam partyRevisionParam) {
+    private Party getParty(String partyId, PartyRevisionParam partyRevisionParam) {
         log.info("Trying to get party, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
         try {
             var party = partyManagementClient.checkout(partyId, partyRevisionParam);
@@ -72,8 +70,7 @@ public class PartyManagementCacheServiceImpl {
         }
     }
 
-    @Cacheable(value = "partyRevisions", key = "#root.args[0]", cacheManager = "partyRevisionsCacheManager")
-    public long getPartyRevision(String partyId) {
+    private long getPartyRevision(String partyId) {
         try {
             log.info("Trying to get revision, partyId='{}'", partyId);
             var revision = partyManagementClient.getRevision(partyId);

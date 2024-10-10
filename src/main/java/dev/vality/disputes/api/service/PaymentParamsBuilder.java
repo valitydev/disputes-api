@@ -6,6 +6,7 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.security.AccessData;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
+import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 public class PaymentParamsBuilder {
 
     private final DominantAsyncService dominantAsyncService;
+    private final PartyManagementAsyncService partyManagementAsyncService;
 
     @SneakyThrows
     public PaymentParams buildGeneralPaymentContext(AccessData accessData) {
@@ -33,6 +35,7 @@ public class PaymentParamsBuilder {
                 .map(p -> p.getPayment().getCost())
                 // http 500
                 .map(cost -> dominantAsyncService.getCurrency(cost.getCurrency()));
+        var shop = partyManagementAsyncService.getShop(invoice.getInvoice().getOwnerId(), invoice.getInvoice().getShopId());
         var paymentParams = PaymentParams.builder()
                 .invoiceId(invoice.getInvoice().getId())
                 .paymentId(payment.getPayment().getId())
@@ -48,6 +51,8 @@ public class PaymentParamsBuilder {
                 .currencyExponent(getCurrency(currency)
                         .map(Currency::getExponent).map(Short::intValue).orElse(null))
                 .options(terminal.get().getOptions())
+                .shopId(invoice.getInvoice().getShopId())
+                .shopDetailsName(shop.get().getDetails().getName())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;

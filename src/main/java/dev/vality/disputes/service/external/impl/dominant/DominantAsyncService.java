@@ -19,7 +19,7 @@ public class DominantAsyncService {
 
     private final DominantService dominantService;
 
-    @Async("dominantAsyncServiceExecutor")
+    @Async("disputesAsyncServiceExecutor")
     public CompletableFuture<Currency> getCurrency(CurrencyRef currencyRef) {
         try {
             var currency = dominantService.getCurrency(currencyRef);
@@ -29,7 +29,7 @@ public class DominantAsyncService {
         }
     }
 
-    @Async("dominantAsyncServiceExecutor")
+    @Async("disputesAsyncServiceExecutor")
     public CompletableFuture<Terminal> getTerminal(TerminalRef terminalRef) {
         try {
             var terminal = dominantService.getTerminal(terminalRef);

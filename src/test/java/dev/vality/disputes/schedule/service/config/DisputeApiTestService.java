@@ -5,6 +5,7 @@ import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
+import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
 import dev.vality.disputes.util.WiremockUtils;
@@ -40,6 +41,8 @@ public class DisputeApiTestService {
     @Autowired
     private DominantAsyncService dominantAsyncService;
     @Autowired
+    private PartyManagementAsyncService partyManagementAsyncService;
+    @Autowired
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
     private JwtTokenBuilder tokenBuilder;
@@ -55,6 +58,7 @@ public class DisputeApiTestService {
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
+        when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")

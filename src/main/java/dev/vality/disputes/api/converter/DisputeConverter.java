@@ -36,6 +36,8 @@ public class DisputeConverter {
         dispute.setCurrencyNumericCode(paymentParams.getCurrencyNumericCode());
         dispute.setCurrencyExponent(paymentParams.getCurrencyExponent());
         dispute.setReason(reason);
+        dispute.setShopId(paymentParams.getShopId());
+        dispute.setShopDetailsName(paymentParams.getShopDetailsName());
         return dispute;
     }
 
