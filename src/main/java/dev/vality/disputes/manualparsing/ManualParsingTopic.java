@@ -26,7 +26,7 @@ public class ManualParsingTopic {
         if (!enabled) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap();
+        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
         var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
         contextMap.put("dispute_attachments", attachmentsCollect);
