@@ -1,7 +1,6 @@
 package dev.vality.disputes.polling;
 
 import dev.vality.adapter.flow.lib.model.PollingInfo;
-import dev.vality.adapter.flow.lib.service.ExponentialBackOffPollingService;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import org.springframework.stereotype.Service;
 
