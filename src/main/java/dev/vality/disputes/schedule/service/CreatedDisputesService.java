@@ -1,7 +1,5 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
@@ -14,7 +12,6 @@ import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.schedule.client.RemoteClient;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
@@ -26,6 +23,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
@@ -42,7 +40,7 @@ public class CreatedDisputesService {
     private final CreatedAttachmentsService createdAttachmentsService;
     private final InvoicingService invoicingService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
-    private final DominantService dominantService;
+    private final ProviderDataService providerDataService;
     private final ExternalGatewayChecker externalGatewayChecker;
     private final ManualParsingTopic manualParsingTopic;
 
@@ -83,19 +81,21 @@ public class CreatedDisputesService {
             log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
-        if ((status.isSetCaptured() && isCapturedBlockedForDispute(dispute))
-                || isNotProvidersDisputesApiExist(dispute)) {
+        var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+        var options = providerData.getOptions();
+        if ((status.isSetCaptured() && isCapturedBlockedForDispute(options))
+                || isNotProvidersDisputesApiExist(options)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            log.warn("finishTaskWithManualParsingFlowActivation, options capt={}, apiExist={}", isCapturedBlockedForDispute(dispute), isNotProvidersDisputesApiExist(dispute));
+            log.warn("finishTaskWithManualParsingFlowActivation, options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProvidersDisputesApiExist(options));
             finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
             return;
         }
         try {
-            var result = remoteClient.createDispute(dispute, attachments);
-            finishTask(dispute, attachments, result);
+            var result = remoteClient.createDispute(dispute, attachments, providerData);
+            finishTask(dispute, attachments, result, options);
         } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isNotProvidersDisputesApiExist(dispute, e)) {
+            if (externalGatewayChecker.isNotProvidersDisputesApiExist(providerData, e)) {
                 // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
                 // (тогда при тесте соединения вернется 404)
                 log.warn("finishTaskWithManualParsingFlowActivation with externalGatewayChecker", e);
@@ -107,10 +107,10 @@ public class CreatedDisputesService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTask(Dispute dispute, List<Attachment> attachments, DisputeCreatedResult result) {
+    void finishTask(Dispute dispute, List<Attachment> attachments, DisputeCreatedResult result, Map<String, String> options) {
         switch (result.getSetField()) {
             case SUCCESS_RESULT -> {
-                var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
+                var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
                 log.info("Trying to set pending Dispute status {}, {}", dispute, result);
                 providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getProviderDisputeId(), dispute.getId()));
                 disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
@@ -135,21 +135,15 @@ public class CreatedDisputesService {
         log.debug("Dispute status has been set to {} {}", disputeStatus, dispute.getId());
     }
 
-    private boolean isCapturedBlockedForDispute(Dispute dispute) {
-        return getTerminal(dispute.getTerminalId()).getOptions()
-                .containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
+    private boolean isCapturedBlockedForDispute(Map<String, String> options) {
+        return options.containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
     }
 
-    private boolean isNotProvidersDisputesApiExist(Dispute dispute) {
-        return !getTerminal(dispute.getTerminalId()).getOptions()
-                .containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
+    private boolean isNotProvidersDisputesApiExist(Map<String, String> options) {
+        return !options.containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 
     private InvoicePayment getInvoicePayment(Dispute dispute) {
         return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
-    }
-
-    private Terminal getTerminal(Integer terminalId) {
-        return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 }

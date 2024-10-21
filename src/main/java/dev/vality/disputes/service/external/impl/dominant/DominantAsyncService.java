@@ -1,9 +1,6 @@
 package dev.vality.disputes.service.external.impl.dominant;
 
-import dev.vality.damsel.domain.Currency;
-import dev.vality.damsel.domain.CurrencyRef;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
+import dev.vality.damsel.domain.*;
 import dev.vality.disputes.service.external.DominantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +31,26 @@ public class DominantAsyncService {
         try {
             var terminal = dominantService.getTerminal(terminalRef);
             return CompletableFuture.completedFuture(terminal);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Async("disputesAsyncServiceExecutor")
+    public CompletableFuture<ProxyDefinition> getProxy(ProxyRef proxyRef) {
+        try {
+            var proxy = dominantService.getProxy(proxyRef);
+            return CompletableFuture.completedFuture(proxy);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Async("disputesAsyncServiceExecutor")
+    public CompletableFuture<Provider> getProvider(ProviderRef providerRef) {
+        try {
+            var provider = dominantService.getProvider(providerRef);
+            return CompletableFuture.completedFuture(provider);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }

@@ -101,6 +101,8 @@ public class CreatedDisputesServiceTest {
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
+        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
@@ -130,7 +132,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
@@ -153,7 +155,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).get().getStatus());

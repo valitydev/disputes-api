@@ -2,10 +2,7 @@ package dev.vality.disputes.polling;
 
 import dev.vality.adapter.flow.lib.model.PollingInfo;
 import dev.vality.adapter.flow.lib.service.ExponentialBackOffPollingService;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.service.external.DominantService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -17,10 +14,8 @@ import java.util.Map;
 public class ExponentialBackOffPollingServiceWrapper {
 
     private final ExponentialBackOffPollingService exponentialBackOffPollingService;
-    private final DominantService dominantService;
 
-    public ExponentialBackOffPollingServiceWrapper(DominantService dominantService) {
-        this.dominantService = dominantService;
+    public ExponentialBackOffPollingServiceWrapper() {
         this.exponentialBackOffPollingService = new ExponentialBackOffPollingService();
     }
 
@@ -29,18 +24,13 @@ public class ExponentialBackOffPollingServiceWrapper {
         return getLocalDateTime(pollingInfo.getStartDateTimePolling().plusSeconds(seconds));
     }
 
-    public LocalDateTime prepareNextPollingInterval(Dispute dispute) {
+    public LocalDateTime prepareNextPollingInterval(Dispute dispute, Map<String, String> options) {
         var pollingInfo = new PollingInfo();
         var startDateTimePolling = dispute.getCreatedAt().toInstant(ZoneOffset.UTC);
         pollingInfo.setStartDateTimePolling(startDateTimePolling);
         pollingInfo.setMaxDateTimePolling(dispute.getPollingBefore().toInstant(ZoneOffset.UTC));
-        var terminal = getTerminal(dispute.getTerminalId());
-        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, terminal.getOptions());
+        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, options);
         return getLocalDateTime(dispute.getNextCheckAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
-    }
-
-    private Terminal getTerminal(Integer terminalId) {
-        return dominantService.getTerminal(new TerminalRef(terminalId));
     }
 
     private LocalDateTime getLocalDateTime(Instant instant) {

@@ -1,11 +1,12 @@
 package dev.vality.disputes.api.service;
 
-import dev.vality.damsel.domain.Currency;
+import dev.vality.damsel.domain.Cash;
+import dev.vality.damsel.domain.CurrencyRef;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.api.model.PaymentParams;
+import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessData;
-import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -13,14 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentParamsBuilder {
 
-    private final DominantAsyncService dominantAsyncService;
+    private final ProviderDataService providerDataService;
     private final PartyManagementAsyncService partyManagementAsyncService;
 
     @SneakyThrows
@@ -29,12 +29,7 @@ public class PaymentParamsBuilder {
         log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
         // http 500
-        var terminal = dominantAsyncService.getTerminal(payment.getRoute().getTerminal());
-        var currency = Optional.of(payment)
-                .filter(p -> p.getPayment().isSetCost())
-                .map(p -> p.getPayment().getCost())
-                // http 500
-                .map(cost -> dominantAsyncService.getCurrency(cost.getCurrency()));
+        var currency = providerDataService.getCurrency(getCurrencyRef(payment));
         var shop = partyManagementAsyncService.getShop(invoice.getOwnerId(), invoice.getShopId());
         var paymentParams = PaymentParams.builder()
                 .invoiceId(invoice.getId())
@@ -42,15 +37,12 @@ public class PaymentParamsBuilder {
                 .terminalId(payment.getRoute().getTerminal().getId())
                 .providerId(payment.getRoute().getProvider().getId())
                 .providerTrxId(getProviderTrxId(payment))
-                .currencyName(getCurrency(currency)
-                        .map(Currency::getName).orElse(null))
-                .currencySymbolicCode(getCurrency(currency)
-                        .map(Currency::getSymbolicCode).orElse(null))
-                .currencyNumericCode(getCurrency(currency)
-                        .map(Currency::getNumericCode).map(Short::intValue).orElse(null))
-                .currencyExponent(getCurrency(currency)
-                        .map(Currency::getExponent).map(Short::intValue).orElse(null))
-                .options(terminal.get().getOptions())
+                .currencyName(currency.getName())
+                .currencySymbolicCode(currency.getSymbolicCode())
+                .currencyNumericCode((int) currency.getNumericCode())
+                .currencyExponent((int) currency.getExponent())
+                // http 500
+                .options(providerDataService.getProviderData(payment).getOptions())
                 .shopId(invoice.getShopId())
                 .shopDetailsName(shop.get().getDetails().getName())
                 .invoiceAmount(payment.getPayment().getCost().getAmount())
@@ -59,14 +51,12 @@ public class PaymentParamsBuilder {
         return paymentParams;
     }
 
-    private Optional<Currency> getCurrency(Optional<CompletableFuture<Currency>> currency) {
-        return currency.map(currencyCompletableFuture -> {
-            try {
-                return currencyCompletableFuture.get();
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
-        });
+    private CurrencyRef getCurrencyRef(InvoicePayment payment) {
+        return Optional.of(payment)
+                .filter(p -> p.getPayment().isSetCost())
+                .map(p -> p.getPayment().getCost())
+                .map(Cash::getCurrency)
+                .orElse(null);
     }
 
     private String getProviderTrxId(InvoicePayment payment) {

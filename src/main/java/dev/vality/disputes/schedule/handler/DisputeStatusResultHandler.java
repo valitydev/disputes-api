@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,11 +24,11 @@ public class DisputeStatusResultHandler {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void handleStatusPending(Dispute dispute, DisputeStatusResult result) {
+    public void handleStatusPending(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
         // дергаем update() чтоб обновить время вызова next_check_after,
         // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
         // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
-        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
+        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
         log.info("Trying to set pending Dispute status {}, {}", dispute, result);
         disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
         log.debug("Dispute status has been set to pending {}", dispute.getId());

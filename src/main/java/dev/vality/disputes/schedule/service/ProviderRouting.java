@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.disputes.exception.RoutingException;
+import dev.vality.disputes.schedule.model.ProviderData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -8,7 +9,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -18,10 +18,10 @@ public class ProviderRouting {
     private static final String DISPUTES_URL_POSTFIX_DEFAULT = "disputes";
     private static final String OPTION_DISPUTES_URL_FIELD_NAME = "disputes_url";
 
-    public String getRouteUrl(Map<String, String> options, String defaultProviderUrl) {
-        var url = options.get(OPTION_DISPUTES_URL_FIELD_NAME);
+    public String getRouteUrl(ProviderData providerData) {
+        var url = providerData.getOptions().get(OPTION_DISPUTES_URL_FIELD_NAME);
         if (ObjectUtils.isEmpty(url)) {
-            url = createDefaultRouteUrl(defaultProviderUrl);
+            url = createDefaultRouteUrl(providerData.getDefaultProviderUrl());
         }
         return url;
     }

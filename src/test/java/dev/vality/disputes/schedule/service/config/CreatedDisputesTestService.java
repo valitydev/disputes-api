@@ -65,7 +65,7 @@ public class CreatedDisputesTestService {
         when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());

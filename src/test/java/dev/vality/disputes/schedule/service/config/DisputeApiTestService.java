@@ -58,6 +58,8 @@ public class DisputeApiTestService {
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
+        when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
+        when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
         when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
