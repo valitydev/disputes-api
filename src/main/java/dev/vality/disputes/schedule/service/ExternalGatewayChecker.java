@@ -1,11 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.ProxyDefinition;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
-import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.woody.api.flow.error.WErrorSource;
 import dev.vality.woody.api.flow.error.WErrorType;
 import dev.vality.woody.api.flow.error.WRuntimeException;
@@ -25,24 +20,23 @@ import org.springframework.stereotype.Service;
 public class ExternalGatewayChecker {
 
     private final CloseableHttpClient httpClient;
-    private final DominantService dominantService;
     private final ProviderRouting providerRouting;
 
-    public boolean isNotProvidersDisputesApiExist(Dispute dispute, WRuntimeException e) {
+    public boolean isNotProvidersDisputesApiExist(ProviderData providerData, WRuntimeException e) {
         return e.getErrorDefinition() != null
                 && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
                 && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
                 && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && isNotFoundProvidersDisputesApi(dispute);
+                && isNotFoundProvidersDisputesApi(providerData);
     }
 
     @SneakyThrows
-    private Boolean isNotFoundProvidersDisputesApi(Dispute dispute) {
-        return httpClient.execute(new HttpGet(getRouteUrl(dispute)), isNotFoundResponse());
+    private Boolean isNotFoundProvidersDisputesApi(ProviderData providerData) {
+        return httpClient.execute(new HttpGet(getRouteUrl(providerData)), isNotFoundResponse());
     }
 
-    private String getRouteUrl(Dispute dispute) {
-        var routeUrl = providerRouting.getRouteUrl(getTerminal(dispute.getTerminalId()).getOptions(), getProxy(dispute.getProviderId()).getUrl());
+    private String getRouteUrl(ProviderData providerData) {
+        var routeUrl = providerRouting.getRouteUrl(providerData);
         log.debug("Check adapter connection, routeUrl={}", routeUrl);
         return routeUrl;
     }
@@ -52,14 +46,5 @@ public class ExternalGatewayChecker {
             log.debug("Check adapter connection, resp={}", response);
             return response.getCode() == HttpStatus.SC_NOT_FOUND;
         };
-    }
-
-    private Terminal getTerminal(Integer terminalId) {
-        return dominantService.getTerminal(new TerminalRef(terminalId));
-    }
-
-    private ProxyDefinition getProxy(Integer providerId) {
-        var provider = dominantService.getProvider(new ProviderRef(providerId));
-        return dominantService.getProxy(provider.getProxy().getRef());
     }
 }

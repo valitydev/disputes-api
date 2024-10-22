@@ -37,7 +37,7 @@ public class PendingDisputesTestService {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusSuccessResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -30,6 +31,7 @@ public class PendingDisputesService {
     private final ProviderDisputeDao providerDisputeDao;
     private final PollingInfoService pollingInfoService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final ProviderDataService providerDataService;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -50,9 +52,10 @@ public class PendingDisputesService {
         }
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         log.debug("Trying to get ProviderDispute {}", dispute.getId());
+        var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
         var providerDispute = providerDisputeDao.get(dispute.getId());
         if (providerDispute == null) {
-            var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute);
+            var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
             // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново
             log.error("Trying to set created Dispute status, because createDispute() was not success {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.created, nextCheckAfter);
@@ -66,16 +69,16 @@ public class PendingDisputesService {
             return;
         }
         log.debug("ProviderDispute has been found {}", dispute.getId());
-        var result = remoteClient.checkDisputeStatus(dispute, providerDispute);
-        finishTask(dispute, result);
+        var result = remoteClient.checkDisputeStatus(dispute, providerDispute, providerData);
+        finishTask(dispute, result, providerData.getOptions());
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTask(Dispute dispute, DisputeStatusResult result) {
+    void finishTask(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
         switch (result.getSetField()) {
             case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);
             case STATUS_FAIL -> disputeStatusResultHandler.handleStatusFail(dispute, result);
-            case STATUS_PENDING -> disputeStatusResultHandler.handleStatusPending(dispute, result);
+            case STATUS_PENDING -> disputeStatusResultHandler.handleStatusPending(dispute, result, options);
         }
     }
 }

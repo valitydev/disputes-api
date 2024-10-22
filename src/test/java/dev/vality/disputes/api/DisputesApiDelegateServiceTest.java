@@ -92,6 +92,8 @@ public class DisputesApiDelegateServiceTest {
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
         when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
+        when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
+        when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
         when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
@@ -108,6 +110,8 @@ public class DisputesApiDelegateServiceTest {
         verify(bouncerClient, times(1)).judge(any(), any());
         verify(dominantAsyncService, times(1)).getTerminal(any());
         verify(dominantAsyncService, times(1)).getCurrency(any());
+        verify(dominantAsyncService, times(1)).getProvider(any());
+        verify(dominantAsyncService, times(1)).getProxy(any());
         verify(partyManagementAsyncService, times(1)).getShop(any(), any());
         verify(fileStorageClient, times(1)).createNewFile(any(), any());
         mvc.perform(get("/disputes/status")
@@ -149,6 +153,8 @@ public class DisputesApiDelegateServiceTest {
         verify(bouncerClient, times(4)).judge(any(), any());
         verify(dominantAsyncService, times(2)).getTerminal(any());
         verify(dominantAsyncService, times(2)).getCurrency(any());
+        verify(dominantAsyncService, times(2)).getProvider(any());
+        verify(dominantAsyncService, times(2)).getProxy(any());
         verify(partyManagementAsyncService, times(2)).getShop(any(), any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
         disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);

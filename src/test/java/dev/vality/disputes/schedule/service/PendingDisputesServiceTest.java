@@ -50,6 +50,8 @@ public class PendingDisputesServiceTest {
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
+        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.created, disputeDao.get(disputeId).get().getStatus());
@@ -69,7 +71,7 @@ public class PendingDisputesServiceTest {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusFailResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
@@ -81,7 +83,7 @@ public class PendingDisputesServiceTest {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any(), any())).thenReturn(providerMock);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());
