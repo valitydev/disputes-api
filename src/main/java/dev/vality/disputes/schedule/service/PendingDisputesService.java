@@ -66,10 +66,7 @@ public class PendingDisputesService {
         }
         if (pollingInfoService.isDeadline(dispute)) {
             manualParsingTopic.sendPoolingExpired(dispute);
-            log.error(
-                "Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}",
-                dispute.getId()
-            );
+            log.error("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
             log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
             return;
