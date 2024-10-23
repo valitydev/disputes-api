@@ -35,6 +35,7 @@ public class DisputeParamsConverter {
             disputeParams.setCash(cash);
         }
         disputeParams.setReason(dispute.getReason());
+        disputeParams.setDisputeId(dispute.getId().toString());
         return disputeParams;
     }
 }
