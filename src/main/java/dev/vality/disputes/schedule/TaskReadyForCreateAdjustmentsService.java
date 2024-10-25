@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule;
 
+import dev.vality.disputes.admin.callback.DefaultCallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.schedule.service.CreateAdjustmentsService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class TaskReadyForCreateAdjustmentsService {
 
     private final CreateAdjustmentsService createAdjustmentsService;
+    private final DefaultCallbackNotifier defaultCallbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayReadyForCreateAdjustments}", initialDelayString = "${dispute.initialDelayReadyForCreateAdjustments}")
@@ -23,6 +25,7 @@ public class TaskReadyForCreateAdjustmentsService {
         log.debug("Processing ReadyForCreateAdjustments get started");
         var disputes = createAdjustmentsService.getReadyDisputesForCreateAdjustment();
         mdcTopicProducer.sendReadyForCreateAdjustments(disputes);
+        defaultCallbackNotifier.sendDisputeReadyForCreateAdjustment(disputes);
         log.info("ReadyForCreateAdjustments were processed");
     }
 }

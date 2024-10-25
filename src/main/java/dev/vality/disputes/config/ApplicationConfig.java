@@ -5,6 +5,7 @@ import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.domain_config.RepositoryClientSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.damsel.payment_processing.PartyManagementSrv;
+import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
@@ -84,12 +85,22 @@ public class ApplicationConfig {
 
     @Bean
     public ProviderDisputesServiceSrv.Iface providerDisputesTgBotClient(
-            @Value("${service.disputes-tg-bot.url}") Resource resource,
-            @Value("${service.disputes-tg-bot.networkTimeout}") int networkTimeout) throws IOException {
+            @Value("${service.disputes-tg-bot.provider.url}") Resource resource,
+            @Value("${service.disputes-tg-bot.provider.networkTimeout}") int networkTimeout) throws IOException {
         return new THSpawnClientBuilder()
                 .withNetworkTimeout(networkTimeout)
                 .withAddress(resource.getURI())
                 .build(ProviderDisputesServiceSrv.Iface.class);
+    }
+
+    @Bean
+    public AdminCallbackServiceSrv.Iface adminCallbackDisputesTgBotClient(
+            @Value("${service.disputes-tg-bot.admin.url}") Resource resource,
+            @Value("${service.disputes-tg-bot.admin.networkTimeout}") int networkTimeout) throws IOException {
+        return new THSpawnClientBuilder()
+                .withNetworkTimeout(networkTimeout)
+                .withAddress(resource.getURI())
+                .build(AdminCallbackServiceSrv.Iface.class);
     }
 
     @Bean

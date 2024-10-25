@@ -23,8 +23,8 @@ import java.util.List;
 public class RemoteClient {
 
     private final ProviderIfaceBuilder providerIfaceBuilder;
-    private final DisputeContextConverter disputeContextConverter;
     private final DisputeParamsConverter disputeParamsConverter;
+    private final DisputeContextConverter disputeContextConverter;
 
     @SneakyThrows
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {

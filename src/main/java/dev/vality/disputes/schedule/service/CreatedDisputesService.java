@@ -1,20 +1,17 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
-import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
-import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.DisputeCreatedResult;
+import dev.vality.disputes.schedule.catcher.WRuntimeExceptionCatcher;
+import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
+import dev.vality.disputes.schedule.handler.DisputeCreateResultHandler;
+import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.utils.ErrorFormatter;
-import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,18 +28,17 @@ import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PRO
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"MemberName", "ParameterName", "LineLength", "MissingSwitchDefault"})
 public class CreatedDisputesService {
 
     private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;
-    private final ProviderDisputeDao providerDisputeDao;
     private final CreatedAttachmentsService createdAttachmentsService;
     private final InvoicingService invoicingService;
-    private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final ProviderDataService providerDataService;
-    private final ExternalGatewayChecker externalGatewayChecker;
-    private final MdcTopicProducer mdcTopicProducer;
+    private final DefaultRemoteClient defaultRemoteClient;
+    private final DisputeCreateResultHandler disputeCreateResultHandler;
+    private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
@@ -87,52 +83,38 @@ public class CreatedDisputesService {
                 || isNotProvidersDisputesApiExist(options)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            log.warn("finishTaskWithManualParsingFlowActivation, options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProvidersDisputesApiExist(options));
-            finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
+            log.warn("Trying to call defaultRemoteClient.createDispute(), options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProvidersDisputesApiExist(options));
+            wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                    () -> {
+                        var result = defaultRemoteClient.createDispute(dispute, attachments, providerData);
+                        finishTask(dispute, result, providerData);
+                    },
+                    e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e));
             return;
         }
-        try {
-            var result = remoteClient.createDispute(dispute, attachments, providerData);
-            finishTask(dispute, attachments, result, options);
-        } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isNotProvidersDisputesApiExist(providerData, e)) {
-                // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
-                // (тогда при тесте соединения вернется 404)
-                log.warn("finishTaskWithManualParsingFlowActivation with externalGatewayChecker", e);
-                finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.manual_created);
-                return;
-            }
-            throw e;
-        }
+        wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                () -> wRuntimeExceptionCatcher.catchProvidersDisputesApiNotExist(
+                        providerData,
+                        () -> {
+                            var result = remoteClient.createDispute(dispute, attachments, providerData);
+                            finishTask(dispute, result, providerData);
+                        },
+                        () -> wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                                () -> {
+                                    var result = defaultRemoteClient.createDispute(dispute, attachments, providerData);
+                                    finishTask(dispute, result, providerData);
+                                },
+                                e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e))),
+                e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e));
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    void finishTask(Dispute dispute, List<Attachment> attachments, DisputeCreatedResult result, Map<String, String> options) {
+    void finishTask(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
         switch (result.getSetField()) {
-            case SUCCESS_RESULT -> {
-                var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
-                log.info("Trying to set pending Dispute status {}, {}", dispute, result);
-                providerDisputeDao.save(new ProviderDispute(result.getSuccessResult().getProviderDisputeId(), dispute.getId()));
-                disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-                log.debug("Dispute status has been set to pending {}", dispute.getId());
-            }
-            case FAIL_RESULT -> {
-                var errorMessage = ErrorFormatter.getErrorMessage(result.getFailResult().getFailure());
-                log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
-                disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
-                log.debug("Dispute status has been set to failed {}", dispute.getId());
-            }
-            case ALREADY_EXIST_RESULT ->
-                    finishTaskWithManualParsingFlowActivation(dispute, attachments, DisputeStatus.already_exist_created);
+            case SUCCESS_RESULT -> disputeCreateResultHandler.handleSuccessResult(dispute, result, providerData);
+            case FAIL_RESULT -> disputeCreateResultHandler.handleFailResult(dispute, result);
+            case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
         }
-    }
-
-    @Transactional(propagation = Propagation.REQUIRED)
-    void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
-        mdcTopicProducer.sendCreated(dispute, attachments, disputeStatus);
-        log.info("Trying to set {} Dispute status {}", disputeStatus, dispute);
-        disputeDao.update(dispute.getId(), disputeStatus);
-        log.debug("Dispute status has been set to {} {}", disputeStatus, dispute.getId());
     }
 
     private boolean isCapturedBlockedForDispute(Map<String, String> options) {

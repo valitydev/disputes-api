@@ -25,6 +25,7 @@ public class ProviderIfaceBuilder {
     public ProviderDisputesServiceSrv.Iface buildTHSpawnClient(ProviderData providerData) {
         var routeUrl = providerRouting.getRouteUrl(providerData);
         log.info("Creating new client for url: {}", routeUrl);
+        providerData.setRouteUrl(routeUrl);
         return new THSpawnClientBuilder()
                 .withNetworkTimeout((int) TimeUnit.SECONDS.toMillis(adaptersConnectionProperties.getTimeoutSec()))
                 .withAddress(URI.create(routeUrl))

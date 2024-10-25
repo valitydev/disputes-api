@@ -2,7 +2,6 @@ package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.provider.Attachment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -22,14 +21,12 @@ public class MdcTopicProducer {
     @Value("${mdc-topic-producer.enabled}")
     private boolean enabled;
 
-    public void sendCreated(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
+    public void sendCreated(Dispute dispute, DisputeStatus disputeStatus) {
         if (!enabled) {
             return;
         }
         var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
-        var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
-        contextMap.put("dispute_attachments", attachmentsCollect);
         contextMap.put("dispute_status", disputeStatus.name());
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");

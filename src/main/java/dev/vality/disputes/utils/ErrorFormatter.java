@@ -12,4 +12,11 @@ public class ErrorFormatter {
         }
         return TErrorUtil.toStringVal(failure);
     }
+
+    public static String getErrorMessage(String errorCode, String errorDescription) {
+        if (!StringUtils.isBlank(errorDescription)) {
+            return errorCode + ": " + errorDescription;
+        }
+        return errorCode;
+    }
 }
