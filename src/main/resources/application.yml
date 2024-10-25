@@ -68,9 +68,13 @@ service:
     provider:
       url: http://localhost:8022/change_it
       networkTimeout: 5000
+      enabled: false
     admin:
       url: http://localhost:8022/change_it
       networkTimeout: 5000
+      enabled: false
+  mdc-topic-producer:
+    enabled: true
   adapters:
     connection:
       timeoutSec: 30
@@ -118,9 +122,6 @@ dispute:
 time:
   config:
     max-time-polling-min: 600
-
-mdc-topic-producer:
-  enabled: true
 
 testcontainers:
   postgresql:

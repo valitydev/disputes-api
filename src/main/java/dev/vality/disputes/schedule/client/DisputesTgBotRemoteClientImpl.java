@@ -10,12 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(value = "service.disputes-tg-bot.provider.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {

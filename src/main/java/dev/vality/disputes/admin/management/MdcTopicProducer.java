@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class MdcTopicProducer {
 
-    @Value("${mdc-topic-producer.enabled}")
+    @Value("${service.mdc-topic-producer.enabled}")
     private boolean enabled;
 
     public void sendCreated(Dispute dispute, DisputeStatus disputeStatus) {
