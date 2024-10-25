@@ -1,4 +1,4 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -28,39 +28,39 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping({"/debug/disputes-api/manual-parsing"})
+@RequestMapping({"/debug/disputes-api/admin-management"})
 @Slf4j
-public class DebugManualParsingController {
+public class DebugAdminManagementController {
 
-    private final ManualParsingServiceSrv.Iface manualParsingHandler;
+    private final AdminManagementServiceSrv.Iface adminManagementHandler;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
 
     @PostMapping("/cancel")
     @SneakyThrows
     public void cancelPending(@RequestBody String body) {
         log.debug("cancelPending {}", body);
-        manualParsingHandler.cancelPending(objectMapper.readValue(body, CancelParamsRequest.class));
+        adminManagementHandler.cancelPending(objectMapper.readValue(body, CancelParamsRequest.class));
     }
 
     @PostMapping("/approve")
     @SneakyThrows
     public void approvePending(@RequestBody String body) {
         log.debug("approvePending {}", body);
-        manualParsingHandler.approvePending(objectMapper.readValue(body, ApproveParamsRequest.class));
+        adminManagementHandler.approvePending(objectMapper.readValue(body, ApproveParamsRequest.class));
     }
 
     @PostMapping("/bind")
     @SneakyThrows
     public void bindCreated(@RequestBody String body) {
         log.debug("bindCreated {}", body);
-        manualParsingHandler.bindCreated(objectMapper.readValue(body, BindParamsRequest.class));
+        adminManagementHandler.bindCreated(objectMapper.readValue(body, BindParamsRequest.class));
     }
 
     @PostMapping("/get")
     @SneakyThrows
     public DisputeResult getDisputes(@RequestBody String body) {
         log.debug("getDispute {}", body);
-        var dispute = manualParsingHandler.getDisputes(objectMapper.readValue(body, DisputeParamsRequest.class));
+        var dispute = adminManagementHandler.getDisputes(objectMapper.readValue(body, DisputeParamsRequest.class));
         return objectMapper.convertValue(dispute, new TypeReference<>() {
         });
     }

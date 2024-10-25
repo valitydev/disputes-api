@@ -28,7 +28,6 @@ public class RemoteClient {
 
     @SneakyThrows
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
-        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         log.debug("Trying to build disputeParams {}", dispute.getId());
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions());
         log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());
@@ -41,7 +40,6 @@ public class RemoteClient {
 
     @SneakyThrows
     public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute, ProviderData providerData) {
-        log.debug("Trying to call dominant for RemoteClient {}", dispute.getId());
         log.debug("Trying to build disputeContext {}", dispute.getId());
         var disputeContext = disputeContextConverter.convert(dispute, providerDispute, providerData.getOptions());
         log.debug("Trying to call ProviderIfaceBuilder {}", dispute.getId());

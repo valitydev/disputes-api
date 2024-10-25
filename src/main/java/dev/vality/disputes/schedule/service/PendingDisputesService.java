@@ -1,11 +1,11 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.manualparsing.ManualParsingTopic;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.provider.DisputeStatusResult;
@@ -34,7 +34,7 @@ public class PendingDisputesService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final ProviderDataService providerDataService;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
-    private final ManualParsingTopic manualParsingTopic;
+    private final MdcTopicProducer mdcTopicProducer;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
@@ -65,7 +65,7 @@ public class PendingDisputesService {
             return;
         }
         if (pollingInfoService.isDeadline(dispute)) {
-            manualParsingTopic.sendPoolingExpired(dispute);
+            mdcTopicProducer.sendPoolingExpired(dispute);
             log.error("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
             log.debug("Dispute status has been set to manual_pending {}", dispute.getId());

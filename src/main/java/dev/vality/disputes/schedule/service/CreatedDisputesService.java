@@ -1,13 +1,13 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.payment_processing.InvoicePayment;
+import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
-import dev.vality.disputes.manualparsing.ManualParsingTopic;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.DisputeCreatedResult;
@@ -42,7 +42,7 @@ public class CreatedDisputesService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final ProviderDataService providerDataService;
     private final ExternalGatewayChecker externalGatewayChecker;
-    private final ManualParsingTopic manualParsingTopic;
+    private final MdcTopicProducer mdcTopicProducer;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
@@ -129,7 +129,7 @@ public class CreatedDisputesService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     void finishTaskWithManualParsingFlowActivation(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
-        manualParsingTopic.sendCreated(dispute, attachments, disputeStatus);
+        mdcTopicProducer.sendCreated(dispute, attachments, disputeStatus);
         log.info("Trying to set {} Dispute status {}", disputeStatus, dispute);
         disputeDao.update(dispute.getId(), disputeStatus);
         log.debug("Dispute status has been set to {} {}", disputeStatus, dispute.getId());

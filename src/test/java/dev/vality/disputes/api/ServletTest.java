@@ -1,8 +1,8 @@
 package dev.vality.disputes.api;
 
 import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.CancelParamsRequest;
-import dev.vality.disputes.admin.ManualParsingServiceSrv;
 import dev.vality.disputes.callback.DisputeCallbackParams;
 import dev.vality.disputes.callback.ProviderDisputesCallbackServiceSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
@@ -53,11 +53,11 @@ public class ServletTest {
 
     @Test
     @SneakyThrows
-    public void manualServletTest() {
+    public void adminManagementServletTest() {
         var iface = new THSpawnClientBuilder()
-                .withAddress(new URI("http://127.0.0.1:" + serverPort + MANUAL))
+                .withAddress(new URI("http://127.0.0.1:" + serverPort + ADMIN_MANAGEMENT))
                 .withNetworkTimeout(5000)
-                .build(ManualParsingServiceSrv.Iface.class);
+                .build(AdminManagementServiceSrv.Iface.class);
         var request = DamselUtil.fillRequiredTBaseObject(
                 new CancelParamsRequest(),
                 CancelParamsRequest.class

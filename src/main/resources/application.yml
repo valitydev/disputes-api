@@ -64,6 +64,9 @@ service:
       shops:
         poolSize: 10
         ttlSec: 86400
+  disputes-tg-bot:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
   adapters:
     connection:
       timeoutSec: 30
@@ -112,7 +115,7 @@ time:
   config:
     max-time-polling-min: 600
 
-manual-parsing-topic:
+mdc-topic-producer:
   enabled: true
 
 testcontainers:

@@ -24,7 +24,7 @@ public class NetworkConfig {
 
     public static final String HEALTH = "/actuator/health";
     public static final String MERCHANT = "/disputes-api/v1/merchant";
-    public static final String MANUAL = "/disputes-api/v1/manual-parsing";
+    public static final String ADMIN_MANAGEMENT = "/disputes-api/v1/admin-management";
     public static final String CALLBACK = "/disputes-api/v1/callback";
 
     @Bean
@@ -39,7 +39,7 @@ public class NetworkConfig {
                 var enabledPaths = servletPath.startsWith(restEndpoint)
                         || servletPath.startsWith(HEALTH)
                         || servletPath.startsWith(MERCHANT)
-                        || servletPath.startsWith(MANUAL)
+                        || servletPath.startsWith(ADMIN_MANAGEMENT)
                         || servletPath.startsWith(CALLBACK);
                 if ((request.getLocalPort() == restPort) && !enabledPaths) {
                     response.sendError(404, "Unknown address");

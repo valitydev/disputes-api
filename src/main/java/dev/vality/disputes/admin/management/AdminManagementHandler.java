@@ -1,4 +1,4 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.admin.*;
 import lombok.RequiredArgsConstructor;
@@ -12,28 +12,28 @@ import java.util.ArrayList;
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class ManualParsingHandler implements ManualParsingServiceSrv.Iface {
+public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
 
-    private final ManualParsingDisputesService manualParsingDisputesService;
+    private final AdminManagementDisputesService adminManagementDisputesService;
 
     @Override
     public void cancelPending(CancelParamsRequest cancelParamsRequest) throws TException {
         for (var cancelParam : cancelParamsRequest.getCancelParams()) {
-            manualParsingDisputesService.cancelPendingDispute(cancelParam);
+            adminManagementDisputesService.cancelPendingDispute(cancelParam);
         }
     }
 
     @Override
     public void approvePending(ApproveParamsRequest approveParamsRequest) throws TException {
         for (var approveParam : approveParamsRequest.getApproveParams()) {
-            manualParsingDisputesService.approvePendingDispute(approveParam);
+            adminManagementDisputesService.approvePendingDispute(approveParam);
         }
     }
 
     @Override
     public void bindCreated(BindParamsRequest bindParamsRequest) throws TException {
         for (var bindParam : bindParamsRequest.getBindParams()) {
-            manualParsingDisputesService.bindCreatedDispute(bindParam);
+            adminManagementDisputesService.bindCreatedDispute(bindParam);
         }
     }
 
@@ -41,7 +41,7 @@ public class ManualParsingHandler implements ManualParsingServiceSrv.Iface {
     public DisputeResult getDisputes(DisputeParamsRequest disputeParamsRequest) throws TException {
         var disputeResult = new DisputeResult(new ArrayList<>());
         for (var disputeParams : disputeParamsRequest.getDisputeParams()) {
-            var dispute = manualParsingDisputesService.getDispute(disputeParams, disputeParamsRequest.isWithAttachments());
+            var dispute = adminManagementDisputesService.getDispute(disputeParams, disputeParamsRequest.isWithAttachments());
             if (dispute != null) {
                 disputeResult.getDisputes().add(dispute);
             }

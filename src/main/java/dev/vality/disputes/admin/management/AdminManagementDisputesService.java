@@ -1,4 +1,4 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.admin.*;
 import dev.vality.disputes.dao.DisputeDao;
@@ -31,7 +31,7 @@ import static dev.vality.disputes.api.service.ApiDisputesService.DISPUTE_PENDING
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class ManualParsingDisputesService {
+public class AdminManagementDisputesService {
 
     private final DisputeDao disputeDao;
     private final ProviderDisputeDao providerDisputeDao;

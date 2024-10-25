@@ -1,4 +1,4 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class ManualParsingTopic {
+public class MdcTopicProducer {
 
-    @Value("${manual-parsing-topic.enabled}")
+    @Value("${mdc-topic-producer.enabled}")
     private boolean enabled;
 
     public void sendCreated(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {

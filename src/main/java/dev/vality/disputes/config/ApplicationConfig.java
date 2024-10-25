@@ -5,6 +5,7 @@ import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.domain_config.RepositoryClientSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.damsel.payment_processing.PartyManagementSrv;
+import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
@@ -79,6 +80,16 @@ public class ApplicationConfig {
                 .withAddress(resource.getURI())
                 .withNetworkTimeout(timeout)
                 .build(PartyManagementSrv.Iface.class);
+    }
+
+    @Bean
+    public ProviderDisputesServiceSrv.Iface providerDisputesTgBotClient(
+            @Value("${service.disputes-tg-bot.url}") Resource resource,
+            @Value("${service.disputes-tg-bot.networkTimeout}") int networkTimeout) throws IOException {
+        return new THSpawnClientBuilder()
+                .withNetworkTimeout(networkTimeout)
+                .withAddress(resource.getURI())
+                .build(ProviderDisputesServiceSrv.Iface.class);
     }
 
     @Bean
