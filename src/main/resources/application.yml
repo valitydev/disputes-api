@@ -117,7 +117,7 @@ dispute:
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
-  isScheduleReadyForCreateAdjustmentsEnabled: true
+  isScheduleReadyForCreateAdjustmentsEnabled: false
 
 time:
   config:
