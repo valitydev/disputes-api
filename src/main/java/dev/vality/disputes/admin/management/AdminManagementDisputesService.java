@@ -134,6 +134,7 @@ public class AdminManagementDisputesService {
         disputeResult.setProviderTrxId(dispute.getProviderTrxId());
         disputeResult.setStatus(dispute.getStatus().name());
         disputeResult.setErrorMessage(dispute.getErrorMessage());
+        disputeResult.setMapping(dispute.getMapping());
         disputeResult.setAmount(String.valueOf(dispute.getAmount()));
         disputeResult.setChangedAmount(Optional.ofNullable(dispute.getChangedAmount())
                 .map(String::valueOf)
