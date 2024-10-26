@@ -1,12 +1,12 @@
 package dev.vality.disputes.service.external.impl;
 
 import dev.vality.disputes.admin.*;
-import dev.vality.disputes.exception.DisputesTgBotException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.service.external.DisputesTgBotService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
@@ -24,15 +24,12 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
     public final AdminCallbackServiceSrv.Iface adminCallbackDisputesTgBotClient;
 
     @Override
+    @SneakyThrows
     public DisputeCreatedResult createDispute(DisputeParams disputeParams) {
-        try {
-            log.debug("Trying to call providerDisputesTgBotClient.createDispute() {} {}", disputeParams.getDisputeId(), disputeParams.getTransactionContext().getInvoiceId());
-            var invoice = providerDisputesTgBotClient.createDispute(disputeParams);
-            log.debug("providerDisputesTgBotClient.createDispute() has been called {} {}", disputeParams.getDisputeId(), disputeParams.getTransactionContext().getInvoiceId());
-            return invoice;
-        } catch (TException e) {
-            throw new DisputesTgBotException(String.format("Failed to call providerDisputesTgBotClient.createDispute() with id: %s, %s", disputeParams.getDisputeId(), disputeParams.getTransactionContext().getInvoiceId()), e);
-        }
+        log.debug("Trying to call providerDisputesTgBotClient.createDispute() {} {}", disputeParams.getDisputeId(), disputeParams.getTransactionContext().getInvoiceId());
+        var invoice = providerDisputesTgBotClient.createDispute(disputeParams);
+        log.debug("providerDisputesTgBotClient.createDispute() has been called {} {}", disputeParams.getDisputeId(), disputeParams.getTransactionContext().getInvoiceId());
+        return invoice;
     }
 
     @Override
@@ -43,7 +40,7 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
                     new NotificationParamsRequest(List.of(Notification.disputeAlreadyCreated(disputeAlreadyCreated))));
             log.debug("adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() has been called {}", disputeAlreadyCreated.getId());
         } catch (TException e) {
-            throw new DisputesTgBotException(String.format("Failed to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() with id: %s", disputeAlreadyCreated.getId()), e);
+            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() with id: {}}", disputeAlreadyCreated.getId(), e);
         }
     }
 
@@ -55,7 +52,7 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
                     new NotificationParamsRequest(List.of(Notification.disputePoolingExpired(disputePoolingExpired))));
             log.debug("adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() has been called {}", disputePoolingExpired.getId());
         } catch (TException e) {
-            throw new DisputesTgBotException(String.format("Failed to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() with id: %s", disputePoolingExpired.getId()), e);
+            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() with id: {}}", disputePoolingExpired.getId(), e);
         }
     }
 
@@ -73,7 +70,7 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
             adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
             log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", ids);
         } catch (TException e) {
-            throw new DisputesTgBotException(String.format("Failed to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() with id: %s", ids), e);
+            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() with id: {}}", ids, e);
         }
     }
 
@@ -85,7 +82,7 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
                     new NotificationParamsRequest(List.of(Notification.disputeFailedReviewRequired(disputeFailedReviewRequired))));
             log.debug("adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() has been called {}", disputeFailedReviewRequired.getId());
         } catch (TException e) {
-            throw new DisputesTgBotException(String.format("Failed to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() with id: %s", disputeFailedReviewRequired.getId()), e);
+            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() with id: {}}", disputeFailedReviewRequired.getId(), e);
         }
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,7 +26,7 @@ public class MdcTopicProducer {
         if (!enabled) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
         contextMap.put("dispute_status", disputeStatus.name());
         if (errorMessage != null) {
@@ -40,7 +41,7 @@ public class MdcTopicProducer {
         if (!enabled) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
         contextMap.put("dispute_status", DisputeStatus.manual_pending.name());
         MDC.setContextMap(contextMap);
@@ -52,11 +53,15 @@ public class MdcTopicProducer {
         if (!enabled || disputes.isEmpty()) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
         contextMap.put("dispute_status", DisputeStatus.create_adjustment.name());
         MDC.setContextMap(contextMap);
         log.warn("Ready for CreateAdjustments case");
         MDC.clear();
+    }
+
+    private Map<String, String> getContextMap() {
+        return MDC.getCopyOfContextMap() == null ? new HashMap<>() : MDC.getCopyOfContextMap();
     }
 }
