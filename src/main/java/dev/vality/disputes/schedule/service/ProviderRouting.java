@@ -18,12 +18,12 @@ public class ProviderRouting {
     private static final String DISPUTES_URL_POSTFIX_DEFAULT = "disputes";
     private static final String OPTION_DISPUTES_URL_FIELD_NAME = "disputes_url";
 
-    public String getRouteUrl(ProviderData providerData) {
+    public void initRouteUrl(ProviderData providerData) {
         var url = providerData.getOptions().get(OPTION_DISPUTES_URL_FIELD_NAME);
         if (ObjectUtils.isEmpty(url)) {
             url = createDefaultRouteUrl(providerData.getDefaultProviderUrl());
         }
-        return url;
+        providerData.setRouteUrl(url);
     }
 
     private String createDefaultRouteUrl(String defaultProviderUrl) {

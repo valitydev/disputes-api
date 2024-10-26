@@ -45,9 +45,9 @@ public class ExternalGatewayChecker {
     }
 
     private String getRouteUrl(ProviderData providerData) {
-        var routeUrl = providerRouting.getRouteUrl(providerData);
-        log.debug("Check adapter connection, routeUrl={}", routeUrl);
-        return routeUrl;
+        providerRouting.initRouteUrl(providerData);
+        log.debug("Check adapter connection, routeUrl={}", providerData.getRouteUrl());
+        return providerData.getRouteUrl();
     }
 
     private HttpClientResponseHandler<Boolean> isNotFoundResponse() {
