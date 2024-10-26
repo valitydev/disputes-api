@@ -4,7 +4,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 
 import java.util.List;
 
-public interface DefaultCallbackNotifier {
+public interface CallbackNotifier {
 
     void sendDisputeAlreadyCreated(Dispute dispute);
 

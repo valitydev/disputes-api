@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"LineLength"})
-public class DisputesTgBotDefaultCallbackNotifierImpl implements DefaultCallbackNotifier {
+public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
 
     private final DisputesTgBotService disputesTgBotService;
 

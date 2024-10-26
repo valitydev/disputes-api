@@ -1,6 +1,6 @@
 package dev.vality.disputes.schedule.handler;
 
-import dev.vality.disputes.admin.callback.DefaultCallbackNotifier;
+import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
@@ -31,7 +31,7 @@ public class DisputeCreateResultHandler {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final DefaultRemoteClient defaultRemoteClient;
     private final ProviderDisputeDao providerDisputeDao;
-    private final DefaultCallbackNotifier defaultCallbackNotifier;
+    private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -59,7 +59,7 @@ public class DisputeCreateResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleAlreadyExistResult(Dispute dispute) {
-        defaultCallbackNotifier.sendDisputeAlreadyCreated(dispute);
+        callbackNotifier.sendDisputeAlreadyCreated(dispute);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.already_exist_created, "dispute already exist");
         log.info("Trying to set {} Dispute status {}", DisputeStatus.already_exist_created, dispute);
         disputeDao.update(dispute.getId(), DisputeStatus.already_exist_created);
@@ -73,7 +73,7 @@ public class DisputeCreateResultHandler {
     }
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
-        defaultCallbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
+        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created, errorMessage);
         log.warn("Trying to set manual_created Dispute status {}, {}", dispute.getId(), errorMessage);

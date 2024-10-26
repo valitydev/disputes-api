@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"LineLength"})
-public class DummyDefaultCallbackNotifierImpl implements DefaultCallbackNotifier {
+public class DummyCallbackNotifierImpl implements CallbackNotifier {
 
     @Override
     public void sendDisputeAlreadyCreated(Dispute dispute) {

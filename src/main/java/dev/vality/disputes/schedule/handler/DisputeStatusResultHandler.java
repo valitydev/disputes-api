@@ -1,6 +1,6 @@
 package dev.vality.disputes.schedule.handler;
 
-import dev.vality.disputes.admin.callback.DefaultCallbackNotifier;
+import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
@@ -29,7 +29,7 @@ public class DisputeStatusResultHandler {
 
     private final DisputeDao disputeDao;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
-    private final DefaultCallbackNotifier defaultCallbackNotifier;
+    private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -58,7 +58,7 @@ public class DisputeStatusResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleStatusSuccess(Dispute dispute, DisputeStatusResult result) {
-        defaultCallbackNotifier.sendDisputeReadyForCreateAdjustment(List.of(dispute));
+        callbackNotifier.sendDisputeReadyForCreateAdjustment(List.of(dispute));
         mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         log.info("Trying to set create_adjustment Dispute status {}, {}", dispute, result);
@@ -68,7 +68,7 @@ public class DisputeStatusResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handlePoolingExpired(Dispute dispute) {
-        defaultCallbackNotifier.sendDisputePoolingExpired(dispute);
+        callbackNotifier.sendDisputePoolingExpired(dispute);
         mdcTopicProducer.sendPoolingExpired(dispute);
         log.warn("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
         disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
@@ -82,7 +82,7 @@ public class DisputeStatusResultHandler {
     }
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
-        defaultCallbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
+        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
         log.warn("Trying to set manual_pending Dispute status {}, {}", dispute.getId(), errorMessage);
