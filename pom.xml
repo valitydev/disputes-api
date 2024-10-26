@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.0.2</version>
+        <version>3.0.3</version>
     </parent>
 
     <artifactId>disputes-api</artifactId>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>disputes-proto</artifactId>
-            <version>1.25-4aff8de</version>
+            <version>1.26-fc8e34f</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -62,6 +62,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
+            <version>1.648-ad715bd</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -86,6 +87,16 @@
             <groupId>dev.vality</groupId>
             <artifactId>adapter-flow-lib</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality.woody</groupId>
+            <artifactId>woody-thrift</artifactId>
+            <version>2.0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality.woody</groupId>
+            <artifactId>woody-api</artifactId>
+            <version>2.0.8</version>
         </dependency>
 
         <!--spring-->
