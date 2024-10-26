@@ -85,16 +85,16 @@ public class MockUtil {
                 .setProxy(new Proxy().setRef(new ProxyRef().setId(1))));
     }
 
-    public static CompletableFuture<ProxyDefinition> createProxy() {
-        return createProxy("http://127.0.0.1:8023");
-    }
-
-    public static CompletableFuture<ProxyDefinition> createProxy(Integer port) {
+    public static CompletableFuture<ProxyDefinition> createProxyNotFoundCase(Integer port) {
         return createProxy("http://127.0.0.1:" + port + "/debug/disputes-api/admin-management");
     }
 
     public static CompletableFuture<ProxyDefinition> createProxyWithRealAddress(Integer port) {
         return createProxy("http://127.0.0.1:" + port);
+    }
+
+    public static CompletableFuture<ProxyDefinition> createProxy() {
+        return createProxy("http://127.0.0.1:8023");
     }
 
     public static CompletableFuture<ProxyDefinition> createProxy(String url) {
@@ -188,7 +188,8 @@ public class MockUtil {
 
     public static WRuntimeException getUnexpectedResultWException() {
         var errorDefinition = new WErrorDefinition(WErrorSource.EXTERNAL);
-        errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, description = Tek seferde en fazla 4,000.00 işem yapılabilir.");
+        errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, description = " +
+                "Tek seferde en fazla 4,000.00 işem yapılabilir.");
         errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
         errorDefinition.setErrorSource(WErrorSource.INTERNAL);
         return new WRuntimeException(errorDefinition);

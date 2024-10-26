@@ -210,7 +210,7 @@ public class CreatedDisputesServiceTest {
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy(serverPort).get());
+        when(dominantService.getProxy(any())).thenReturn(createProxyNotFoundCase(serverPort).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
