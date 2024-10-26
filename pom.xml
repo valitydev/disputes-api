@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.0.3</version>
+        <version>3.0.2</version>
     </parent>
 
     <artifactId>disputes-api</artifactId>
