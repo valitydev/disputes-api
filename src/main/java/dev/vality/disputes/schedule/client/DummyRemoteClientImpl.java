@@ -7,6 +7,7 @@ import dev.vality.disputes.provider.DisputeCreatedSuccessResult;
 import dev.vality.disputes.schedule.model.ProviderData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +21,16 @@ import java.util.UUID;
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class DummyRemoteClientImpl implements DefaultRemoteClient {
 
+    private final String routeUrl = "tg-bot";
+
     @Override
     public Boolean routeUrlEquals(ProviderData providerData) {
-        return false; // todo
+        return StringUtils.equalsIgnoreCase(providerData.getRouteUrl(), routeUrl);
     }
 
     @Override
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
+        providerData.setRouteUrl(routeUrl);
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(UUID.randomUUID().toString()));
     }
 }

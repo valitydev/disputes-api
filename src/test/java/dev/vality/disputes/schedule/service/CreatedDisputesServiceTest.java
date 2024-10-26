@@ -92,7 +92,7 @@ public class CreatedDisputesServiceTest {
 
     @Test
     @SneakyThrows
-    public void testManualCreatedWhenIsNotProvidersDisputesApiExist() {
+    public void testManualPendingWhenIsNotProvidersDisputesApiExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
@@ -105,7 +105,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
         disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
