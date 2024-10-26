@@ -48,11 +48,12 @@ public class AdminManagementDisputesService {
             return;
         }
         var cancelReason = cancelParams.getCancelReason().orElse(null);
+        var mapping = cancelParams.getMapping().orElse(null);
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (DISPUTE_PENDING.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
-            log.warn("Trying to set cancelled Dispute status {}, {}", dispute, cancelReason);
-            disputeDao.update(dispute.getId(), DisputeStatus.cancelled, cancelReason);
+            log.warn("Trying to set cancelled Dispute status {}, {}, {}", dispute, mapping, cancelReason);
+            disputeDao.update(dispute.getId(), DisputeStatus.cancelled, cancelReason, mapping);
             log.debug("Dispute status has been set to cancelled {}", dispute);
         } else {
             log.info("Request was skipped by inappropriate status {}", dispute);

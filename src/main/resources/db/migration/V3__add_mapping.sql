@@ -1,0 +1,2 @@
+ALTER TABLE dspt.dispute
+    ADD COLUMN "mapping" CHARACTER VARYING;

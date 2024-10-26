@@ -21,13 +21,16 @@ public class MdcTopicProducer {
     @Value("${service.mdc-topic-producer.enabled}")
     private boolean enabled;
 
-    public void sendCreated(Dispute dispute, DisputeStatus disputeStatus) {
+    public void sendCreated(Dispute dispute, DisputeStatus disputeStatus, String errorMessage) {
         if (!enabled) {
             return;
         }
         var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
         contextMap.put("dispute_status", disputeStatus.name());
+        if (errorMessage != null) {
+            contextMap.put("dispute_error_message", errorMessage);
+        }
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");
         MDC.clear();

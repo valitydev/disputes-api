@@ -45,12 +45,13 @@ public class DisputeStatusResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleStatusFail(Dispute dispute, DisputeStatusResult result) {
-        var errorMessage = ErrorFormatter.getErrorMessage(result.getStatusFail().getFailure());
+        var failure = result.getStatusFail().getFailure();
+        var errorMessage = ErrorFormatter.getErrorMessage(failure);
         if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
-            handleUnexpectedResultMapping(dispute, result.getStatusFail().getFailure().getCode(), result.getStatusFail().getFailure().getReason());
+            handleUnexpectedResultMapping(dispute, failure.getCode(), failure.getReason());
         } else {
             log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
-            disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
+            disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage, failure.getCode());
             log.debug("Dispute status has been set to failed {}", dispute.getId());
         }
     }
@@ -69,7 +70,7 @@ public class DisputeStatusResultHandler {
     public void handlePoolingExpired(Dispute dispute) {
         defaultCallbackNotifier.sendDisputePoolingExpired(dispute);
         mdcTopicProducer.sendPoolingExpired(dispute);
-        log.error("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
+        log.warn("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
         disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
         log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
     }
@@ -82,8 +83,8 @@ public class DisputeStatusResultHandler {
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
         defaultCallbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
+        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
         log.warn("Trying to set manual_pending Dispute status {}, {}", dispute.getId(), errorMessage);
         disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, errorMessage);
         log.debug("Dispute status has been set to manual_pending {}", dispute.getId());

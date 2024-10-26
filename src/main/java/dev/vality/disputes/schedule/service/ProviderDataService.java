@@ -38,7 +38,7 @@ public class ProviderDataService {
         var terminal = dominantAsyncService.getTerminal(payment.getRoute().getTerminal());
         var proxy = dominantAsyncService.getProxy(provider.get().getProxy().getRef());
         return ProviderData.builder()
-            .options(OptionsExtractors.mergeOptions(provider.get(), proxy.get(), terminal.get()))
+                .options(OptionsExtractors.mergeOptions(provider.get(), proxy.get(), terminal.get()))
                 .defaultProviderUrl(proxy.get().getUrl())
                 .build();
     }

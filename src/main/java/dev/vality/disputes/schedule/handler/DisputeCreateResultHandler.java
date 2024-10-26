@@ -46,12 +46,13 @@ public class DisputeCreateResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleFailResult(Dispute dispute, DisputeCreatedResult result) {
-        var errorMessage = ErrorFormatter.getErrorMessage(result.getFailResult().getFailure());
+        var failure = result.getFailResult().getFailure();
+        var errorMessage = ErrorFormatter.getErrorMessage(failure);
         if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
-            handleUnexpectedResultMapping(dispute, result.getFailResult().getFailure().getCode(), result.getFailResult().getFailure().getReason());
+            handleUnexpectedResultMapping(dispute, failure.getCode(), failure.getReason());
         } else {
             log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
-            disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage);
+            disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage, failure.getCode());
             log.debug("Dispute status has been set to failed {}", dispute.getId());
         }
     }
@@ -59,7 +60,7 @@ public class DisputeCreateResultHandler {
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleAlreadyExistResult(Dispute dispute) {
         defaultCallbackNotifier.sendDisputeAlreadyCreated(dispute);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.already_exist_created);
+        mdcTopicProducer.sendCreated(dispute, DisputeStatus.already_exist_created, "dispute already exist");
         log.info("Trying to set {} Dispute status {}", DisputeStatus.already_exist_created, dispute);
         disputeDao.update(dispute.getId(), DisputeStatus.already_exist_created);
         log.debug("Dispute status has been set to {} {}", DisputeStatus.already_exist_created, dispute.getId());
@@ -73,8 +74,8 @@ public class DisputeCreateResultHandler {
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
         defaultCallbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
+        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created, errorMessage);
         log.warn("Trying to set manual_created Dispute status {}, {}", dispute.getId(), errorMessage);
         disputeDao.update(dispute.getId(), DisputeStatus.manual_created, errorMessage);
         log.debug("Dispute status has been set to manual_created {}", dispute.getId());
