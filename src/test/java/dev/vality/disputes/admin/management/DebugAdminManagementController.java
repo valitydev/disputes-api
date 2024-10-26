@@ -16,10 +16,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +61,12 @@ public class DebugAdminManagementController {
         var dispute = adminManagementHandler.getDisputes(objectMapper.readValue(body, DisputeParamsRequest.class));
         return objectMapper.convertValue(dispute, new TypeReference<>() {
         });
+    }
+
+    @GetMapping("/disputes")
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public void defaultRouteUrl() {
+        log.info("hi");
     }
 
     @Data

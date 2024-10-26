@@ -15,8 +15,10 @@ import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
+import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -76,6 +78,37 @@ public class PendingDisputesServiceTest {
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
     }
+
+    @Test
+    @SneakyThrows
+    public void testManualPendingWhenStatusFailResultWithDisputesUnknownMapping() {
+        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        var disputeStatusFailResult = createDisputeStatusFailResult();
+        disputeStatusFailResult.getStatusFail().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
+        when(providerMock.checkDisputeStatus(any())).thenReturn(disputeStatusFailResult);
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        var dispute = disputeDao.get(disputeId);
+        pendingDisputesService.callPendingDisputeRemotely(dispute.get());
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
+        assertTrue(disputeDao.get(disputeId).get().getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
+        disputeDao.update(disputeId, DisputeStatus.failed);
+    }
+
+    @Test
+    @SneakyThrows
+    public void testManualPendingWhenUnexpectedResultMapping() {
+        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        when(providerMock.checkDisputeStatus(any())).thenThrow(getUnexpectedResultWException());
+        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        var dispute = disputeDao.get(disputeId);
+        pendingDisputesService.callPendingDisputeRemotely(dispute.get());
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
+        assertTrue(disputeDao.get(disputeId).get().getErrorMessage().contains("Unexpected result"));
+        disputeDao.update(disputeId, DisputeStatus.failed);
+    }
+
 
     @Test
     @SneakyThrows
