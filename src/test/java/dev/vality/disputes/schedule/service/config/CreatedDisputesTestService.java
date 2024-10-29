@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestComponent
-@Import({DisputeApiTestService.class, RemoteClientTestConfig.class})
+@Import({DisputeApiTestService.class, RemoteClientTestConfig.class, DefaultRemoteClientTestConfig.class, CallbackNotifierTestConfig.class})
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class CreatedDisputesTestService {
 

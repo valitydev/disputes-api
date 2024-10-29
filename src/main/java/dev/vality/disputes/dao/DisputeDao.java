@@ -113,28 +113,32 @@ public class DisputeDao extends AbstractGenericDao {
     }
 
     public UUID update(UUID disputeId, DisputeStatus status) {
-        return update(disputeId, status, null, null, null, null);
+        return update(disputeId, status, null, null, null, null, null);
     }
 
     public UUID update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter) {
-        return update(disputeId, status, nextCheckAfter, null, null, null);
+        return update(disputeId, status, nextCheckAfter, null, null, null, null);
     }
 
     public UUID update(UUID disputeId, DisputeStatus status, String errorMessage) {
-        return update(disputeId, status, null, errorMessage, null, null);
+        return update(disputeId, status, null, errorMessage, null, null, null);
+    }
+
+    public UUID update(UUID disputeId, DisputeStatus status, String errorMessage, String mapping) {
+        return update(disputeId, status, null, errorMessage, null, null, mapping);
     }
 
     public UUID update(UUID disputeId, DisputeStatus status, Long changedAmount) {
-        return update(disputeId, status, null, null, changedAmount, null);
+        return update(disputeId, status, null, null, changedAmount, null, null);
     }
 
     public UUID update(UUID disputeId, DisputeStatus status, Long changedAmount,
                        Boolean skipCallHgForCreateAdjustment) {
-        return update(disputeId, status, null, null, changedAmount, skipCallHgForCreateAdjustment);
+        return update(disputeId, status, null, null, changedAmount, skipCallHgForCreateAdjustment, null);
     }
 
     private UUID update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage,
-                        Long changedAmount, Boolean skipCallHgForCreateAdjustment) {
+                        Long changedAmount, Boolean skipCallHgForCreateAdjustment, String mapping) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
@@ -142,6 +146,9 @@ public class DisputeDao extends AbstractGenericDao {
         }
         if (errorMessage != null) {
             set = set.set(DISPUTE.ERROR_MESSAGE, errorMessage);
+        }
+        if (mapping != null) {
+            set = set.set(DISPUTE.MAPPING, mapping);
         }
         if (changedAmount != null) {
             set = set.set(DISPUTE.CHANGED_AMOUNT, changedAmount);

@@ -22,23 +22,32 @@ public class ExternalGatewayChecker {
     private final CloseableHttpClient httpClient;
     private final ProviderRouting providerRouting;
 
-    public boolean isNotProvidersDisputesApiExist(ProviderData providerData, WRuntimeException e) {
+    public boolean isProvidersDisputesUnexpectedResultMapping(WRuntimeException e) {
         return e.getErrorDefinition() != null
                 && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
                 && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
                 && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && isNotFoundProvidersDisputesApi(providerData);
+                && e.getErrorDefinition().getErrorReason() != null
+                && e.getErrorDefinition().getErrorReason().contains("Unexpected result, code = ");
+    }
+
+    public boolean isProvidersDisputesApiNotExist(ProviderData providerData, WRuntimeException e) {
+        return e.getErrorDefinition() != null
+                && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
+                && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
+                && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
+                && isProvidersDisputesApiNotFound(providerData);
     }
 
     @SneakyThrows
-    private Boolean isNotFoundProvidersDisputesApi(ProviderData providerData) {
+    private Boolean isProvidersDisputesApiNotFound(ProviderData providerData) {
         return httpClient.execute(new HttpGet(getRouteUrl(providerData)), isNotFoundResponse());
     }
 
     private String getRouteUrl(ProviderData providerData) {
-        var routeUrl = providerRouting.getRouteUrl(providerData);
-        log.debug("Check adapter connection, routeUrl={}", routeUrl);
-        return routeUrl;
+        providerRouting.initRouteUrl(providerData);
+        log.debug("Check adapter connection, routeUrl={}", providerData.getRouteUrl());
+        return providerData.getRouteUrl();
     }
 
     private HttpClientResponseHandler<Boolean> isNotFoundResponse() {

@@ -31,11 +31,12 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
     }
 
     @Override
-    public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) throws DisputeNotFound, TException {
+    public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) throws TException {
         var response = disputesApiDelegate.status(getRequestID(), disputeContext.getDisputeId(), false).getBody();
         return switch (response.getStatus()) {
             case PENDING -> DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
-            case FAILED -> DisputeStatusResult.statusFail(new DisputeStatusFailResult(getErrorMessage(response)));
+            case FAILED ->
+                    DisputeStatusResult.statusFail(new DisputeStatusFailResult().setMapping(getMapping(response)));
             case SUCCEEDED -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult());
         };
     }
@@ -44,7 +45,7 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
         return UUID.randomUUID().toString();
     }
 
-    private String getErrorMessage(Status200Response response) {
+    private String getMapping(Status200Response response) {
         return Optional.ofNullable(response.getReason())
                 .map(GeneralError::getMessage)
                 .orElse(null);

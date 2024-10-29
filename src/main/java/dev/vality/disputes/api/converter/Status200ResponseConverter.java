@@ -12,8 +12,8 @@ public class Status200ResponseConverter {
     public Status200Response convert(Dispute dispute) {
         var body = new Status200Response();
         body.setStatus(getStatus(dispute));
-        if (!StringUtils.isBlank(dispute.getErrorMessage())) {
-            body.setReason(new GeneralError(dispute.getErrorMessage()));
+        if (!StringUtils.isBlank(dispute.getMapping())) {
+            body.setReason(new GeneralError(dispute.getMapping()));
         }
         if (dispute.getChangedAmount() != null) {
             body.setChangedAmount(dispute.getChangedAmount());

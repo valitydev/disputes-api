@@ -14,6 +14,10 @@ import dev.vality.file.storage.NewFileResult;
 import dev.vality.geck.common.util.TypeUtil;
 import dev.vality.token.keeper.AuthData;
 import dev.vality.token.keeper.AuthDataStatus;
+import dev.vality.woody.api.flow.error.WErrorDefinition;
+import dev.vality.woody.api.flow.error.WErrorSource;
+import dev.vality.woody.api.flow.error.WErrorType;
+import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import org.apache.thrift.TSerializer;
@@ -81,8 +85,16 @@ public class MockUtil {
                 .setProxy(new Proxy().setRef(new ProxyRef().setId(1))));
     }
 
+    public static CompletableFuture<ProxyDefinition> createProxyNotFoundCase(Integer port) {
+        return createProxy("http://127.0.0.1:" + port + "/debug/disputes-api/admin-management");
+    }
+
+    public static CompletableFuture<ProxyDefinition> createProxyWithRealAddress(Integer port) {
+        return createProxy("http://127.0.0.1:" + port);
+    }
+
     public static CompletableFuture<ProxyDefinition> createProxy() {
-        return createProxy("http://ya.ru");
+        return createProxy("http://127.0.0.1:8023");
     }
 
     public static CompletableFuture<ProxyDefinition> createProxy(String url) {
@@ -172,5 +184,14 @@ public class MockUtil {
         Failure failure = new Failure("some_error");
         failure.setSub(new SubFailure("some_suberror"));
         return failure;
+    }
+
+    public static WRuntimeException getUnexpectedResultWException() {
+        var errorDefinition = new WErrorDefinition(WErrorSource.EXTERNAL);
+        errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, description = " +
+                "Tek seferde en fazla 4,000.00 işem yapılabilir.");
+        errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
+        errorDefinition.setErrorSource(WErrorSource.INTERNAL);
+        return new WRuntimeException(errorDefinition);
     }
 }

@@ -64,6 +64,17 @@ service:
       shops:
         poolSize: 10
         ttlSec: 86400
+  disputes-tg-bot:
+    provider:
+      url: http://localhost:8022/change_it
+      networkTimeout: 5000
+      enabled: false
+    admin:
+      url: http://localhost:8022/change_it
+      networkTimeout: 5000
+      enabled: false
+  mdc-topic-producer:
+    enabled: true
   adapters:
     connection:
       timeoutSec: 30
@@ -106,18 +117,15 @@ dispute:
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
-  isScheduleReadyForCreateAdjustmentsEnabled: true
+  isScheduleReadyForCreateAdjustmentsEnabled: false
 
 time:
   config:
     max-time-polling-min: 600
 
-manual-parsing-topic:
-  enabled: true
-
 testcontainers:
   postgresql:
-    tag: '11.4'
+    tag: '14.12'
 
 http-client:
   requestTimeout: 60000
@@ -125,3 +133,7 @@ http-client:
   connectionTimeout: 10000
   maxTotalPooling: 200
   defaultMaxPerRoute: 200
+
+otel:
+  resource: http://localhost:4318/v1/traces
+  timeout: 60000

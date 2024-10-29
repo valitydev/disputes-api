@@ -1,9 +1,9 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
+import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.Attachment;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.admin.DisputeResult;
-import dev.vality.disputes.admin.ManualParsingServiceSrv;
 import dev.vality.disputes.config.SpringBootUTest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -19,17 +19,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @SpringBootUTest
-public class DebugManualParsingControllerTest {
+public class DebugAdminManagementControllerTest {
 
     @MockBean
-    private ManualParsingServiceSrv.Iface manualParsingHandler;
+    private AdminManagementServiceSrv.Iface adminManagementHandler;
     @Autowired
-    private DebugManualParsingController debugManualParsingController;
+    private DebugAdminManagementController debugAdminManagementController;
 
     @Test
     @SneakyThrows
     public void checkSerialization() {
-        debugManualParsingController.approvePending("""
+        debugAdminManagementController.approvePending("""
                 {
                   "approveParams": [
                     {
@@ -39,7 +39,7 @@ public class DebugManualParsingControllerTest {
                   ]
                 }
                 """);
-        debugManualParsingController.cancelPending("""
+        debugAdminManagementController.cancelPending("""
                 {
                   "cancelParams": [
                     {
@@ -49,7 +49,7 @@ public class DebugManualParsingControllerTest {
                   ]
                 }
                 """);
-        debugManualParsingController.cancelPending("""
+        debugAdminManagementController.cancelPending("""
                 {
                   "cancelParams": [
                     {
@@ -59,7 +59,7 @@ public class DebugManualParsingControllerTest {
                   ]
                 }
                 """);
-        debugManualParsingController.bindCreated("""
+        debugAdminManagementController.bindCreated("""
                   {
                     "bindParams": [
                       {
@@ -77,9 +77,9 @@ public class DebugManualParsingControllerTest {
         randomed.setDisputes(List.of(
                 randomThrift(Dispute.class).setAttachments(List.of(new Attachment().setData(b))),
                 randomThrift(Dispute.class).setAttachments(List.of(new Attachment().setData(a)))));
-        given(manualParsingHandler.getDisputes(any()))
+        given(adminManagementHandler.getDisputes(any()))
                 .willReturn(randomed);
-        var disputes = debugManualParsingController.getDisputes("""
+        var disputes = debugAdminManagementController.getDisputes("""
                   {
                     "disputeParams": [
                       {

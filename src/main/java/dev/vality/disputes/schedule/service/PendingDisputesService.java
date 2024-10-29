@@ -1,14 +1,13 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.manualparsing.ManualParsingTopic;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.schedule.catcher.WRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.schedule.handler.DisputeStatusResultHandler;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"MemberName", "ParameterName", "LineLength", "MissingSwitchDefault"})
 public class PendingDisputesService {
 
     private final RemoteClient remoteClient;
@@ -34,7 +33,7 @@ public class PendingDisputesService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final ProviderDataService providerDataService;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
-    private final ManualParsingTopic manualParsingTopic;
+    private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
@@ -65,15 +64,16 @@ public class PendingDisputesService {
             return;
         }
         if (pollingInfoService.isDeadline(dispute)) {
-            manualParsingTopic.sendPoolingExpired(dispute);
-            log.error("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
-            disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
-            log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
+            disputeStatusResultHandler.handlePoolingExpired(dispute);
             return;
         }
         log.debug("ProviderDispute has been found {}", dispute.getId());
-        var result = remoteClient.checkDisputeStatus(dispute, providerDispute, providerData);
-        finishTask(dispute, result, providerData.getOptions());
+        wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                () -> {
+                    var result = remoteClient.checkDisputeStatus(dispute, providerDispute, providerData);
+                    finishTask(dispute, result, providerData.getOptions());
+                },
+                e -> disputeStatusResultHandler.handleUnexpectedResultMapping(dispute, e));
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

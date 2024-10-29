@@ -1,8 +1,7 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.provider.Attachment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -11,26 +10,28 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class ManualParsingTopic {
+public class MdcTopicProducer {
 
-    @Value("${manual-parsing-topic.enabled}")
+    @Value("${service.mdc-topic-producer.enabled}")
     private boolean enabled;
 
-    public void sendCreated(Dispute dispute, List<Attachment> attachments, DisputeStatus disputeStatus) {
+    public void sendCreated(Dispute dispute, DisputeStatus disputeStatus, String errorMessage) {
         if (!enabled) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
-        var attachmentsCollect = attachments.stream().map(Attachment::toString).collect(Collectors.joining(", "));
-        contextMap.put("dispute_attachments", attachmentsCollect);
         contextMap.put("dispute_status", disputeStatus.name());
+        if (errorMessage != null) {
+            contextMap.put("dispute_error_message", errorMessage);
+        }
         MDC.setContextMap(contextMap);
         log.warn("Manual parsing case");
         MDC.clear();
@@ -40,7 +41,7 @@ public class ManualParsingTopic {
         if (!enabled) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_id", dispute.getId().toString());
         contextMap.put("dispute_status", DisputeStatus.manual_pending.name());
         MDC.setContextMap(contextMap);
@@ -52,11 +53,15 @@ public class ManualParsingTopic {
         if (!enabled || disputes.isEmpty()) {
             return;
         }
-        var contextMap = MDC.getCopyOfContextMap() == null ? new HashMap<String, String>() : MDC.getCopyOfContextMap();
+        var contextMap = getContextMap();
         contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
         contextMap.put("dispute_status", DisputeStatus.create_adjustment.name());
         MDC.setContextMap(contextMap);
         log.warn("Ready for CreateAdjustments case");
         MDC.clear();
+    }
+
+    private Map<String, String> getContextMap() {
+        return MDC.getCopyOfContextMap() == null ? new HashMap<>() : MDC.getCopyOfContextMap();
     }
 }

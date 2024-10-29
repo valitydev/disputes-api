@@ -11,5 +11,6 @@ public class ProviderData {
 
     private Map<String, String> options;
     private String defaultProviderUrl;
+    private String routeUrl;
 
 }

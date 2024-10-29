@@ -1,4 +1,4 @@
-package dev.vality.disputes.manualparsing;
+package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.admin.*;
 import dev.vality.disputes.dao.DisputeDao;
@@ -31,7 +31,7 @@ import static dev.vality.disputes.api.service.ApiDisputesService.DISPUTE_PENDING
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class ManualParsingDisputesService {
+public class AdminManagementDisputesService {
 
     private final DisputeDao disputeDao;
     private final ProviderDisputeDao providerDisputeDao;
@@ -48,11 +48,12 @@ public class ManualParsingDisputesService {
             return;
         }
         var cancelReason = cancelParams.getCancelReason().orElse(null);
+        var mapping = cancelParams.getMapping().orElse(null);
         log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (DISPUTE_PENDING.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
-            log.warn("Trying to set cancelled Dispute status {}, {}", dispute, cancelReason);
-            disputeDao.update(dispute.getId(), DisputeStatus.cancelled, cancelReason);
+            log.warn("Trying to set cancelled Dispute status {}, {}, {}", dispute, mapping, cancelReason);
+            disputeDao.update(dispute.getId(), DisputeStatus.cancelled, cancelReason, mapping);
             log.debug("Dispute status has been set to cancelled {}", dispute);
         } else {
             log.info("Request was skipped by inappropriate status {}", dispute);
@@ -133,6 +134,7 @@ public class ManualParsingDisputesService {
         disputeResult.setProviderTrxId(dispute.getProviderTrxId());
         disputeResult.setStatus(dispute.getStatus().name());
         disputeResult.setErrorMessage(dispute.getErrorMessage());
+        disputeResult.setMapping(dispute.getMapping());
         disputeResult.setAmount(String.valueOf(dispute.getAmount()));
         disputeResult.setChangedAmount(Optional.ofNullable(dispute.getChangedAmount())
                 .map(String::valueOf)
