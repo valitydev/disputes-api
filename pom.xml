@@ -228,6 +228,11 @@
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.29.0-alpha</version>
+        </dependency>
 
         <!--test-->
         <dependency>

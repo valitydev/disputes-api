@@ -17,17 +17,21 @@ public class DummyCallbackNotifierImpl implements CallbackNotifier {
 
     @Override
     public void sendDisputeAlreadyCreated(Dispute dispute) {
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeAlreadyCreated() {}", dispute.getId());
     }
 
     @Override
     public void sendDisputePoolingExpired(Dispute dispute) {
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputePoolingExpired() {}", dispute.getId());
     }
 
     @Override
     public void sendDisputeReadyForCreateAdjustment(List<Dispute> disputes) {
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeReadyForCreateAdjustment() {}", disputes.size());
     }
 
     @Override
     public void sendDisputeFailedReviewRequired(Dispute dispute, String errorCode, String errorDescription) {
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeFailedReviewRequired() {}", dispute.getId());
     }
 }

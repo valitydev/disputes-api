@@ -133,3 +133,7 @@ http-client:
   connectionTimeout: 10000
   maxTotalPooling: 200
   defaultMaxPerRoute: 200
+
+otel:
+  resource: http://localhost:4318/v1/traces
+  timeout: 60000

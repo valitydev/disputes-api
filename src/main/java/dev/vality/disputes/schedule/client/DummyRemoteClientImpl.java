@@ -30,6 +30,7 @@ public class DummyRemoteClientImpl implements DefaultRemoteClient {
 
     @Override
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
+        log.debug("Trying to call DummyRemoteClientImpl.createDispute() {}", dispute.getId());
         providerData.setRouteUrl(routeUrl);
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(UUID.randomUUID().toString()));
     }

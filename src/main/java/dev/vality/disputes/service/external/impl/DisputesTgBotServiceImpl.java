@@ -8,7 +8,6 @@ import dev.vality.disputes.service.external.DisputesTgBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,56 +32,44 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
     }
 
     @Override
+    @SneakyThrows
     public void sendDisputeAlreadyCreated(DisputeAlreadyCreated disputeAlreadyCreated) {
-        try {
-            log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() {}", disputeAlreadyCreated.getId());
-            adminCallbackDisputesTgBotClient.notify(
-                    new NotificationParamsRequest(List.of(Notification.disputeAlreadyCreated(disputeAlreadyCreated))));
-            log.debug("adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() has been called {}", disputeAlreadyCreated.getId());
-        } catch (TException e) {
-            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() with id: {}}", disputeAlreadyCreated.getId(), e);
-        }
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() {}", disputeAlreadyCreated.getId());
+        adminCallbackDisputesTgBotClient.notify(
+                new NotificationParamsRequest(List.of(Notification.disputeAlreadyCreated(disputeAlreadyCreated))));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() has been called {}", disputeAlreadyCreated.getId());
     }
 
     @Override
+    @SneakyThrows
     public void sendDisputePoolingExpired(DisputePoolingExpired disputePoolingExpired) {
-        try {
-            log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() {}", disputePoolingExpired.getId());
-            adminCallbackDisputesTgBotClient.notify(
-                    new NotificationParamsRequest(List.of(Notification.disputePoolingExpired(disputePoolingExpired))));
-            log.debug("adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() has been called {}", disputePoolingExpired.getId());
-        } catch (TException e) {
-            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() with id: {}}", disputePoolingExpired.getId(), e);
-        }
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() {}", disputePoolingExpired.getId());
+        adminCallbackDisputesTgBotClient.notify(
+                new NotificationParamsRequest(List.of(Notification.disputePoolingExpired(disputePoolingExpired))));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() has been called {}", disputePoolingExpired.getId());
     }
 
     @Override
+    @SneakyThrows
     public void sendDisputeReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputeReadyForCreateAdjustments) {
         var ids = disputeReadyForCreateAdjustments.stream()
                 .map(DisputeReadyForCreateAdjustment::getId)
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
-        try {
-            log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", ids);
-            var notifications = disputeReadyForCreateAdjustments.stream()
-                    .map(Notification::disputeReadyForCreateAdjustment)
-                    .collect(Collectors.toList());
-            adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
-            log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", ids);
-        } catch (TException e) {
-            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() with id: {}}", ids, e);
-        }
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", ids);
+        var notifications = disputeReadyForCreateAdjustments.stream()
+                .map(Notification::disputeReadyForCreateAdjustment)
+                .collect(Collectors.toList());
+        adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", ids);
     }
 
     @Override
+    @SneakyThrows
     public void sendDisputeFailedReviewRequired(DisputeFailedReviewRequired disputeFailedReviewRequired) {
-        try {
-            log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() {}", disputeFailedReviewRequired.getId());
-            adminCallbackDisputesTgBotClient.notify(
-                    new NotificationParamsRequest(List.of(Notification.disputeFailedReviewRequired(disputeFailedReviewRequired))));
-            log.debug("adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() has been called {}", disputeFailedReviewRequired.getId());
-        } catch (TException e) {
-            log.error("Failed to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() with id: {}}", disputeFailedReviewRequired.getId(), e);
-        }
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() {}", disputeFailedReviewRequired.getId());
+        adminCallbackDisputesTgBotClient.notify(
+                new NotificationParamsRequest(List.of(Notification.disputeFailedReviewRequired(disputeFailedReviewRequired))));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() has been called {}", disputeFailedReviewRequired.getId());
     }
 }
