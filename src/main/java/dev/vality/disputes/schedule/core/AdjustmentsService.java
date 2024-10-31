@@ -10,6 +10,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.converter.InvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.schedule.converter.InvoicePaymentCashFlowAdjustmentParamsConverter;
 import dev.vality.disputes.schedule.converter.InvoicePaymentFailedAdjustmentParamsConverter;
+import dev.vality.disputes.schedule.result.ErrorResultHandler;
 import dev.vality.disputes.schedule.service.AdjustmentExtractor;
 import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class AdjustmentsService {
     private final InvoicePaymentCashFlowAdjustmentParamsConverter invoicePaymentCashFlowAdjustmentParamsConverter;
     private final InvoicePaymentFailedAdjustmentParamsConverter invoicePaymentFailedAdjustmentParamsConverter;
     private final AdjustmentExtractor adjustmentExtractor;
+    private final ErrorResultHandler errorResultHandler;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getDisputesForHgCall(int batchSize) {
@@ -62,16 +64,13 @@ public class AdjustmentsService {
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            updateFailed(dispute, ErrorReason.PAYMENT_NOT_FOUND);
+            errorResultHandler.updateFailed(dispute, ErrorReason.PAYMENT_NOT_FOUND);
             return;
         }
         if (!adjustmentExtractor.isCashFlowAdjustmentByDisputeExist(invoicePayment, dispute)
                 && !Objects.equals(dispute.getAmount(), dispute.getChangedAmount())) {
             var params = invoicePaymentCashFlowAdjustmentParamsConverter.convert(dispute);
-            var paymentAdjustment = createAdjustment(dispute, params);
-            if (paymentAdjustment == null) {
-                var errorReason = ErrorReason.INVOICE_NOT_FOUND;
-                updateFailed(dispute, errorReason);
+            if (!createAdjustment(dispute, params)) {
                 return;
             }
         } else {
@@ -80,16 +79,12 @@ public class AdjustmentsService {
         if (!adjustmentExtractor.isCapturedAdjustmentByDisputeExist(invoicePayment, dispute)) {
             if (invoicePayment.getPayment().getStatus().isSetCaptured()) {
                 var params = invoicePaymentFailedAdjustmentParamsConverter.convert(dispute);
-                var paymentAdjustment = createAdjustment(dispute, params);
-                if (paymentAdjustment == null) {
-                    updateFailed(dispute, ErrorReason.INVOICE_NOT_FOUND);
+                if (!createAdjustment(dispute, params)) {
                     return;
                 }
             }
             var params = invoicePaymentCapturedAdjustmentParamsConverter.convert(dispute);
-            var paymentAdjustment = createAdjustment(dispute, params);
-            if (paymentAdjustment == null) {
-                updateFailed(dispute, ErrorReason.INVOICE_NOT_FOUND);
+            if (!createAdjustment(dispute, params)) {
                 return;
             }
         } else {
@@ -100,14 +95,18 @@ public class AdjustmentsService {
         log.debug("Dispute status has been set to succeeded {}", dispute.getId());
     }
 
+
     @Transactional(propagation = Propagation.REQUIRED)
-    void updateFailed(Dispute dispute, String errorReason) {
-        log.error("Trying to set failed Dispute status with {} error reason {}", errorReason, dispute.getId());
-        disputeDao.update(dispute.getId(), DisputeStatus.failed, errorReason);
-        log.debug("Dispute status has been set to failed {}", dispute.getId());
+    boolean createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
+        var paymentAdjustment = createPaymentAdjustment(dispute, params);
+        if (paymentAdjustment == null) {
+            errorResultHandler.updateFailed(dispute, ErrorReason.INVOICE_NOT_FOUND);
+            return false;
+        }
+        return true;
     }
 
-    private InvoicePaymentAdjustment createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
+    private InvoicePaymentAdjustment createPaymentAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
         return invoicingService.createPaymentAdjustment(dispute.getInvoiceId(), dispute.getPaymentId(), params);
     }
 

@@ -9,7 +9,7 @@ import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.schedule.catcher.WRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.RemoteClient;
-import dev.vality.disputes.schedule.handler.DisputeStatusResultHandler;
+import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

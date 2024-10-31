@@ -9,8 +9,9 @@ import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.schedule.catcher.WRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
-import dev.vality.disputes.schedule.handler.DisputeCreateResultHandler;
 import dev.vality.disputes.schedule.model.ProviderData;
+import dev.vality.disputes.schedule.result.DisputeCreateResultHandler;
+import dev.vality.disputes.schedule.result.ErrorResultHandler;
 import dev.vality.disputes.schedule.service.AttachmentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.external.InvoicingService;
@@ -40,6 +41,7 @@ public class CreatedDisputesService {
     private final ProviderDataService providerDataService;
     private final DefaultRemoteClient defaultRemoteClient;
     private final DisputeCreateResultHandler disputeCreateResultHandler;
+    private final ErrorResultHandler errorResultHandler;
     private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -61,16 +63,12 @@ public class CreatedDisputesService {
         log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
         var invoicePayment = getInvoicePayment(dispute);
         if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            log.error("Trying to set failed Dispute status with PAYMENT_NOT_FOUND error reason {}", dispute.getId());
-            disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.PAYMENT_NOT_FOUND);
-            log.debug("Dispute status has been set to failed {}", dispute.getId());
+            errorResultHandler.updateFailed(dispute, ErrorReason.PAYMENT_NOT_FOUND);
             return;
         }
         var attachments = attachmentsService.getAttachments(dispute);
         if (attachments == null || attachments.isEmpty()) {
-            log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute.getId());
-            disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.NO_ATTACHMENTS);
-            log.debug("Dispute status has been set to failed {}", dispute.getId());
+            errorResultHandler.updateFailed(dispute, ErrorReason.NO_ATTACHMENTS);
             return;
         }
         var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());

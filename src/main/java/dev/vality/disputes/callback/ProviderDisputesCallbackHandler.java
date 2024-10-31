@@ -2,7 +2,7 @@ package dev.vality.disputes.callback;
 
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
-import dev.vality.disputes.schedule.handler.DisputeStatusResultHandler;
+import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
