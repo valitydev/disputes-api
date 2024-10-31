@@ -5,4 +5,7 @@ public class InvoicingPaymentStatusPendingException extends RuntimeException {
     public InvoicingPaymentStatusPendingException(Throwable cause) {
         super(cause);
     }
+
+    public InvoicingPaymentStatusPendingException() {
+    }
 }

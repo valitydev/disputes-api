@@ -3,7 +3,7 @@ package dev.vality.disputes.schedule.service.config;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
-import dev.vality.disputes.schedule.service.PendingDisputesService;
+import dev.vality.disputes.schedule.core.PendingDisputesService;
 import dev.vality.disputes.schedule.service.ProviderIfaceBuilder;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -58,7 +58,9 @@ public class MockUtil {
                                                         BankCard.class))))))
                         .setCost(new Cash()
                                 .setCurrency(new CurrencyRef().setSymbolicCode("RUB")))
-                        .setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending())))
+                        .setStatus(InvoicePaymentStatus.failed(
+                                new InvoicePaymentFailed(OperationFailure.failure(
+                                        new Failure("authorization_failed:unknown"))))))
                 .setRoute(new PaymentRoute()
                         .setProvider(DamselUtil.fillRequiredTBaseObject(new ProviderRef(), ProviderRef.class))
                         .setTerminal(DamselUtil.fillRequiredTBaseObject(new TerminalRef(), TerminalRef.class)))
@@ -170,14 +172,23 @@ public class MockUtil {
         return DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
     }
 
-    public static InvoicePaymentAdjustment getInvoicePaymentAdjustment(String adjustmentId, String reason) {
+    public static InvoicePaymentAdjustment getCapturedInvoicePaymentAdjustment(String adjustmentId, String reason) {
         return new InvoicePaymentAdjustment()
                 .setId(adjustmentId)
+                .setReason(reason)
                 .setState(InvoicePaymentAdjustmentState.status_change(new InvoicePaymentAdjustmentStatusChangeState()
                         .setScenario(new InvoicePaymentAdjustmentStatusChange()
                                 .setTargetStatus(new InvoicePaymentStatus(InvoicePaymentStatus.captured(
                                         new InvoicePaymentCaptured()
                                                 .setReason(reason)))))));
+    }
+
+    public static InvoicePaymentAdjustment getCashFlowInvoicePaymentAdjustment(String adjustmentId, String reason) {
+        return new InvoicePaymentAdjustment()
+                .setId(adjustmentId)
+                .setReason(reason)
+                .setState(InvoicePaymentAdjustmentState.cash_flow(new InvoicePaymentAdjustmentCashFlowState()
+                        .setScenario(new InvoicePaymentAdjustmentCashFlow().setNewAmount(10L))));
     }
 
     public static Failure createFailure() {

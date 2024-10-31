@@ -34,13 +34,13 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
     }
 
     @Override
-    public void sendDisputeReadyForCreateAdjustment(List<Dispute> disputes) {
+    public void sendDisputesReadyForCreateAdjustment(List<Dispute> disputes) {
         var disputeReadyForCreateAdjustments = disputes.stream()
                 .map(Dispute::getId)
                 .map(UUID::toString)
                 .map(DisputeReadyForCreateAdjustment::new)
                 .toList();
-        disputesTgBotService.sendDisputeReadyForCreateAdjustment(disputeReadyForCreateAdjustments);
+        disputesTgBotService.sendDisputesReadyForCreateAdjustment(disputeReadyForCreateAdjustments);
     }
 
     @Override

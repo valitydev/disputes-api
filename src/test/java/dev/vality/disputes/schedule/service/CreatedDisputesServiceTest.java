@@ -8,6 +8,7 @@ import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
+import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
@@ -65,19 +66,6 @@ public class CreatedDisputesServiceTest {
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
         assertEquals(ErrorReason.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).get().getErrorMessage());
-    }
-
-    @Test
-    @SneakyThrows
-    public void testSkipDisputeWhenPaymentNonFinalStatus() {
-        var invoiceId = "20McecNnWoy";
-        var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
-        var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
     }
 
     @Test

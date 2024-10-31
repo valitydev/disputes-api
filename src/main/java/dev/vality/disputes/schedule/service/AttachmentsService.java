@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CreatedAttachmentsService {
+public class AttachmentsService {
 
     private final FileMetaDao fileMetaDao;
     private final FileStorageService fileStorageService;

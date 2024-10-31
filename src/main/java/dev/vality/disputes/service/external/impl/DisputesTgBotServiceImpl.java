@@ -51,13 +51,13 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
 
     @Override
     @SneakyThrows
-    public void sendDisputeReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputeReadyForCreateAdjustments) {
-        var ids = disputeReadyForCreateAdjustments.stream()
+    public void sendDisputesReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputesReadyForCreateAdjustments) {
+        var ids = disputesReadyForCreateAdjustments.stream()
                 .map(DisputeReadyForCreateAdjustment::getId)
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
         log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", ids);
-        var notifications = disputeReadyForCreateAdjustments.stream()
+        var notifications = disputesReadyForCreateAdjustments.stream()
                 .map(Notification::disputeReadyForCreateAdjustment)
                 .collect(Collectors.toList());
         adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));

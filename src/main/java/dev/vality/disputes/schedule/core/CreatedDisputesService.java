@@ -1,4 +1,4 @@
-package dev.vality.disputes.schedule.service;
+package dev.vality.disputes.schedule.core;
 
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorReason;
@@ -11,6 +11,8 @@ import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
 import dev.vality.disputes.schedule.handler.DisputeCreateResultHandler;
 import dev.vality.disputes.schedule.model.ProviderData;
+import dev.vality.disputes.schedule.service.AttachmentsService;
+import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,7 @@ public class CreatedDisputesService {
 
     private final RemoteClient remoteClient;
     private final DisputeDao disputeDao;
-    private final CreatedAttachmentsService createdAttachmentsService;
+    private final AttachmentsService attachmentsService;
     private final InvoicingService invoicingService;
     private final ProviderDataService providerDataService;
     private final DefaultRemoteClient defaultRemoteClient;
@@ -64,13 +66,7 @@ public class CreatedDisputesService {
             log.debug("Dispute status has been set to failed {}", dispute.getId());
             return;
         }
-        var status = invoicePayment.getPayment().getStatus();
-        if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
-            // не создаем диспут, пока платеж не финален
-            log.warn("Payment has non-final status {} {}", status, dispute.getId());
-            return;
-        }
-        var attachments = createdAttachmentsService.getAttachments(dispute);
+        var attachments = attachmentsService.getAttachments(dispute);
         if (attachments == null || attachments.isEmpty()) {
             log.error("Trying to set failed Dispute status with NO_ATTACHMENTS error reason {}", dispute.getId());
             disputeDao.update(dispute.getId(), DisputeStatus.failed, ErrorReason.NO_ATTACHMENTS);
@@ -79,7 +75,7 @@ public class CreatedDisputesService {
         }
         var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
         var options = providerData.getOptions();
-        if ((status.isSetCaptured() && isCapturedBlockedForDispute(options))
+        if ((invoicePayment.getPayment().getStatus().isSetCaptured() && isCapturedBlockedForDispute(options))
                 || isNotProvidersDisputesApiExist(options)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST

@@ -1,7 +1,7 @@
 package dev.vality.disputes.schedule.handler;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.schedule.service.CreatedDisputesService;
+import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
