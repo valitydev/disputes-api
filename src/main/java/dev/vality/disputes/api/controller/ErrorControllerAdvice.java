@@ -1,6 +1,7 @@
 package dev.vality.disputes.api.controller;
 
 import dev.vality.disputes.exception.AuthorizationException;
+import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.TokenKeeperException;
 import dev.vality.swag.disputes.model.GeneralError;
@@ -34,6 +35,14 @@ import static org.springframework.http.ResponseEntity.status;
 public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
+
+    @ExceptionHandler({InvoicingPaymentStatusPendingException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleInvalidMimeTypeException(InvoicingPaymentStatusPendingException e) {
+        log.warn("<- Res [400]: Payment has non-final status", e);
+        return new GeneralError()
+                .message("Payment has non-final status");
+    }
 
     @ExceptionHandler({InvalidMimeTypeException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)

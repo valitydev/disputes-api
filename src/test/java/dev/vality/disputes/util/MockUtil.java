@@ -58,7 +58,9 @@ public class MockUtil {
                                                         BankCard.class))))))
                         .setCost(new Cash()
                                 .setCurrency(new CurrencyRef().setSymbolicCode("RUB")))
-                        .setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending())))
+                        .setStatus(InvoicePaymentStatus.failed(
+                                new InvoicePaymentFailed(OperationFailure.failure(
+                                        new Failure("authorization_failed:unknown"))))))
                 .setRoute(new PaymentRoute()
                         .setProvider(DamselUtil.fillRequiredTBaseObject(new ProviderRef(), ProviderRef.class))
                         .setTerminal(DamselUtil.fillRequiredTBaseObject(new TerminalRef(), TerminalRef.class)))

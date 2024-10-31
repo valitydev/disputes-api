@@ -8,6 +8,7 @@ import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.schedule.converter.InvoicePaymentCapturedAdjustmentParamsConverter;
+import dev.vality.disputes.schedule.core.AdjustmentsService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.util.MockUtil;
@@ -28,14 +29,14 @@ import static org.mockito.Mockito.when;
 @WireMockSpringBootITest
 @Import({PendingDisputesTestService.class})
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class CreateAdjustmentsServiceTest {
+public class AdjustmentsServiceTest {
 
     @Autowired
     private InvoicingSrv.Iface invoicingClient;
     @Autowired
     private DisputeDao disputeDao;
     @Autowired
-    private CreateAdjustmentsService createAdjustmentsService;
+    private AdjustmentsService adjustmentsService;
     @Autowired
     private DisputeApiTestService disputeApiTestService;
     @Autowired
@@ -53,7 +54,7 @@ public class CreateAdjustmentsServiceTest {
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         disputeDao.update(disputeId, DisputeStatus.create_adjustment);
         var dispute = disputeDao.get(disputeId);
-        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
+        adjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
         assertEquals(ErrorReason.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).get().getErrorMessage());
     }
@@ -63,7 +64,7 @@ public class CreateAdjustmentsServiceTest {
     public void testInvoiceNotFound() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         var dispute = disputeDao.get(disputeId);
-        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
+        adjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
         assertEquals(ErrorReason.INVOICE_NOT_FOUND, disputeDao.get(disputeId).get().getErrorMessage());
     }
@@ -79,7 +80,7 @@ public class CreateAdjustmentsServiceTest {
         var reason = adjustmentExtractor.getReason(dispute.get());
         when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                 .thenReturn(getCapturedInvoicePaymentAdjustment(adjustmentId, reason));
-        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
+        adjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
         disputeDao.update(disputeId, DisputeStatus.failed);
     }
@@ -98,7 +99,7 @@ public class CreateAdjustmentsServiceTest {
                 getCapturedInvoicePaymentAdjustment(adjustmentId, adjustmentExtractor.getReason(dispute.get())),
                 getCashFlowInvoicePaymentAdjustment(adjustmentId, adjustmentExtractor.getReason(dispute.get()))));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
+        adjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
         disputeDao.update(disputeId, DisputeStatus.failed);
     }

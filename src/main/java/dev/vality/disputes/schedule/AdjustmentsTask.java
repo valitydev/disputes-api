@@ -1,8 +1,8 @@
 package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.schedule.handler.CreateAdjustmentHandler;
-import dev.vality.disputes.schedule.service.CreateAdjustmentsService;
+import dev.vality.disputes.schedule.core.AdjustmentsService;
+import dev.vality.disputes.schedule.handler.AdjustmentHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class TaskCreateAdjustmentsService {
+public class AdjustmentsTask {
 
     private final ExecutorService disputesThreadPool;
-    private final CreateAdjustmentsService createAdjustmentsService;
+    private final AdjustmentsService adjustmentsService;
     @Value("${dispute.batchSize}")
     private int batchSize;
 
@@ -31,7 +31,7 @@ public class TaskCreateAdjustmentsService {
     public void processPending() {
         log.debug("Processing create adjustments get started");
         try {
-            var disputes = createAdjustmentsService.getDisputesForHgCall(batchSize);
+            var disputes = adjustmentsService.getDisputesForHgCall(batchSize);
             var callables = disputes.stream()
                     .map(this::handleCreateAdjustment)
                     .collect(Collectors.toList());
@@ -46,6 +46,6 @@ public class TaskCreateAdjustmentsService {
     }
 
     private Callable<UUID> handleCreateAdjustment(Dispute dispute) {
-        return () -> new CreateAdjustmentHandler(createAdjustmentsService).handle(dispute);
+        return () -> new AdjustmentHandler(adjustmentsService).handle(dispute);
     }
 }

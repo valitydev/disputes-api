@@ -17,7 +17,7 @@ public interface DisputesTgBotService {
 
     void sendDisputePoolingExpired(DisputePoolingExpired disputePoolingExpired);
 
-    void sendDisputeReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputeReadyForCreateAdjustments);
+    void sendDisputesReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputeReadyForCreateAdjustments);
 
     void sendDisputeFailedReviewRequired(DisputeFailedReviewRequired disputeFailedReviewRequired);
 

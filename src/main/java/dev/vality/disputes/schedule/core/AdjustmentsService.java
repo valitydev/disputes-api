@@ -1,4 +1,4 @@
-package dev.vality.disputes.schedule.service;
+package dev.vality.disputes.schedule.core;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.InvoicePayment;
@@ -10,6 +10,7 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.converter.InvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.schedule.converter.InvoicePaymentCashFlowAdjustmentParamsConverter;
 import dev.vality.disputes.schedule.converter.InvoicePaymentFailedAdjustmentParamsConverter;
+import dev.vality.disputes.schedule.service.AdjustmentExtractor;
 import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class CreateAdjustmentsService {
+public class AdjustmentsService {
 
     private final DisputeDao disputeDao;
     private final InvoicingService invoicingService;
@@ -64,12 +65,6 @@ public class CreateAdjustmentsService {
             updateFailed(dispute, ErrorReason.PAYMENT_NOT_FOUND);
             return;
         }
-        var status = invoicePayment.getPayment().getStatus();
-        if (status.isSetPending()) {
-            // не создаем диспут, пока платеж не финален
-            log.warn("Payment has non-final status {} {}", status, dispute.getId());
-            return;
-        }
         if (!adjustmentExtractor.isCashFlowAdjustmentByDisputeExist(invoicePayment, dispute)
                 && !Objects.equals(dispute.getAmount(), dispute.getChangedAmount())) {
             var params = invoicePaymentCashFlowAdjustmentParamsConverter.convert(dispute);
@@ -83,7 +78,7 @@ public class CreateAdjustmentsService {
             log.info("Creating CashFlowAdjustment was skipped {}", dispute);
         }
         if (!adjustmentExtractor.isCapturedAdjustmentByDisputeExist(invoicePayment, dispute)) {
-            if (status.isSetCaptured()) {
+            if (invoicePayment.getPayment().getStatus().isSetCaptured()) {
                 var params = invoicePaymentFailedAdjustmentParamsConverter.convert(dispute);
                 var paymentAdjustment = createAdjustment(dispute, params);
                 if (paymentAdjustment == null) {

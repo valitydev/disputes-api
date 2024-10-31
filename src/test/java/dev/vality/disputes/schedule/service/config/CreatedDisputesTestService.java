@@ -6,7 +6,7 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
-import dev.vality.disputes.schedule.service.CreatedDisputesService;
+import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.service.ProviderIfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;

@@ -3,6 +3,7 @@ package dev.vality.disputes.security;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.BouncerException;
+import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.security.service.BouncerService;
 import dev.vality.disputes.security.service.TokenKeeperService;
@@ -93,12 +94,17 @@ public class AccessService {
 
     private InvoicePayment getInvoicePayment(dev.vality.damsel.payment_processing.Invoice invoice, String paymentId) {
         log.debug("Processing invoice: {}", invoice.getInvoice().getId());
-        return invoice.getPayments().stream()
-                .filter(invoicePayment -> paymentId.equals(invoicePayment.getPayment().getId())
-                        && invoicePayment.isSetRoute())
+        var invoicePayment = invoice.getPayments().stream()
+                .filter(p -> paymentId.equals(p.getPayment().getId()) && p.isSetRoute())
                 .findFirst()
                 // http 404
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Payment with id: %s and filled route not found!", paymentId)));
+                        String.format("Payment with id: %s and filled route and status not found!", paymentId)));
+        log.debug("Processing payment: {}", invoicePayment);
+        var status = invoicePayment.getPayment().getStatus();
+        if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
+            throw new InvoicingPaymentStatusPendingException();
+        }
+        return invoicePayment;
     }
 }
