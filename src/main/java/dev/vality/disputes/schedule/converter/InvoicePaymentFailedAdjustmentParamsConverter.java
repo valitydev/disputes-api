@@ -18,7 +18,7 @@ public class InvoicePaymentFailedAdjustmentParamsConverter {
         var invoicePaymentFailed = new InvoicePaymentFailed();
         var reason = adjustmentExtractor.getReason(dispute);
         invoicePaymentFailed.setFailure(OperationFailure.failure(
-                new Failure("fake_failed_by_disputes_api").setReason(reason)));
+                new Failure("failed_by_disputes_api").setReason(reason)));
         var params = new InvoicePaymentAdjustmentParams();
         params.setReason(reason);
         params.setScenario(getInvoicePaymentAdjustmentScenario(invoicePaymentFailed));
