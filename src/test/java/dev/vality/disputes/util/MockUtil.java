@@ -170,14 +170,23 @@ public class MockUtil {
         return DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
     }
 
-    public static InvoicePaymentAdjustment getInvoicePaymentAdjustment(String adjustmentId, String reason) {
+    public static InvoicePaymentAdjustment getCapturedInvoicePaymentAdjustment(String adjustmentId, String reason) {
         return new InvoicePaymentAdjustment()
                 .setId(adjustmentId)
+                .setReason(reason)
                 .setState(InvoicePaymentAdjustmentState.status_change(new InvoicePaymentAdjustmentStatusChangeState()
                         .setScenario(new InvoicePaymentAdjustmentStatusChange()
                                 .setTargetStatus(new InvoicePaymentStatus(InvoicePaymentStatus.captured(
                                         new InvoicePaymentCaptured()
                                                 .setReason(reason)))))));
+    }
+
+    public static InvoicePaymentAdjustment getCashFlowInvoicePaymentAdjustment(String adjustmentId, String reason) {
+        return new InvoicePaymentAdjustment()
+                .setId(adjustmentId)
+                .setReason(reason)
+                .setState(InvoicePaymentAdjustmentState.cash_flow(new InvoicePaymentAdjustmentCashFlowState()
+                        .setScenario(new InvoicePaymentAdjustmentCashFlow().setNewAmount(10L))));
     }
 
     public static Failure createFailure() {

@@ -7,7 +7,7 @@ import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
-import dev.vality.disputes.schedule.converter.InvoicePaymentAdjustmentParamsConverter;
+import dev.vality.disputes.schedule.converter.InvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.util.MockUtil;
@@ -19,7 +19,8 @@ import org.springframework.context.annotation.Import;
 import java.util.List;
 import java.util.UUID;
 
-import static dev.vality.disputes.util.MockUtil.getInvoicePaymentAdjustment;
+import static dev.vality.disputes.util.MockUtil.getCapturedInvoicePaymentAdjustment;
+import static dev.vality.disputes.util.MockUtil.getCashFlowInvoicePaymentAdjustment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -40,7 +41,9 @@ public class CreateAdjustmentsServiceTest {
     @Autowired
     private PendingDisputesTestService pendingDisputesTestService;
     @Autowired
-    private InvoicePaymentAdjustmentParamsConverter invoicePaymentAdjustmentParamsConverter;
+    private InvoicePaymentCapturedAdjustmentParamsConverter invoicePaymentCapturedAdjustmentParamsConverter;
+    @Autowired
+    private AdjustmentExtractor adjustmentExtractor;
 
     @Test
     @SneakyThrows
@@ -57,31 +60,8 @@ public class CreateAdjustmentsServiceTest {
 
     @Test
     @SneakyThrows
-    public void testDisputesAdjustmentExist() {
-        var invoiceId = "20McecNnWoy";
-        var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        disputeDao.update(disputeId, DisputeStatus.create_adjustment);
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        var dispute = disputeDao.get(disputeId);
-        dispute.get().setReason("test adj");
-        var adjustmentId = "adjustmentId";
-        var invoicePaymentAdjustment = getInvoicePaymentAdjustment(adjustmentId, invoicePaymentAdjustmentParamsConverter.getReason(dispute.get()));
-        invoicePayment.setAdjustments(List.of(invoicePaymentAdjustment));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
-    }
-
-    @Test
-    @SneakyThrows
     public void testInvoiceNotFound() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        var paymentId = "1";
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         var dispute = disputeDao.get(disputeId);
         createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
@@ -92,15 +72,32 @@ public class CreateAdjustmentsServiceTest {
     @SneakyThrows
     public void testFullSuccessFlow() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        var paymentId = "1";
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         var dispute = disputeDao.get(disputeId);
         dispute.get().setReason("test adj");
+        dispute.get().setChangedAmount(dispute.get().getAmount() + 1);
         var adjustmentId = "adjustmentId";
-        var reason = invoicePaymentAdjustmentParamsConverter.getReason(dispute.get());
+        var reason = adjustmentExtractor.getReason(dispute.get());
         when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
-                .thenReturn(getInvoicePaymentAdjustment(adjustmentId, reason));
+                .thenReturn(getCapturedInvoicePaymentAdjustment(adjustmentId, reason));
+        createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.update(disputeId, DisputeStatus.failed);
+    }
+
+    @Test
+    @SneakyThrows
+    public void testDisputesAdjustmentExist() {
+        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var dispute = disputeDao.get(disputeId);
+        dispute.get().setReason("test adj");
+        dispute.get().setChangedAmount(dispute.get().getAmount() + 1);
+        var adjustmentId = "adjustmentId";
+        var invoicePayment = MockUtil.createInvoicePayment(dispute.get().getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
+        invoicePayment.setAdjustments(List.of(
+                getCapturedInvoicePaymentAdjustment(adjustmentId, adjustmentExtractor.getReason(dispute.get())),
+                getCashFlowInvoicePaymentAdjustment(adjustmentId, adjustmentExtractor.getReason(dispute.get()))));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         createAdjustmentsService.callHgForCreateAdjustment(dispute.get());
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
         disputeDao.update(disputeId, DisputeStatus.failed);
