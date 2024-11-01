@@ -97,10 +97,12 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
         transactionContext.setTerminalOptions(paymentParams.getOptions());
         log.info("call remoteClient.isPaymentSuccess {}", transactionContext);
         try {
-            if (remoteClient.isPaymentSuccess(transactionContext)) {
+            var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext);
+            if (paymentStatusResult.isSuccess()) {
                 var providerCallback = new ProviderCallback();
                 providerCallback.setInvoiceId(paymentParams.getInvoiceId());
                 providerCallback.setPaymentId(paymentParams.getPaymentId());
+                providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
                 providerCallbackDao.save(providerCallback);
                 log.info("providerCallback {}", providerCallback);
             }

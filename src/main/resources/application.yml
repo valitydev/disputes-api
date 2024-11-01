@@ -112,7 +112,7 @@ dispute:
   initialDelayCreated: 5000
   initialDelayPending: 5000
   initialDelayCreateAdjustments: 5000
-  cronForgottenDisputesNotifications: 0 0 * * *
+  cronForgottenDisputesNotifications: 0 0 0 * * *
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
