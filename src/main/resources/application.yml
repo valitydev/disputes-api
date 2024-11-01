@@ -117,6 +117,7 @@ dispute:
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
   isScheduleForgottenDisputesNotificationsEnabled: false
+  isTestAdjustmentFromCallbackEnabled: false
 
 time:
   config:

@@ -80,6 +80,16 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
+    public List<Dispute> getDisputesForUpdateSkipLocked(String invoiceId, String paymentId) {
+        var query = getDslContext().selectFrom(DISPUTE)
+                .where(DISPUTE.INVOICE_ID.eq(invoiceId)
+                        .and(DISPUTE.PAYMENT_ID.eq(paymentId)))
+                .forUpdate()
+                .skipLocked();
+        return Optional.ofNullable(fetch(query, disputeRowMapper))
+                .orElse(List.of());
+    }
+
     public List<Dispute> getDisputesForHgCall(int limit) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.STATUS.eq(DisputeStatus.create_adjustment)
