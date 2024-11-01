@@ -20,6 +20,6 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
 
     @Override
     public void createAdjustmentIfPaymentSuccess(DisputeCallbackParams disputeCallbackParams) throws TException {
-
+        log.info("{}", disputeCallbackParams);
     }
 }
