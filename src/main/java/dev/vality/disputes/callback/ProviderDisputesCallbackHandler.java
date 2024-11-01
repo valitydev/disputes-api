@@ -45,7 +45,7 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
     @Override
     @Transactional
     public void createAdjustmentIfPaymentSuccess(DisputeCallbackParams disputeCallbackParams) throws TException {
-        log.debug("disputeCallbackParams {}", disputeCallbackParams);
+        log.info("disputeCallbackParams {}", disputeCallbackParams);
         if (!enabled) {
             return;
         }
@@ -72,7 +72,7 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
                                         .paymentId(disputeCallbackParams.getPaymentId().get())
                                         .build())))
                 .orElse(null);
-        log.debug("invoiceData {}", invoiceData);
+        log.info("invoiceData {}", invoiceData);
         if (invoiceData == null || invoiceData.getInvoiceId() == null) {
             return;
         }
@@ -95,10 +95,9 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
         transactionContext.setInvoiceId(paymentParams.getInvoiceId());
         transactionContext.setPaymentId(paymentParams.getPaymentId());
         transactionContext.setTerminalOptions(paymentParams.getOptions());
-        log.debug("call remoteClient.isPaymentSuccess {}", transactionContext);
+        log.info("call remoteClient.isPaymentSuccess {}", transactionContext);
         try {
             if (remoteClient.isPaymentSuccess(transactionContext)) {
-                log.debug("call remoteClient.isPaymentSuccess {}", transactionContext);
                 var testAdjustmentFromCallback = new TestAdjustmentFromCallback();
                 testAdjustmentFromCallback.setInvoiceId(paymentParams.getInvoiceId());
                 testAdjustmentFromCallback.setPaymentId(paymentParams.getPaymentId());
@@ -112,7 +111,7 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
     private AccessData getAccessData(InvoiceData invoiceData) {
         try {
             var accessData = accessService.approveUserAccess(invoiceData.getInvoiceId(), invoiceData.getPaymentId(), false);
-            log.debug("accessData {}", accessData);
+            log.info("accessData {}", accessData);
             return accessData;
         } catch (Throwable e) {
             log.warn("accessData error", e);
@@ -123,7 +122,7 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
     private PaymentParams getPaymentParams(AccessData accessData) {
         try {
             var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
-            log.debug("paymentParams {}", paymentParams);
+            log.info("paymentParams {}", paymentParams);
             return paymentParams;
         } catch (Throwable e) {
             log.warn("paymentParams error", e);
