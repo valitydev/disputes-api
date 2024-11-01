@@ -137,3 +137,4 @@ http-client:
 otel:
   resource: http://localhost:4318/v1/traces
   timeout: 60000
+  enabled: false
