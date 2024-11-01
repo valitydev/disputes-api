@@ -3,9 +3,9 @@ package dev.vality.disputes.callback;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.api.service.PaymentParamsBuilder;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.dao.TestAdjusmentFromCallbackDao;
+import dev.vality.disputes.dao.ProviderCallbackDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.domain.tables.pojos.TestAdjustmentFromCallback;
+import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.TransactionContext;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.schedule.service.ProviderIfaceBuilder;
@@ -37,9 +37,9 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
     private final ProviderDataService providerDataService;
     private final ProviderRouting providerRouting;
     private final ProviderIfaceBuilder providerIfaceBuilder;
-    private final TestAdjusmentFromCallbackDao testAdjusmentFromCallbackDao;
+    private final ProviderCallbackDao providerCallbackDao;
 
-    @Value("${dispute.isTestAdjustmentFromCallbackEnabled}")
+    @Value("${dispute.isProviderCallbackEnabled}")
     private boolean enabled;
 
     @Override
@@ -98,10 +98,11 @@ public class ProviderDisputesCallbackHandler implements ProviderDisputesCallback
         log.info("call remoteClient.isPaymentSuccess {}", transactionContext);
         try {
             if (remoteClient.isPaymentSuccess(transactionContext)) {
-                var testAdjustmentFromCallback = new TestAdjustmentFromCallback();
-                testAdjustmentFromCallback.setInvoiceId(paymentParams.getInvoiceId());
-                testAdjustmentFromCallback.setPaymentId(paymentParams.getPaymentId());
-                testAdjusmentFromCallbackDao.save(testAdjustmentFromCallback);
+                var providerCallback = new ProviderCallback();
+                providerCallback.setInvoiceId(paymentParams.getInvoiceId());
+                providerCallback.setPaymentId(paymentParams.getPaymentId());
+                providerCallbackDao.save(providerCallback);
+                log.info("providerCallback {}", providerCallback);
             }
         } catch (TException e) {
             log.warn("remoteClient.isPaymentSuccess error", e);

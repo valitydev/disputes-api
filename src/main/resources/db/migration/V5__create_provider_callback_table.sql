@@ -1,4 +1,4 @@
-CREATE TABLE dspt.test_adjustment_from_callback
+CREATE TABLE dspt.provider_callback
 (
     id                                 UUID                        NOT NULL DEFAULT gen_random_uuid(),
     invoice_id                         CHARACTER VARYING           NOT NULL,
