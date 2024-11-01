@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,17 +50,11 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
 
     @Override
     @SneakyThrows
-    public void sendDisputesReadyForCreateAdjustment(List<DisputeReadyForCreateAdjustment> disputesReadyForCreateAdjustments) {
-        var ids = disputesReadyForCreateAdjustments.stream()
-                .map(DisputeReadyForCreateAdjustment::getId)
-                .map(String::valueOf)
-                .collect(Collectors.joining(", "));
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", ids);
-        var notifications = disputesReadyForCreateAdjustments.stream()
-                .map(Notification::disputeReadyForCreateAdjustment)
-                .collect(Collectors.toList());
-        adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", ids);
+    public void sendDisputeReadyForCreateAdjustment(DisputeReadyForCreateAdjustment disputeReadyForCreateAdjustment) {
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", disputeReadyForCreateAdjustment.getId());
+        adminCallbackDisputesTgBotClient.notify(
+                new NotificationParamsRequest(List.of(Notification.disputeReadyForCreateAdjustment(disputeReadyForCreateAdjustment))));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", disputeReadyForCreateAdjustment.getId());
     }
 
     @Override
@@ -71,5 +64,14 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputeFailedReviewRequired(disputeFailedReviewRequired))));
         log.debug("adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() has been called {}", disputeFailedReviewRequired.getId());
+    }
+
+    @Override
+    @SneakyThrows
+    public void sendForgottenDisputes(List<Notification> notifications) {
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendForgottenDisputes() {}", notifications.size());
+        adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
+        log.debug("adminCallbackDisputesTgBotClient.sendForgottenDisputes() has been called {}", notifications.size());
+
     }
 }

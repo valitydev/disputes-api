@@ -92,9 +92,13 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public List<Dispute> getReadyDisputesForCreateAdjustment() {
+    public List<Dispute> getForgottenDisputes() {
         var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(DisputeStatus.create_adjustment)
+                .where(DISPUTE.STATUS.ne(DisputeStatus.created)
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.pending))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.failed))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.cancelled))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.succeeded))
                         .and(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT.eq(true)))
                 .orderBy(DISPUTE.NEXT_CHECK_AFTER)
                 .forUpdate()

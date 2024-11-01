@@ -61,6 +61,17 @@ public class MdcTopicProducer {
         MDC.clear();
     }
 
+    public void sendForgottenDisputes(List<Dispute> disputes) {
+        if (!enabled || disputes.isEmpty()) {
+            return;
+        }
+        var contextMap = getContextMap();
+        contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
+        MDC.setContextMap(contextMap);
+        log.warn("Ready for CreateAdjustments case");
+        MDC.clear();
+    }
+
     private Map<String, String> getContextMap() {
         return MDC.getCopyOfContextMap() == null ? new HashMap<>() : MDC.getCopyOfContextMap();
     }

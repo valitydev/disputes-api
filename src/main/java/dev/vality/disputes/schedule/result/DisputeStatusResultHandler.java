@@ -58,7 +58,7 @@ public class DisputeStatusResultHandler {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void handleStatusSuccess(Dispute dispute, DisputeStatusResult result) {
-        callbackNotifier.sendDisputesReadyForCreateAdjustment(List.of(dispute));
+        callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
         mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         log.info("Trying to set create_adjustment Dispute status {}, {}", dispute, result);

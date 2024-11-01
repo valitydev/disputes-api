@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
         "dispute.isScheduleCreatedEnabled=false",
         "dispute.isSchedulePendingEnabled=false",
         "dispute.isScheduleCreateAdjustmentsEnabled=false",
-        "dispute.isScheduleReadyForCreateAdjustmentsEnabled=false",
+        "dispute.isScheduleForgottenDisputesNotificationsEnabled=false",
 })
 public @interface DisableScheduling {
 }
