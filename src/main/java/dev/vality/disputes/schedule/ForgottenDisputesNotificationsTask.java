@@ -24,8 +24,10 @@ public class ForgottenDisputesNotificationsTask {
     public void processForgottenDisputes() {
         log.debug("Processing ReadyForCreateAdjustments get started");
         var forgottenDisputes = disputeDao.getForgottenDisputes();
-        callbackNotifier.sendForgottenDisputes(forgottenDisputes);
-        mdcTopicProducer.sendForgottenDisputes(forgottenDisputes);
+        if (!forgottenDisputes.isEmpty()) {
+            callbackNotifier.sendForgottenDisputes(forgottenDisputes);
+            mdcTopicProducer.sendForgottenDisputes(forgottenDisputes);
+        }
         log.info("ReadyForCreateAdjustments were processed");
     }
 }
