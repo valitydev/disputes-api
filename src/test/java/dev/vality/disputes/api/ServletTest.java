@@ -76,7 +76,7 @@ public class ServletTest {
                 new DisputeCallbackParams(),
                 DisputeCallbackParams.class
         );
-        iface.changeStatus(request);
+        iface.createAdjustmentIfPaymentSuccess(request);
     }
 
     @Test

@@ -109,15 +109,15 @@ dispute:
   fixedDelayCreated: 5000
   fixedDelayPending: 5000
   fixedDelayCreateAdjustments: 5000
-  fixedDelayReadyForCreateAdjustments: 5000
   initialDelayCreated: 5000
   initialDelayPending: 5000
   initialDelayCreateAdjustments: 5000
-  initialDelayReadyForCreateAdjustments: 5000
+  cronForgottenDisputesNotifications: 0 0 * * *
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
-  isScheduleReadyForCreateAdjustmentsEnabled: false
+  isScheduleForgottenDisputesNotificationsEnabled: false
+  isProviderCallbackEnabled: false
 
 time:
   config:

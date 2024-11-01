@@ -10,8 +10,10 @@ public interface CallbackNotifier {
 
     void sendDisputePoolingExpired(Dispute dispute);
 
-    void sendDisputesReadyForCreateAdjustment(List<Dispute> disputes);
+    void sendDisputeReadyForCreateAdjustment(Dispute dispute);
 
     void sendDisputeFailedReviewRequired(Dispute dispute, String errorCode, String errorDescription);
+
+    void sendForgottenDisputes(List<Dispute> disputes);
 
 }

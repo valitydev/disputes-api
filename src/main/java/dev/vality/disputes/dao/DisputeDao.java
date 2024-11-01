@@ -80,6 +80,16 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
+    public List<Dispute> getDisputesForUpdateSkipLocked(String invoiceId, String paymentId) {
+        var query = getDslContext().selectFrom(DISPUTE)
+                .where(DISPUTE.INVOICE_ID.eq(invoiceId)
+                        .and(DISPUTE.PAYMENT_ID.eq(paymentId)))
+                .forUpdate()
+                .skipLocked();
+        return Optional.ofNullable(fetch(query, disputeRowMapper))
+                .orElse(List.of());
+    }
+
     public List<Dispute> getDisputesForHgCall(int limit) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.STATUS.eq(DisputeStatus.create_adjustment)
@@ -92,9 +102,13 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public List<Dispute> getReadyDisputesForCreateAdjustment() {
+    public List<Dispute> getForgottenDisputes() {
         var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(DisputeStatus.create_adjustment)
+                .where(DISPUTE.STATUS.ne(DisputeStatus.created)
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.pending))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.failed))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.cancelled))
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.succeeded))
                         .and(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT.eq(true)))
                 .orderBy(DISPUTE.NEXT_CHECK_AFTER)
                 .forUpdate()
