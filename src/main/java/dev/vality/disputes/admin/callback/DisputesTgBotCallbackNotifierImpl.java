@@ -22,23 +22,26 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
 
     @Override
     public void sendDisputeAlreadyCreated(Dispute dispute) {
-        disputesTgBotService.sendDisputeAlreadyCreated(new DisputeAlreadyCreated(dispute.getId().toString()));
+        disputesTgBotService.sendDisputeAlreadyCreated(new DisputeAlreadyCreated(
+                dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId()));
     }
 
     @Override
     public void sendDisputePoolingExpired(Dispute dispute) {
-        disputesTgBotService.sendDisputePoolingExpired(new DisputePoolingExpired(dispute.getId().toString()));
+        disputesTgBotService.sendDisputePoolingExpired(new DisputePoolingExpired(
+                dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId()));
     }
 
     @Override
     public void sendDisputeReadyForCreateAdjustment(Dispute dispute) {
-        disputesTgBotService.sendDisputeReadyForCreateAdjustment(new DisputeReadyForCreateAdjustment(dispute.getId().toString()));
+        disputesTgBotService.sendDisputeReadyForCreateAdjustment(new DisputeReadyForCreateAdjustment(
+                dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId()));
     }
 
     @Override
     public void sendDisputeFailedReviewRequired(Dispute dispute, String errorCode, String errorDescription) {
         disputesTgBotService.sendDisputeFailedReviewRequired(
-                new DisputeFailedReviewRequired(dispute.getId().toString(), errorCode)
+                new DisputeFailedReviewRequired(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId(), errorCode)
                         .setErrorDescription(errorDescription));
     }
 
@@ -47,13 +50,15 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
         var notifications = disputes.stream()
                 .map(dispute -> switch (dispute.getStatus()) {
                     case manual_created ->
-                            Notification.disputeManualCreated(new DisputeManualCreated(dispute.getId().toString()).setErrorMessage(dispute.getErrorMessage()));
+                            Notification.disputeManualCreated(new DisputeManualCreated(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId())
+                                    .setErrorMessage(dispute.getErrorMessage()));
                     case manual_pending ->
-                            Notification.disputeManualPending(new DisputeManualPending(dispute.getId().toString()).setErrorMessage(dispute.getErrorMessage()));
+                            Notification.disputeManualPending(new DisputeManualPending(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId())
+                                    .setErrorMessage(dispute.getErrorMessage()));
                     case already_exist_created ->
-                            Notification.disputeAlreadyCreated(new DisputeAlreadyCreated(dispute.getId().toString()));
+                            Notification.disputeAlreadyCreated(new DisputeAlreadyCreated(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId()));
                     case create_adjustment ->
-                            Notification.disputeReadyForCreateAdjustment(new DisputeReadyForCreateAdjustment(dispute.getId().toString()));
+                            Notification.disputeReadyForCreateAdjustment(new DisputeReadyForCreateAdjustment(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId()));
                     default -> null;
                 })
                 .filter(Objects::nonNull)
