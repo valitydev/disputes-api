@@ -92,6 +92,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
                 providerCallback.setInvoiceId(paymentParams.getInvoiceId());
                 providerCallback.setPaymentId(paymentParams.getPaymentId());
                 providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
+                providerCallback.setAmount(paymentParams.getInvoiceAmount());
                 providerCallbackDao.save(providerCallback);
                 log.info("providerCallback {}", providerCallback);
             }
