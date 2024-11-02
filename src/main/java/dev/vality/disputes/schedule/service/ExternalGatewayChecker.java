@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class ExternalGatewayChecker {
 
     private final CloseableHttpClient httpClient;
-    private final ProviderRouting providerRouting;
+    private final ProviderDisputesRouting providerDisputesRouting;
 
     public boolean isProvidersDisputesUnexpectedResultMapping(WRuntimeException e) {
         return e.getErrorDefinition() != null
@@ -45,7 +45,7 @@ public class ExternalGatewayChecker {
     }
 
     private String getRouteUrl(ProviderData providerData) {
-        providerRouting.initRouteUrl(providerData);
+        providerDisputesRouting.initRouteUrl(providerData);
         log.debug("Check adapter connection, routeUrl={}", providerData.getRouteUrl());
         return providerData.getRouteUrl();
     }

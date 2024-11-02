@@ -7,7 +7,7 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
-import dev.vality.disputes.schedule.service.ProviderIfaceBuilder;
+import dev.vality.disputes.schedule.service.ProviderDisputesIfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.TestUrlPaths;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class CreatedDisputesTestService {
 
     @Autowired
-    private ProviderIfaceBuilder providerIfaceBuilder;
+    private ProviderDisputesIfaceBuilder providerDisputesIfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -65,7 +65,7 @@ public class CreatedDisputesTestService {
         when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());

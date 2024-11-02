@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 public class PendingDisputesServiceTest {
 
     @Autowired
-    private ProviderIfaceBuilder providerIfaceBuilder;
+    private ProviderDisputesIfaceBuilder providerDisputesIfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -74,7 +74,7 @@ public class PendingDisputesServiceTest {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusFailResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
@@ -88,7 +88,7 @@ public class PendingDisputesServiceTest {
         var disputeStatusFailResult = createDisputeStatusFailResult();
         disputeStatusFailResult.getStatusFail().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
         when(providerMock.checkDisputeStatus(any())).thenReturn(disputeStatusFailResult);
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
@@ -102,7 +102,7 @@ public class PendingDisputesServiceTest {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenThrow(getUnexpectedResultWException());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
@@ -117,7 +117,7 @@ public class PendingDisputesServiceTest {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());

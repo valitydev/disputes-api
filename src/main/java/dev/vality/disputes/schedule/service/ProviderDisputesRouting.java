@@ -13,7 +13,7 @@ import java.net.URI;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProviderRouting {
+public class ProviderDisputesRouting {
 
     private static final String DISPUTES_URL_POSTFIX_DEFAULT = "disputes";
     private static final String OPTION_DISPUTES_URL_FIELD_NAME = "disputes_url";

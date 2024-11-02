@@ -3,8 +3,8 @@ package dev.vality.disputes.api;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.CancelParamsRequest;
-import dev.vality.disputes.callback.DisputeCallbackParams;
-import dev.vality.disputes.callback.ProviderDisputesCallbackServiceSrv;
+import dev.vality.disputes.callback.ProviderPaymentsCallbackParams;
+import dev.vality.disputes.callback.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.merchant.MerchantDisputesServiceSrv;
@@ -71,12 +71,12 @@ public class ServletTest {
         var iface = new THSpawnClientBuilder()
                 .withAddress(new URI("http://127.0.0.1:" + serverPort + CALLBACK))
                 .withNetworkTimeout(5000)
-                .build(ProviderDisputesCallbackServiceSrv.Iface.class);
+                .build(ProviderPaymentsCallbackServiceSrv.Iface.class);
         var request = DamselUtil.fillRequiredTBaseObject(
-                new DisputeCallbackParams(),
-                DisputeCallbackParams.class
+                new ProviderPaymentsCallbackParams(),
+                ProviderPaymentsCallbackParams.class
         );
-        iface.createAdjustmentIfPaymentSuccess(request);
+        iface.createAdjustmentWhenFailedPaymentSuccess(request);
     }
 
     @Test

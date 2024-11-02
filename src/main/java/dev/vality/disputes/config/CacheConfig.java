@@ -26,10 +26,18 @@ public class CacheConfig {
 
     @Bean
     @Primary
-    public CacheManager adaptersCacheManager() {
+    public CacheManager providersDisputesCacheManager() {
         var caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.setCaffeine(adaptersConnectionsCacheConfig());
-        caffeineCacheManager.setCacheNames(List.of("adapters"));
+        caffeineCacheManager.setCacheNames(List.of("providersDisputes"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager providersPaymentsCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(adaptersConnectionsCacheConfig());
+        caffeineCacheManager.setCacheNames(List.of("providersPayments"));
         return caffeineCacheManager;
     }
 

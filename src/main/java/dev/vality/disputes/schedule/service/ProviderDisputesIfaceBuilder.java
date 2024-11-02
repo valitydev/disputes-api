@@ -15,11 +15,11 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings({"AbbreviationAsWordInName", "LineLength"})
-public class ProviderIfaceBuilder {
+public class ProviderDisputesIfaceBuilder {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
 
-    @Cacheable(value = "adapters", key = "#root.args[0]", cacheManager = "adaptersCacheManager")
+    @Cacheable(value = "providersDisputes", key = "#root.args[0]", cacheManager = "providersDisputesCacheManager")
     public ProviderDisputesServiceSrv.Iface buildTHSpawnClient(String routeUrl) {
         log.info("Creating new client for url: {}", routeUrl);
         return new THSpawnClientBuilder()

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class CreatedDisputesServiceTest {
 
     @Autowired
-    private ProviderIfaceBuilder providerIfaceBuilder;
+    private ProviderDisputesIfaceBuilder providerDisputesIfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -125,7 +125,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
@@ -150,7 +150,7 @@ public class CreatedDisputesServiceTest {
         var disputeCreatedFailResult = createDisputeCreatedFailResult();
         disputeCreatedFailResult.getFailResult().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
         when(providerMock.createDispute(any())).thenReturn(disputeCreatedFailResult);
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
@@ -176,7 +176,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxyWithRealAddress(serverPort).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
@@ -201,7 +201,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxyNotFoundCase(serverPort).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
@@ -225,7 +225,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
-        when(providerIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute.get());
         assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).get().getStatus());
