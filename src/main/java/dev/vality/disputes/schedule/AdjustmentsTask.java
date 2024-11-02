@@ -29,7 +29,6 @@ public class AdjustmentsTask {
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreateAdjustments}", initialDelayString = "${dispute.initialDelayCreateAdjustments}")
     public void processPending() {
-        log.debug("Processing create adjustments get started");
         try {
             var disputes = adjustmentsService.getDisputesForHgCall(batchSize);
             var callables = disputes.stream()
@@ -42,7 +41,6 @@ public class AdjustmentsTask {
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed create adjustments", ex);
         }
-        log.info("Create adjustments were processed");
     }
 
     private Callable<UUID> handleCreateAdjustment(Dispute dispute) {

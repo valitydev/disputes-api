@@ -39,9 +39,10 @@ public class AdjustmentsService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getDisputesForHgCall(int batchSize) {
-        log.debug("Trying to getDisputesForHgCall");
         var locked = disputeDao.getDisputesForHgCall(batchSize);
-        log.debug("getDisputesForHgCall has been found, size={}", locked.size());
+        if (!locked.isEmpty()) {
+            log.debug("getDisputesForHgCall has been found, size={}", locked.size());
+        }
         return locked;
     }
 

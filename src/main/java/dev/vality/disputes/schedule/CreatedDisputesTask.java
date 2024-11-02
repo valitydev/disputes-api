@@ -28,7 +28,6 @@ public class CreatedDisputesTask {
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", initialDelayString = "${dispute.initialDelayCreated}")
     public void processCreated() {
-        log.debug("Processing created disputes get started");
         try {
             var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
@@ -41,7 +40,6 @@ public class CreatedDisputesTask {
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed created disputes", ex);
         }
-        log.info("Created disputes were processed");
     }
 
     private Callable<UUID> handleCreated(Dispute dispute) {

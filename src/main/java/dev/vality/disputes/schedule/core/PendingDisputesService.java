@@ -38,9 +38,10 @@ public class PendingDisputesService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
-        log.debug("Trying to getPendingDisputesForUpdateSkipLocked");
         var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.pending);
-        log.debug("PendingDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+        if (!locked.isEmpty()) {
+            log.debug("PendingDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+        }
         return locked;
     }
 

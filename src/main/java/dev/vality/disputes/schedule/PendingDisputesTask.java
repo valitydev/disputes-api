@@ -28,7 +28,6 @@ public class PendingDisputesTask {
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}", initialDelayString = "${dispute.initialDelayPending}")
     public void processPending() {
-        log.debug("Processing pending disputes get started");
         try {
             var disputes = pendingDisputesService.getPendingDisputesForUpdateSkipLocked(batchSize);
             var callables = disputes.stream()
@@ -41,7 +40,6 @@ public class PendingDisputesTask {
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed pending disputes", ex);
         }
-        log.info("Pending disputes were processed");
     }
 
     private Callable<UUID> handlePending(Dispute dispute) {

@@ -46,9 +46,10 @@ public class CreatedDisputesService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
-        log.debug("Trying to getCreatedDisputesForUpdateSkipLocked");
         var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.created);
-        log.debug("CreatedDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+        if (!locked.isEmpty()) {
+            log.debug("CreatedDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+        }
         return locked;
     }
 

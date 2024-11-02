@@ -22,12 +22,10 @@ public class ForgottenDisputesNotificationsTask {
 
     @Scheduled(cron = "${dispute.cronForgottenDisputesNotifications:-}")
     public void processForgottenDisputes() {
-        log.debug("Processing ReadyForCreateAdjustments get started");
         var forgottenDisputes = disputeDao.getForgottenDisputes();
         if (!forgottenDisputes.isEmpty()) {
             callbackNotifier.sendForgottenDisputes(forgottenDisputes);
             mdcTopicProducer.sendForgottenDisputes(forgottenDisputes);
         }
-        log.info("ReadyForCreateAdjustments were processed");
     }
 }
