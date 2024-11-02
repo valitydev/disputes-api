@@ -23,9 +23,9 @@ public class NetworkConfig {
     private String restEndpoint;
 
     public static final String HEALTH = "/actuator/health";
-    public static final String MERCHANT = "/disputes-api/v1/merchant";
-    public static final String ADMIN_MANAGEMENT = "/disputes-api/v1/admin-management";
-    public static final String CALLBACK = "/disputes-api/v1/callback";
+    public static final String MERCHANT = "/v1/merchant";
+    public static final String ADMIN_MANAGEMENT = "/v1/admin-management";
+    public static final String CALLBACK = "/v1/callback";
 
     @Bean
     public FilterRegistrationBean externalPortRestrictingFilter() {

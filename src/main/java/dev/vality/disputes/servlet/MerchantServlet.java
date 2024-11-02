@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
-@WebServlet("/disputes-api/v1/merchant")
+@WebServlet("/v1/merchant")
 public class MerchantServlet extends GenericServlet {
 
     @Autowired

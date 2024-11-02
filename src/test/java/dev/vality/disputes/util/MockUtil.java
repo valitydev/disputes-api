@@ -88,7 +88,7 @@ public class MockUtil {
     }
 
     public static CompletableFuture<ProxyDefinition> createProxyNotFoundCase(Integer port) {
-        return createProxy("http://127.0.0.1:" + port + "/debug/disputes-api/admin-management");
+        return createProxy("http://127.0.0.1:" + port + "/debug/v1/admin-management");
     }
 
     public static CompletableFuture<ProxyDefinition> createProxyWithRealAddress(Integer port) {

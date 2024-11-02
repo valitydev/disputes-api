@@ -26,7 +26,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping({"/debug/disputes-api/admin-management"})
+@RequestMapping({"/debug/v1/admin-management"})
 @Slf4j
 public class DebugAdminManagementController {
 

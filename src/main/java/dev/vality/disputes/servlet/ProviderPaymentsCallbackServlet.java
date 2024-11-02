@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
-@WebServlet("/disputes-api/v1/callback")
-public class ProviderDisputesCallbackServlet extends GenericServlet {
+@WebServlet("/v1/callback")
+public class ProviderPaymentsCallbackServlet extends GenericServlet {
 
     @Autowired
     private ProviderPaymentsCallbackServiceSrv.Iface providerPaymentsCallbackHandler;

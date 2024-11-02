@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
-@WebServlet("/disputes-api/v1/admin-management")
+@WebServlet("/v1/admin-management")
 public class AdminManagementServlet extends GenericServlet {
 
     @Autowired

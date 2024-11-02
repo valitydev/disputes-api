@@ -42,7 +42,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
     @Override
     @Transactional
     public void createAdjustmentWhenFailedPaymentSuccess(ProviderPaymentsCallbackParams providerPaymentsCallbackParams) throws TException {
-        log.info("disputeCallbackParams {}", providerPaymentsCallbackParams);
+        log.info("providerPaymentsCallbackParams {}", providerPaymentsCallbackParams);
         if (!enabled) {
             return;
         }
