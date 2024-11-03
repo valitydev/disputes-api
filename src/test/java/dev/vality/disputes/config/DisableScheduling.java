@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
         "dispute.isSchedulePendingEnabled=false",
         "dispute.isScheduleCreateAdjustmentsEnabled=false",
         "dispute.isScheduleForgottenDisputesNotificationsEnabled=false",
+        "provider.payments.isScheduleCreateAdjustmentsEnabled=false",
 })
 public @interface DisableScheduling {
 }

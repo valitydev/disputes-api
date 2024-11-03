@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 import static dev.vality.disputes.domain.tables.ProviderCallback.PROVIDER_CALLBACK;
 
 @Component
@@ -34,7 +33,7 @@ public class ProviderCallbackDao extends AbstractGenericDao {
         var record = getDslContext().newRecord(PROVIDER_CALLBACK, providerCallback);
         var query = getDslContext().insertInto(PROVIDER_CALLBACK)
                 .set(record)
-                .returning(DISPUTE.ID);
+                .returning(PROVIDER_CALLBACK.ID);
         var keyHolder = new GeneratedKeyHolder();
         execute(query, keyHolder);
         return Optional.ofNullable(keyHolder.getKeyAs(UUID.class)).orElseThrow();
