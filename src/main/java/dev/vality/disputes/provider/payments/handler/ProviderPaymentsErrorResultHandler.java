@@ -1,8 +1,8 @@
-package dev.vality.disputes.callback.handler;
+package dev.vality.disputes.provider.payments.handler;
 
-import dev.vality.disputes.callback.dao.ProviderCallbackDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

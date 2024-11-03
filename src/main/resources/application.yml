@@ -120,6 +120,7 @@ dispute:
 
 provider:
   payments:
+    batchSize: 1
     fixedDelayCreateAdjustments: 5000
     initialDelayCreateAdjustments: 5000
     isProviderCallbackEnabled: false

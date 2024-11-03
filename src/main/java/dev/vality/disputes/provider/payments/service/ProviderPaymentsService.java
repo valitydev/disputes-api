@@ -1,16 +1,16 @@
-package dev.vality.disputes.callback.service;
+package dev.vality.disputes.provider.payments.service;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
-import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
-import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
-import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentFailedAdjustmentParamsConverter;
-import dev.vality.disputes.callback.dao.ProviderCallbackDao;
-import dev.vality.disputes.callback.handler.ProviderPaymentsErrorResultHandler;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
+import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
+import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentFailedAdjustmentParamsConverter;
+import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.handler.ProviderPaymentsErrorResultHandler;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class ProviderPaymentsService {
 
     @Transactional
     public List<ProviderCallback> getPaymentsForHgCall(int batchSize) {
-        var locked = providerCallbackDao.getProviderCallbackForHgCall(batchSize);
+        var locked = providerCallbackDao.getProviderCallbacksForHgCall(batchSize);
         if (!locked.isEmpty()) {
             log.debug("getProviderCallbackForHgCall has been found, size={}", locked.size());
         }

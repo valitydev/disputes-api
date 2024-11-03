@@ -1,4 +1,4 @@
-package dev.vality.disputes.callback.service;
+package dev.vality.disputes.provider.payments.service;
 
 import dev.vality.disputes.callback.ProviderPaymentsServiceSrv;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;

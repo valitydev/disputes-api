@@ -1,8 +1,8 @@
-package dev.vality.disputes.callback.schedule;
+package dev.vality.disputes.provider.payments.schedule;
 
-import dev.vality.disputes.callback.handler.ProviderPaymentHandler;
-import dev.vality.disputes.callback.service.ProviderPaymentsService;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.provider.payments.handler.ProviderPaymentHandler;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

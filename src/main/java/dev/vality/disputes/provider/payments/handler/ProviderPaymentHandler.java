@@ -1,7 +1,7 @@
-package dev.vality.disputes.callback.handler;
+package dev.vality.disputes.provider.payments.handler;
 
-import dev.vality.disputes.callback.service.ProviderPaymentsService;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
