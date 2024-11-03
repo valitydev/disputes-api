@@ -4,6 +4,7 @@ import dev.vality.disputes.callback.ApproveParamsRequest;
 import dev.vality.disputes.callback.CancelParamsRequest;
 import dev.vality.disputes.callback.ProviderPaymentsCallbackAdminManagementServiceSrv;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
+import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import lombok.Builder;
 import lombok.Data;
@@ -24,12 +25,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsC
     public void cancel(CancelParamsRequest cancelParamsRequest) throws TException {
         if (cancelParamsRequest.isCancelAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
-                    .peek(providerCallback -> {
-                        if (cancelParamsRequest.getCancelReason().isPresent()) {
-                            providerCallback.setErrorReason(cancelParamsRequest.getCancelReason().orElse(null));
-                        }
-                        providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
-                    })
+                    .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
             log.info("batch by cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
@@ -37,15 +33,11 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsC
             var invoiceDataList = cancelParamsRequest.getCancelParams().get().stream()
                     .map(cancelParams -> InvoiceData.builder()
                             .invoiceId(cancelParams.getInvoiceId())
-                            .paymentId(cancelParams.getPaymentId()).build())
+                            .paymentId(cancelParams.getPaymentId())
+                            .build())
                     .toList();
             var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoiceDataList).stream()
-                    .peek(providerCallback -> {
-                        if (cancelParamsRequest.getCancelReason().isPresent()) {
-                            providerCallback.setErrorReason(cancelParamsRequest.getCancelReason().orElse(null));
-                        }
-                        providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
-                    })
+                    .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
             log.info("batch by cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
@@ -56,34 +48,38 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsC
     public void approve(ApproveParamsRequest approveParamsRequest) throws TException {
         if (approveParamsRequest.isApproveAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
-                    .peek(providerCallback -> {
-                        if (approveParamsRequest.getApproveReason().isPresent()) {
-                            providerCallback.setApproveReason(approveParamsRequest.getApproveReason().orElse(null));
-                        }
-                        providerCallback.setStatus(ProviderPaymentsStatus.create_adjustment);
-                        providerCallback.setSkipCallHgForCreateAdjustment(false);
-                    })
+                    .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
             log.info("batch by cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
             var invoiceDataList = approveParamsRequest.getApproveParams().get().stream()
-                    .map(cancelParams -> InvoiceData.builder()
-                            .invoiceId(cancelParams.getInvoiceId())
-                            .paymentId(cancelParams.getPaymentId()).build())
+                    .map(approveParams -> InvoiceData.builder()
+                            .invoiceId(approveParams.getInvoiceId())
+                            .paymentId(approveParams.getPaymentId())
+                            .build())
                     .toList();
             var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoiceDataList).stream()
-                    .peek(providerCallback -> {
-                        if (approveParamsRequest.getApproveReason().isPresent()) {
-                            providerCallback.setApproveReason(approveParamsRequest.getApproveReason().orElse(null));
-                        }
-                        providerCallback.setStatus(ProviderPaymentsStatus.create_adjustment);
-                        providerCallback.setSkipCallHgForCreateAdjustment(false);
-                    })
+                    .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
             log.info("batch by approveParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         }
+    }
+
+    private void setCancelled(CancelParamsRequest cancelParamsRequest, ProviderCallback providerCallback) {
+        if (cancelParamsRequest.getCancelReason().isPresent()) {
+            providerCallback.setErrorReason(cancelParamsRequest.getCancelReason().orElse(null));
+        }
+        providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
+    }
+
+    private void setReadyToCreateAdjustment(ApproveParamsRequest approveParamsRequest, ProviderCallback providerCallback) {
+        if (approveParamsRequest.getApproveReason().isPresent()) {
+            providerCallback.setApproveReason(approveParamsRequest.getApproveReason().orElse(null));
+        }
+        providerCallback.setStatus(ProviderPaymentsStatus.create_adjustment);
+        providerCallback.setSkipCallHgForCreateAdjustment(false);
     }
 
     @Data
