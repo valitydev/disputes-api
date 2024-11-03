@@ -1,9 +1,9 @@
-package dev.vality.disputes.schedule.service;
+package dev.vality.disputes.callback;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -15,28 +15,28 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class AdjustmentExtractor {
+public class ProviderPaymentsAdjustmentExtractor {
 
-    private static final String DISPUTE_MASK = "disputeId=%s";
+    public static final String PROVIDER_PAYMENT_MASK = "providerCallbackId=%s";
 
-    public String getReason(Dispute dispute) {
-        return Optional.ofNullable(dispute.getReason())
-                .map(s -> String.format(DISPUTE_MASK + ", reason=%s", dispute.getId(), s))
-                .orElse(String.format(DISPUTE_MASK, dispute.getId()));
+    public String getReason(ProviderCallback providerCallback) {
+        return Optional.ofNullable(providerCallback.getApproveReason())
+                .map(s -> String.format(PROVIDER_PAYMENT_MASK + ", reason=%s", providerCallback.getId(), s))
+                .orElse(String.format(PROVIDER_PAYMENT_MASK, providerCallback.getId()));
     }
 
-    public boolean isCashFlowAdjustmentByDisputeExist(InvoicePayment invoicePayment, Dispute dispute) {
+    public boolean isCashFlowAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment, ProviderCallback providerCallback) {
         return getInvoicePaymentAdjustmentStream(invoicePayment)
-                .filter(adj -> isDisputesAdjustment(adj.getReason(), dispute))
+                .filter(adj -> isProviderPaymentsAdjustment(adj.getReason(), providerCallback))
                 .anyMatch(adj -> adj.getState() != null && adj.getState().isSetCashFlow());
     }
 
-    public boolean isCapturedAdjustmentByDisputeExist(InvoicePayment invoicePayment, Dispute dispute) {
+    public boolean isCapturedAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment, ProviderCallback providerCallback) {
         return getInvoicePaymentAdjustmentStream(invoicePayment)
-                .filter(adj -> isDisputesAdjustment(adj.getReason(), dispute))
+                .filter(adj -> isProviderPaymentsAdjustment(adj.getReason(), providerCallback))
                 .filter(adj -> adj.getState() != null && adj.getState().isSetStatusChange())
                 .filter(adj -> getTargetStatus(adj).isSetCaptured())
-                .anyMatch(adj -> isDisputesAdjustment(getTargetStatus(adj).getCaptured().getReason(), dispute));
+                .anyMatch(adj -> isProviderPaymentsAdjustment(getTargetStatus(adj).getCaptured().getReason(), providerCallback));
     }
 
     private Stream<InvoicePaymentAdjustment> getInvoicePaymentAdjustmentStream(InvoicePayment invoicePayment) {
@@ -49,8 +49,8 @@ public class AdjustmentExtractor {
         return s.getState().getStatusChange().getScenario().getTargetStatus();
     }
 
-    private boolean isDisputesAdjustment(String reason, Dispute dispute) {
+    private boolean isProviderPaymentsAdjustment(String reason, ProviderCallback providerCallback) {
         return !StringUtils.isBlank(reason)
-                && reason.equalsIgnoreCase(getReason(dispute));
+                && reason.equalsIgnoreCase(getReason(providerCallback));
     }
 }

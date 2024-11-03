@@ -4,7 +4,6 @@ import dev.vality.damsel.domain.Currency;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.api.service.PaymentParamsBuilder;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.dao.ProviderCallbackDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.schedule.service.ProviderDataService;
@@ -36,7 +35,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
     private final ProviderPaymentsIfaceBuilder providerPaymentsIfaceBuilder;
     private final ProviderCallbackDao providerCallbackDao;
 
-    @Value("${dispute.isProviderCallbackEnabled}")
+    @Value("${provider.payments.isProviderCallbackEnabled}")
     private boolean enabled;
 
     @Override

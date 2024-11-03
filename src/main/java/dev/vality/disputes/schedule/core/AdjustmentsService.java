@@ -37,7 +37,7 @@ public class AdjustmentsService {
     private final AdjustmentExtractor adjustmentExtractor;
     private final ErrorResultHandler errorResultHandler;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public List<Dispute> getDisputesForHgCall(int batchSize) {
         var locked = disputeDao.getDisputesForHgCall(batchSize);
         if (!locked.isEmpty()) {
@@ -89,7 +89,7 @@ public class AdjustmentsService {
     }
 
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     boolean createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
         var paymentAdjustment = createPaymentAdjustment(dispute, params);
         if (paymentAdjustment == null) {

@@ -11,7 +11,6 @@ import dev.vality.swag.disputes.model.CreateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
@@ -40,7 +39,7 @@ public class ApiDisputesService {
         return first;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public UUID createDispute(CreateRequest req, PaymentParams paymentParams) {
         log.debug("Start creating Dispute {}", paymentParams);
         var dispute = disputeConverter.convert(paymentParams, req.getAmount(), req.getReason());

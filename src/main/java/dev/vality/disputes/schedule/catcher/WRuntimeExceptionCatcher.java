@@ -17,11 +17,11 @@ public class WRuntimeExceptionCatcher {
 
     private final ExternalGatewayChecker externalGatewayChecker;
 
-    public void catchProvidersDisputesApiNotExist(ProviderData providerData, Runnable runnable, Runnable defaultRemoteClientRunnable) {
+    public void catchProviderDisputesApiNotExist(ProviderData providerData, Runnable runnable, Runnable defaultRemoteClientRunnable) {
         try {
             runnable.run();
         } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isProvidersDisputesApiNotExist(providerData, e)) {
+            if (externalGatewayChecker.isProviderDisputesApiNotExist(providerData, e)) {
                 // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
                 // (тогда при тесте соединения вернется 404)
                 log.warn("Trying to call defaultRemoteClient.createDispute(), externalGatewayChecker", e);
@@ -36,7 +36,7 @@ public class WRuntimeExceptionCatcher {
         try {
             runnable.run();
         } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isProvidersDisputesUnexpectedResultMapping(e)) {
+            if (externalGatewayChecker.isProviderDisputesUnexpectedResultMapping(e)) {
                 unexpectedResultMappingHandler.accept(e);
                 return;
             }

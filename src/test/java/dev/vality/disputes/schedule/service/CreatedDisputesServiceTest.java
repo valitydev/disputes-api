@@ -85,7 +85,7 @@ public class CreatedDisputesServiceTest {
 
     @Test
     @SneakyThrows
-    public void testManualPendingWhenIsNotProvidersDisputesApiExist() {
+    public void testManualPendingWhenIsNotProviderDisputesApiExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());

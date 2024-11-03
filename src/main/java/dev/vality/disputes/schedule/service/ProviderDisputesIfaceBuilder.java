@@ -19,7 +19,7 @@ public class ProviderDisputesIfaceBuilder {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
 
-    @Cacheable(value = "providersDisputes", key = "#root.args[0]", cacheManager = "providersDisputesCacheManager")
+    @Cacheable(value = "providerDisputes", key = "#root.args[0]", cacheManager = "providerDisputesCacheManager")
     public ProviderDisputesServiceSrv.Iface buildTHSpawnClient(String routeUrl) {
         log.info("Creating new client for url: {}", routeUrl);
         return new THSpawnClientBuilder()

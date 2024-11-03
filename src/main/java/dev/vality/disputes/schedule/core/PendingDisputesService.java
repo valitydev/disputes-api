@@ -36,7 +36,7 @@ public class PendingDisputesService {
     private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
         var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.pending);
         if (!locked.isEmpty()) {
@@ -78,7 +78,7 @@ public class PendingDisputesService {
                 e -> disputeStatusResultHandler.handleUnexpectedResultMapping(dispute, e));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     void finishTask(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
         switch (result.getSetField()) {
             case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);

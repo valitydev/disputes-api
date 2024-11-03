@@ -18,7 +18,7 @@ public class ProviderPaymentsIfaceBuilder {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
 
-    @Cacheable(value = "providersPayments", key = "#root.args[0]", cacheManager = "providersPaymentsCacheManager")
+    @Cacheable(value = "providerPayments", key = "#root.args[0]", cacheManager = "providerPaymentsCacheManager")
     public ProviderPaymentsServiceSrv.Iface buildTHSpawnClient(String routeUrl) {
         log.info("Creating new client for url: {}", routeUrl);
         return new THSpawnClientBuilder()

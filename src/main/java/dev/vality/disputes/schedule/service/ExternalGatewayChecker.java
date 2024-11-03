@@ -22,7 +22,7 @@ public class ExternalGatewayChecker {
     private final CloseableHttpClient httpClient;
     private final ProviderDisputesRouting providerDisputesRouting;
 
-    public boolean isProvidersDisputesUnexpectedResultMapping(WRuntimeException e) {
+    public boolean isProviderDisputesUnexpectedResultMapping(WRuntimeException e) {
         return e.getErrorDefinition() != null
                 && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
                 && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
@@ -31,16 +31,16 @@ public class ExternalGatewayChecker {
                 && e.getErrorDefinition().getErrorReason().contains("Unexpected result, code = ");
     }
 
-    public boolean isProvidersDisputesApiNotExist(ProviderData providerData, WRuntimeException e) {
+    public boolean isProviderDisputesApiNotExist(ProviderData providerData, WRuntimeException e) {
         return e.getErrorDefinition() != null
                 && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
                 && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
                 && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && isProvidersDisputesApiNotFound(providerData);
+                && isProviderDisputesApiNotFound(providerData);
     }
 
     @SneakyThrows
-    private Boolean isProvidersDisputesApiNotFound(ProviderData providerData) {
+    private Boolean isProviderDisputesApiNotFound(ProviderData providerData) {
         return httpClient.execute(new HttpGet(getRouteUrl(providerData)), isNotFoundResponse());
     }
 

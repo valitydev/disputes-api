@@ -1,7 +1,7 @@
-package dev.vality.disputes.dao;
+package dev.vality.disputes.callback;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.mapper.RecordRowMapper;
 import jakarta.annotation.Nullable;
@@ -51,12 +51,20 @@ public class ProviderCallbackDao extends AbstractGenericDao {
 
     public List<ProviderCallback> getProviderCallbackForHgCall(int limit) {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
-                .where(PROVIDER_CALLBACK.STATUS.eq(DisputeStatus.create_adjustment)
+                .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment)
                         .and(PROVIDER_CALLBACK.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT.eq(false)))
                 .limit(limit)
                 .forUpdate()
                 .skipLocked();
         return Optional.ofNullable(fetch(query, providerCallbackRowMapper))
                 .orElse(List.of());
+    }
+
+    public void update(ProviderCallback providerCallback) {
+        var record = getDslContext().newRecord(PROVIDER_CALLBACK, providerCallback);
+        var query = getDslContext().update(PROVIDER_CALLBACK)
+                .set(record)
+                .where(PROVIDER_CALLBACK.ID.eq(providerCallback.getId()));
+        execute(query);
     }
 }

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -22,7 +21,7 @@ public class ApiAttachmentsService {
     private final FileMetaDao fileMetaDao;
     private final FileStorageService fileStorageService;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void createAttachments(CreateRequest req, UUID disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
         for (var attachment : req.getAttachments()) {

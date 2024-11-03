@@ -111,4 +111,13 @@ public class ApplicationConfig {
                 .build();
         return Executors.newFixedThreadPool(threadPoolSize, threadFactory);
     }
+
+    @Bean
+    public ExecutorService providerPaymentsThreadPool(@Value("${provider.payments.batchSize}") int threadPoolSize) {
+        final var threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("provider-payments-exec-%d")
+                .setDaemon(true)
+                .build();
+        return Executors.newFixedThreadPool(threadPoolSize, threadFactory);
+    }
 }
