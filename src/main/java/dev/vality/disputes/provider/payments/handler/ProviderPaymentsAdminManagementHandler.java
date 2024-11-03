@@ -1,27 +1,29 @@
 package dev.vality.disputes.provider.payments.handler;
 
-import dev.vality.disputes.callback.ApproveParamsRequest;
-import dev.vality.disputes.callback.CancelParamsRequest;
-import dev.vality.disputes.callback.ProviderPaymentsCallbackAdminManagementServiceSrv;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.provider.payments.ApproveParamsRequest;
+import dev.vality.provider.payments.CancelParamsRequest;
+import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings({"ParameterName", "LineLength"})
-public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsCallbackAdminManagementServiceSrv.Iface {
+public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsAdminManagementServiceSrv.Iface {
 
     private final ProviderCallbackDao providerCallbackDao;
 
     @Override
+    @Transactional
     public void cancel(CancelParamsRequest cancelParamsRequest) throws TException {
         if (cancelParamsRequest.isCancelAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
@@ -45,6 +47,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsC
     }
 
     @Override
+    @Transactional
     public void approve(ApproveParamsRequest approveParamsRequest) throws TException {
         if (approveParamsRequest.isApproveAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()

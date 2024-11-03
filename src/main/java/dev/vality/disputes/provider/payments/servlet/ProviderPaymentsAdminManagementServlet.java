@@ -1,6 +1,6 @@
 package dev.vality.disputes.provider.payments.servlet;
 
-import dev.vality.disputes.callback.ProviderPaymentsCallbackAdminManagementServiceSrv;
+import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,7 +13,7 @@ import java.io.IOException;
 public class ProviderPaymentsAdminManagementServlet extends GenericServlet {
 
     @Autowired
-    private ProviderPaymentsCallbackAdminManagementServiceSrv.Iface providerPaymentsAdminManagementHandler;
+    private ProviderPaymentsAdminManagementServiceSrv.Iface providerPaymentsAdminManagementHandler;
 
     private Servlet servlet;
 
@@ -21,7 +21,7 @@ public class ProviderPaymentsAdminManagementServlet extends GenericServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         servlet = new THServiceBuilder()
-                .build(ProviderPaymentsCallbackAdminManagementServiceSrv.Iface.class, providerPaymentsAdminManagementHandler);
+                .build(ProviderPaymentsAdminManagementServiceSrv.Iface.class, providerPaymentsAdminManagementHandler);
     }
 
     @Override

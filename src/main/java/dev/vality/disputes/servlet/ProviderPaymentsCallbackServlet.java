@@ -1,6 +1,6 @@
 package dev.vality.disputes.servlet;
 
-import dev.vality.disputes.callback.ProviderPaymentsCallbackServiceSrv;
+import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;

@@ -1,7 +1,7 @@
 package dev.vality.disputes.provider.payments.service;
 
-import dev.vality.disputes.callback.ProviderPaymentsServiceSrv;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
