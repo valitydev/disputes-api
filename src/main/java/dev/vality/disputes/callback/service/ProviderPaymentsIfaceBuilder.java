@@ -1,5 +1,6 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.service;
 
+import dev.vality.disputes.callback.ProviderPaymentsServiceSrv;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.RequiredArgsConstructor;

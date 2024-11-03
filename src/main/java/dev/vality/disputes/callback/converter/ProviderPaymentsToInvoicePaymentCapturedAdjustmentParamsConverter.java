@@ -1,31 +1,33 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.converter;
 
-import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain.InvoicePaymentAdjustmentStatusChange;
+import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentScenario;
+import dev.vality.disputes.callback.service.ProviderPaymentsAdjustmentExtractor;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ProviderPaymentsToInvoicePaymentFailedAdjustmentParamsConverter {
+public class ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter {
 
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
 
     public InvoicePaymentAdjustmentParams convert(ProviderCallback providerCallback) {
-        var invoicePaymentFailed = new InvoicePaymentFailed();
+        var captured = new InvoicePaymentCaptured();
         var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
-        invoicePaymentFailed.setFailure(OperationFailure.failure(
-                new Failure("failed_by_provider_payments_flow").setReason(reason)));
+        captured.setReason(reason);
         var params = new InvoicePaymentAdjustmentParams();
         params.setReason(reason);
-        params.setScenario(getInvoicePaymentAdjustmentScenario(invoicePaymentFailed));
+        params.setScenario(getInvoicePaymentAdjustmentScenario(captured));
         return params;
     }
 
-    private InvoicePaymentAdjustmentScenario getInvoicePaymentAdjustmentScenario(InvoicePaymentFailed failed) {
+    private InvoicePaymentAdjustmentScenario getInvoicePaymentAdjustmentScenario(InvoicePaymentCaptured captured) {
         return InvoicePaymentAdjustmentScenario.status_change(new InvoicePaymentAdjustmentStatusChange(
-                InvoicePaymentStatus.failed(failed)));
+                InvoicePaymentStatus.captured(captured)));
     }
 }

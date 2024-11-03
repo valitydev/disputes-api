@@ -1,4 +1,4 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;

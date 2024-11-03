@@ -1,5 +1,6 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.handler;
 
+import dev.vality.disputes.callback.dao.ProviderCallbackDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import lombok.RequiredArgsConstructor;

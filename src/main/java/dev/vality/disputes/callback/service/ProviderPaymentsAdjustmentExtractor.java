@@ -1,4 +1,4 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.service;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.domain.InvoicePaymentStatus;

@@ -1,9 +1,10 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.converter;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustmentCashFlow;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentScenario;
+import dev.vality.disputes.callback.service.ProviderPaymentsAdjustmentExtractor;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

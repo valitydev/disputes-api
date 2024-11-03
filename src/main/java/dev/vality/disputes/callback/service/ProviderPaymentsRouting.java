@@ -1,4 +1,4 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.service;
 
 import dev.vality.disputes.exception.RoutingException;
 import dev.vality.disputes.schedule.model.ProviderData;

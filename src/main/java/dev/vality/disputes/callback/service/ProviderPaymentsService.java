@@ -1,11 +1,17 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.callback.service;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
+import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
+import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
+import dev.vality.disputes.callback.converter.ProviderPaymentsToInvoicePaymentFailedAdjustmentParamsConverter;
+import dev.vality.disputes.callback.dao.ProviderCallbackDao;
+import dev.vality.disputes.callback.handler.ProviderPaymentsErrorResultHandler;
 import dev.vality.disputes.constant.ErrorReason;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +36,7 @@ public class ProviderPaymentsService {
     private final ProviderPaymentsToInvoicePaymentFailedAdjustmentParamsConverter providerPaymentsToInvoicePaymentFailedAdjustmentParamsConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
     private final ProviderPaymentsErrorResultHandler paymentsErrorResultHandler;
+    private final DisputesService disputesService;
 
     @Transactional
     public List<ProviderCallback> getPaymentsForHgCall(int batchSize) {
@@ -81,8 +88,12 @@ public class ProviderPaymentsService {
         providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to succeeded {}", providerCallback.getInvoiceId());
+        try {
+            disputesService.finishSuccess(providerCallback.getInvoiceId(), providerCallback.getPaymentId());
+        } catch (Throwable ex) {
+            log.error("Received exception while disputesService.finishSuccess", ex);
+        }
     }
-
 
     @Transactional
     boolean createAdjustment(ProviderCallback providerCallback, InvoicePaymentAdjustmentParams params) {
