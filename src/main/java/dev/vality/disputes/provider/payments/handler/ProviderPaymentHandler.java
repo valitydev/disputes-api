@@ -16,8 +16,8 @@ public class ProviderPaymentHandler {
     public UUID handle(ProviderCallback providerCallback) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("provider-payments-id-" + providerCallback.getInvoiceId() +
-                "-" + providerCallback.getPaymentId() + "-" + oldName);
+        currentThread.setName("provider-payments-" + providerCallback.getInvoiceId() +
+                "." + providerCallback.getPaymentId() + "-" + oldName);
         try {
             providerPaymentsService.callHgForCreateAdjustment(providerCallback);
             return providerCallback.getId();
