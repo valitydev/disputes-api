@@ -1,4 +1,4 @@
-package dev.vality.disputes.provider.payments.handler;
+package dev.vality.disputes.provider.payments.admin;
 
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
@@ -53,7 +53,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.info("batch by cancelParamsRequest {}", batch);
+            log.info("batch by approveParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
             var invoiceDataList = approveParamsRequest.getApproveParams().get().stream()

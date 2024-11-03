@@ -58,7 +58,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             providerPaymentsRouting.initRouteUrl(providerData);
             var transactionContext = getTransactionContext(paymentParams);
             var remoteClient = providerPaymentsIfaceBuilder.buildTHSpawnClient(providerData.getRouteUrl());
-            log.info("call remoteClient.isPaymentSuccess {}", transactionContext);
+            log.info("call remoteClient.checkPaymentStatus {}", transactionContext);
             var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext, getCurrency(paymentParams));
             if (paymentStatusResult.isSuccess()) {
                 var providerCallback = new ProviderCallback();
@@ -70,7 +70,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
                 log.info("providerCallback {}", providerCallback);
             }
         } catch (TException e) {
-            log.warn("remoteClient.isPaymentSuccess error", e);
+            log.warn("remoteClient.checkPaymentStatus error", e);
         }
     }
 

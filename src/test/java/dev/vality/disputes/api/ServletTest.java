@@ -8,6 +8,8 @@ import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.merchant.MerchantDisputesServiceSrv;
 import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.util.DamselUtil;
+import dev.vality.provider.payments.ApproveParamsRequest;
+import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.woody.api.flow.error.WRuntimeException;
@@ -77,6 +79,20 @@ public class ServletTest {
                 ProviderPaymentsCallbackParams.class
         );
         iface.createAdjustmentWhenFailedPaymentSuccess(request);
+    }
+
+    @Test
+    @SneakyThrows
+    public void providerPaymentsAdminManagementServletTest() {
+        var iface = new THSpawnClientBuilder()
+                .withAddress(new URI("http://127.0.0.1:" + serverPort + PROVIDER_PAYMENTS_ADMIN_MANAGEMENT))
+                .withNetworkTimeout(5000)
+                .build(ProviderPaymentsAdminManagementServiceSrv.Iface.class);
+        var request = DamselUtil.fillRequiredTBaseObject(
+                new ApproveParamsRequest(),
+                ApproveParamsRequest.class
+        );
+        iface.approve(request);
     }
 
     @Test

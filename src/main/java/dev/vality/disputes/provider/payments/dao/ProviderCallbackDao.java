@@ -3,7 +3,7 @@ package dev.vality.disputes.provider.payments.dao;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
-import dev.vality.disputes.provider.payments.handler.ProviderPaymentsAdminManagementHandler;
+import dev.vality.disputes.provider.payments.admin.ProviderPaymentsAdminManagementHandler;
 import dev.vality.mapper.RecordRowMapper;
 import jakarta.annotation.Nullable;
 import org.jooq.Query;
@@ -81,7 +81,8 @@ public class ProviderCallbackDao extends AbstractGenericDao {
         });
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
                 .where(PROVIDER_CALLBACK.INVOICE_ID.in(invoiceIds)
-                        .and(PROVIDER_CALLBACK.PAYMENT_ID.in(paymentIds)))
+                        .and(PROVIDER_CALLBACK.PAYMENT_ID.in(paymentIds))
+                        .and(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment)))
                 .forUpdate()
                 .skipLocked();
         return Optional.ofNullable(fetch(query, providerCallbackRowMapper))
