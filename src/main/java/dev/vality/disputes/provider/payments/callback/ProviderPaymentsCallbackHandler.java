@@ -69,8 +69,8 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
                 providerCallbackDao.save(providerCallback);
                 log.info("providerCallback {}", providerCallback);
             }
-        } catch (TException e) {
-            log.warn("remoteClient.checkPaymentStatus error", e);
+        } catch (Throwable e) {
+            log.warn("createAdjustmentWhenFailedPaymentSuccess() error", e);
         }
     }
 
