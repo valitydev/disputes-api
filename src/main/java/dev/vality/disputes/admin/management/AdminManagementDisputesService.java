@@ -16,8 +16,6 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -39,7 +37,7 @@ public class AdminManagementDisputesService {
     private final FileStorageService fileStorageService;
     private final CloseableHttpClient httpClient;
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void cancelPendingDispute(CancelParams cancelParams) {
         var disputeId = cancelParams.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
@@ -60,7 +58,7 @@ public class AdminManagementDisputesService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void approvePendingDispute(ApproveParams approveParam) {
         var disputeId = approveParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
@@ -88,7 +86,7 @@ public class AdminManagementDisputesService {
         log.info("Request was skipped by inappropriate status {}", dispute);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void bindCreatedDispute(BindParams bindParam) {
         var disputeId = bindParam.getDisputeId();
         log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
