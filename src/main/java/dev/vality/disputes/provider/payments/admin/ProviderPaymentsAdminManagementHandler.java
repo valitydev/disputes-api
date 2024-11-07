@@ -6,9 +6,6 @@ import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.provider.payments.ApproveParamsRequest;
 import dev.vality.provider.payments.CancelParamsRequest;
 import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
@@ -35,17 +32,10 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             log.info("batch by cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (cancelParamsRequest.getCancelParams().isPresent()) {
-            var invoiceDataSet = cancelParamsRequest.getCancelParams().get().stream()
-                    .map(cancelParams -> InvoiceData.builder()
-                            .invoiceId(cancelParams.getInvoiceId())
-                            .paymentId(cancelParams.getPaymentId())
-                            .build())
+            var invoicePaymentIds = cancelParamsRequest.getCancelParams().get().stream()
+                    .map(cancelParams -> cancelParams.getInvoiceId() + cancelParams.getPaymentId())
                     .collect(Collectors.toSet());
-            var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
-                    .filter(providerCallback -> invoiceDataSet.contains(InvoiceData.builder()
-                            .invoiceId(providerCallback.getInvoiceId())
-                            .paymentId(providerCallback.getPaymentId())
-                            .build()))
+            var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
                     .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
             log.info("batch by cancelParamsRequest {}", batch);
@@ -63,17 +53,10 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             log.info("batch by approveParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
-            var invoiceDataSet = approveParamsRequest.getApproveParams().get().stream()
-                    .map(approveParams -> InvoiceData.builder()
-                            .invoiceId(approveParams.getInvoiceId())
-                            .paymentId(approveParams.getPaymentId())
-                            .build())
+            var invoicePaymentIds = approveParamsRequest.getApproveParams().get().stream()
+                    .map(approveParams -> approveParams.getInvoiceId() + approveParams.getPaymentId())
                     .collect(Collectors.toSet());
-            var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
-                    .filter(providerCallback -> invoiceDataSet.contains(InvoiceData.builder()
-                            .invoiceId(providerCallback.getInvoiceId())
-                            .paymentId(providerCallback.getPaymentId())
-                            .build()))
+            var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
             log.info("batch by approveParamsRequest {}", batch);
@@ -94,15 +77,5 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
         }
         providerCallback.setStatus(ProviderPaymentsStatus.create_adjustment);
         providerCallback.setSkipCallHgForCreateAdjustment(false);
-    }
-
-    @Data
-    @Builder
-    @EqualsAndHashCode
-    public static class InvoiceData {
-        @EqualsAndHashCode.Include
-        private String invoiceId;
-        @EqualsAndHashCode.Include
-        private String paymentId;
     }
 }

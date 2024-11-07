@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,17 @@ public class ProviderCallbackDao extends AbstractGenericDao {
     public List<ProviderCallback> getAllPendingProviderCallbacksForUpdateSkipLocked() {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
                 .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment))
+                .forUpdate()
+                .skipLocked();
+        return Optional.ofNullable(fetch(query, providerCallbackRowMapper))
+                .orElse(List.of());
+    }
+
+    public List<ProviderCallback> getProviderCallbacksForUpdateSkipLocked(Set<String> invoicePaymentIds) {
+        var query = getDslContext()
+                .selectFrom(PROVIDER_CALLBACK)
+                .where(PROVIDER_CALLBACK.INVOICE_ID.concat(PROVIDER_CALLBACK.PAYMENT_ID).in(invoicePaymentIds)
+                        .and(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment)))
                 .forUpdate()
                 .skipLocked();
         return Optional.ofNullable(fetch(query, providerCallbackRowMapper))
