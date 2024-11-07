@@ -57,7 +57,8 @@ public class MockUtil {
                                                 PaymentTool.bank_card(DamselUtil.fillRequiredTBaseObject(new BankCard(),
                                                         BankCard.class))))))
                         .setCost(new Cash()
-                                .setCurrency(new CurrencyRef().setSymbolicCode("RUB")))
+                                .setCurrency(new CurrencyRef().setSymbolicCode("RUB"))
+                                .setAmount(100L))
                         .setStatus(InvoicePaymentStatus.failed(
                                 new InvoicePaymentFailed(OperationFailure.failure(
                                         new Failure("authorization_failed:unknown"))))))

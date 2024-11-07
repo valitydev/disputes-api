@@ -1,6 +1,6 @@
-package dev.vality.disputes.servlet;
+package dev.vality.disputes.provider.payments.servlet;
 
-import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
+import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
@@ -8,11 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
-@WebServlet("/v1/callback")
-public class ProviderPaymentsCallbackServlet extends GenericServlet {
+@WebServlet("/v1/provider-payments-admin-management")
+@SuppressWarnings({"ParameterName", "LineLength"})
+public class ProviderPaymentsAdminManagementServlet extends GenericServlet {
 
     @Autowired
-    private ProviderPaymentsCallbackServiceSrv.Iface providerPaymentsCallbackHandler;
+    private ProviderPaymentsAdminManagementServiceSrv.Iface providerPaymentsAdminManagementHandler;
 
     private Servlet servlet;
 
@@ -20,7 +21,7 @@ public class ProviderPaymentsCallbackServlet extends GenericServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         servlet = new THServiceBuilder()
-                .build(ProviderPaymentsCallbackServiceSrv.Iface.class, providerPaymentsCallbackHandler);
+                .build(ProviderPaymentsAdminManagementServiceSrv.Iface.class, providerPaymentsAdminManagementHandler);
     }
 
     @Override

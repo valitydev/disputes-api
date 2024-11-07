@@ -6,7 +6,6 @@ import dev.vality.disputes.domain.tables.pojos.Dispute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -17,7 +16,7 @@ public class ErrorResultHandler {
 
     private final DisputeDao disputeDao;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void updateFailed(Dispute dispute, String errorReason) {
         log.error("Trying to set failed Dispute status with {} error reason {}", errorReason, dispute.getId());
         disputeDao.update(dispute.getId(), DisputeStatus.failed, errorReason);

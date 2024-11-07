@@ -1,4 +1,4 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.provider.payments.service;
 
 import dev.vality.disputes.exception.RoutingException;
 import dev.vality.disputes.schedule.model.ProviderData;
@@ -15,7 +15,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class ProviderPaymentsRouting {
 
-    private static final String PAYMENTS_URL_POSTFIX_DEFAULT = "payments";
+    private static final String PAYMENTS_URL_POSTFIX_DEFAULT = "provider-payments";
     private static final String OPTION_PROVIDER_PAYMENTS_URL_FIELD_NAME = "provider_payments_url";
 
     public void initRouteUrl(ProviderData providerData) {

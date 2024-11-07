@@ -1,6 +1,7 @@
-package dev.vality.disputes.callback;
+package dev.vality.disputes.provider.payments.service;
 
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,7 @@ public class ProviderPaymentsIfaceBuilder {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
 
-    @Cacheable(value = "providersPayments", key = "#root.args[0]", cacheManager = "providersPaymentsCacheManager")
+    @Cacheable(value = "providerPayments", key = "#root.args[0]", cacheManager = "providerPaymentsCacheManager")
     public ProviderPaymentsServiceSrv.Iface buildTHSpawnClient(String routeUrl) {
         log.info("Creating new client for url: {}", routeUrl);
         return new THSpawnClientBuilder()

@@ -13,7 +13,6 @@ import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -32,7 +31,7 @@ public class DisputeStatusResultHandler {
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void handleStatusPending(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
         // дергаем update() чтоб обновить время вызова next_check_after,
         // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
@@ -43,7 +42,7 @@ public class DisputeStatusResultHandler {
         log.debug("Dispute status has been set to pending {}", dispute.getId());
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void handleStatusFail(Dispute dispute, DisputeStatusResult result) {
         var failure = result.getStatusFail().getFailure();
         var errorMessage = ErrorFormatter.getErrorMessage(failure);
@@ -56,7 +55,7 @@ public class DisputeStatusResultHandler {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void handleStatusSuccess(Dispute dispute, DisputeStatusResult result) {
         callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
         mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
@@ -66,7 +65,7 @@ public class DisputeStatusResultHandler {
         log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void handlePoolingExpired(Dispute dispute) {
         callbackNotifier.sendDisputePoolingExpired(dispute);
         mdcTopicProducer.sendPoolingExpired(dispute);
@@ -75,7 +74,7 @@ public class DisputeStatusResultHandler {
         log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException e) {
         var errorMessage = e.getErrorDefinition().getErrorReason();
         handleUnexpectedResultMapping(dispute, errorMessage, null);

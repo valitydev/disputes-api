@@ -26,7 +26,7 @@ public class NetworkConfig {
     public static final String MERCHANT = "/v1/merchant";
     public static final String ADMIN_MANAGEMENT = "/v1/admin-management";
     public static final String CALLBACK = "/v1/callback";
-    public static final String PAYMENTS_ADMIN_MANAGEMENT = "/v1/payments-admin-management";
+    public static final String PROVIDER_PAYMENTS_ADMIN_MANAGEMENT = "/v1/provider-payments-admin-management";
 
     @Bean
     public FilterRegistrationBean externalPortRestrictingFilter() {
@@ -42,7 +42,7 @@ public class NetworkConfig {
                         || servletPath.startsWith(MERCHANT)
                         || servletPath.startsWith(ADMIN_MANAGEMENT)
                         || servletPath.startsWith(CALLBACK)
-                        || servletPath.startsWith(PAYMENTS_ADMIN_MANAGEMENT);
+                        || servletPath.startsWith(PROVIDER_PAYMENTS_ADMIN_MANAGEMENT);
                 if ((request.getLocalPort() == restPort) && !enabledPaths) {
                     response.sendError(404, "Unknown address");
                     return;

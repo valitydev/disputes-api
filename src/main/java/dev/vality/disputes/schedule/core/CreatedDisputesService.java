@@ -18,8 +18,6 @@ import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -44,7 +42,7 @@ public class CreatedDisputesService {
     private final ErrorResultHandler errorResultHandler;
     private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
         var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.created);
         if (!locked.isEmpty()) {
@@ -53,7 +51,7 @@ public class CreatedDisputesService {
         return locked;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void callCreateDisputeRemotely(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -75,10 +73,10 @@ public class CreatedDisputesService {
         var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
         var options = providerData.getOptions();
         if ((invoicePayment.getPayment().getStatus().isSetCaptured() && isCapturedBlockedForDispute(options))
-                || isNotProvidersDisputesApiExist(options)) {
+                || isNotProviderDisputesApiExist(options)) {
             // отправлять на ручной разбор, если выставлена опция
             // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            log.warn("Trying to call defaultRemoteClient.createDispute(), options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProvidersDisputesApiExist(options));
+            log.warn("Trying to call defaultRemoteClient.createDispute(), options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProviderDisputesApiExist(options));
             wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
                     () -> {
                         var result = defaultRemoteClient.createDispute(dispute, attachments, providerData);
@@ -88,7 +86,7 @@ public class CreatedDisputesService {
             return;
         }
         wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
-                () -> wRuntimeExceptionCatcher.catchProvidersDisputesApiNotExist(
+                () -> wRuntimeExceptionCatcher.catchProviderDisputesApiNotExist(
                         providerData,
                         () -> {
                             var result = remoteClient.createDispute(dispute, attachments, providerData);
@@ -103,7 +101,7 @@ public class CreatedDisputesService {
                 e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     void finishTask(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
         switch (result.getSetField()) {
             case SUCCESS_RESULT -> disputeCreateResultHandler.handleSuccessResult(dispute, result, providerData);
@@ -116,7 +114,7 @@ public class CreatedDisputesService {
         return options.containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
     }
 
-    private boolean isNotProvidersDisputesApiExist(Map<String, String> options) {
+    private boolean isNotProviderDisputesApiExist(Map<String, String> options) {
         return !options.containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
     }
 

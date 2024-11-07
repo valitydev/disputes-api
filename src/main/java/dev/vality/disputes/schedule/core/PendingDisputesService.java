@@ -14,8 +14,6 @@ import dev.vality.disputes.schedule.service.ProviderDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -36,7 +34,7 @@ public class PendingDisputesService {
     private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
         var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.pending);
         if (!locked.isEmpty()) {
@@ -45,7 +43,7 @@ public class PendingDisputesService {
         return locked;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void callPendingDisputeRemotely(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -78,7 +76,7 @@ public class PendingDisputesService {
                 e -> disputeStatusResultHandler.handleUnexpectedResultMapping(dispute, e));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     void finishTask(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
         switch (result.getSetField()) {
             case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);

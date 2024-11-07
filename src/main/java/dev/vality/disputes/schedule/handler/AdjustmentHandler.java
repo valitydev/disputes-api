@@ -16,7 +16,7 @@ public class AdjustmentHandler {
     public UUID handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("dispute-created-adjustment-id-" + dispute.getId() + "-" + oldName);
+        currentThread.setName("dispute-create-adjustment-id-" + dispute.getId() + "-" + oldName);
         try {
             adjustmentsService.callHgForCreateAdjustment(dispute);
             return dispute.getId();

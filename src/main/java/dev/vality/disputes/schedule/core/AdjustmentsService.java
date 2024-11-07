@@ -16,8 +16,6 @@ import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -37,7 +35,7 @@ public class AdjustmentsService {
     private final AdjustmentExtractor adjustmentExtractor;
     private final ErrorResultHandler errorResultHandler;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public List<Dispute> getDisputesForHgCall(int batchSize) {
         var locked = disputeDao.getDisputesForHgCall(batchSize);
         if (!locked.isEmpty()) {
@@ -46,7 +44,7 @@ public class AdjustmentsService {
         return locked;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void callHgForCreateAdjustment(Dispute dispute) {
         log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
         var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
@@ -89,7 +87,7 @@ public class AdjustmentsService {
     }
 
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     boolean createAdjustment(Dispute dispute, InvoicePaymentAdjustmentParams params) {
         var paymentAdjustment = createPaymentAdjustment(dispute, params);
         if (paymentAdjustment == null) {

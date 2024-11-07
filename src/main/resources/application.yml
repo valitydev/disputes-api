@@ -116,8 +116,15 @@ dispute:
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleCreateAdjustmentsEnabled: true
-  isScheduleForgottenDisputesNotificationsEnabled: false
-  isProviderCallbackEnabled: false
+  isScheduleForgottenDisputesNotificationsEnabled: true
+
+provider:
+  payments:
+    batchSize: 1
+    fixedDelayCreateAdjustments: 5000
+    initialDelayCreateAdjustments: 5000
+    isProviderCallbackEnabled: false
+    isScheduleCreateAdjustmentsEnabled: true
 
 time:
   config:
