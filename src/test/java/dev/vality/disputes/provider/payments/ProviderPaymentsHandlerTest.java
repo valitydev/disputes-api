@@ -86,6 +86,7 @@ public class ProviderPaymentsHandlerTest {
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
         when(providerPaymentsIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        var approveParams = new ArrayList<ApproveParams>();
         for (int i = 0; i < 4; i++) {
             var invoiceId = String.valueOf(i);
             var invoice = createInvoice(invoiceId, invoiceId);
@@ -95,9 +96,13 @@ public class ProviderPaymentsHandlerTest {
                     .setPaymentId(invoiceId);
             // 1. callback
             createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
+            approveParams.add(new ApproveParams(invoiceId, invoiceId));
         }
+        // pendings = 4, approved = 3
+        approveParams.removeFirst();
         var request = new ApproveParamsRequest()
-                .setApproveAll(true)
+                .setApproveAll(false)
+                .setApproveParams(approveParams)
                 .setApproveReason("test asdj556");
         // 2. approve
         createProviderPaymentsAdminManagementIface().approve(request);
@@ -117,6 +122,7 @@ public class ProviderPaymentsHandlerTest {
             var providerCallback = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallbackId);
             assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         }
+        assertEquals(1, providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().size());
     }
 
     private ProviderPaymentsCallbackServiceSrv.Iface createProviderPaymentsCallbackIface() throws URISyntaxException {
