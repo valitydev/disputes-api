@@ -14,6 +14,7 @@ import static dev.vality.disputes.api.service.ApiDisputesService.DISPUTE_PENDING
 @RequiredArgsConstructor
 @SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
 public class DisputesService {
+
     private final DisputeDao disputeDao;
 
     @Transactional
