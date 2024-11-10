@@ -128,13 +128,12 @@ public class DebugAdminManagementHandlerTest {
     public void testBindCreatedAlreadyExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var providerDisputeId = generateId();
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         disputeDao.setNextStepToAlreadyExist(disputeId);
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
+        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, generateId()));
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }

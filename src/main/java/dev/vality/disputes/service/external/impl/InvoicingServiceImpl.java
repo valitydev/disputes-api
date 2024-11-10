@@ -69,7 +69,7 @@ public class InvoicingServiceImpl implements InvoicingService {
         } catch (InvoicePaymentNotFound ex) {
             throw new NotFoundException(String.format("Unable to find invoice with id: %s, paymentId: %s", invoiceId, paymentId), ex, Type.PAYMENT);
         } catch (InvalidPaymentStatus | InvalidPaymentTargetStatus ex) {
-            throw new InvoicingPaymentStatusRestrictionsException(ex);
+            throw new InvoicingPaymentStatusRestrictionsException(ex, null);
         } catch (TException ex) {
             throw new InvoicingException(String.format("Failed to createPaymentAdjustment with id: %s", invoiceId), ex);
         }

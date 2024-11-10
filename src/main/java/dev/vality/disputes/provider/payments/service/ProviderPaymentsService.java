@@ -66,7 +66,7 @@ public class ProviderPaymentsService {
             }
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
-            finishFailed(providerCallback, ErrorMessage.PAYMENT_STATUS_RESTRICTIONS);
+            finishFailed(providerCallback, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
         } catch (ProviderCallbackStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("ProviderCallbackStatusWasUpdatedByAnotherThread when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
         }
