@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
@@ -9,6 +10,7 @@ import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.util.MockUtil;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,8 @@ public class PendingDisputesServiceTest {
     @Autowired
     private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
     @Autowired
+    private InvoicingSrv.Iface invoicingClient;
+    @Autowired
     private DominantService dominantService;
     @Autowired
     private DisputeDao disputeDao;
@@ -50,6 +54,7 @@ public class PendingDisputesServiceTest {
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         disputeDao.setNextStepToPending(disputeId, null);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);

@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,9 @@ public class InvoicingServiceImpl implements InvoicingService {
     public Invoice getInvoice(String invoiceId) {
         try {
             log.debug("Looking for invoice with id: {}", invoiceId);
-            var invoice = invoicingClient.get(invoiceId, new EventRange());
+            var invoice = Optional.ofNullable(invoicingClient.get(invoiceId, new EventRange()))
+                    .orElseThrow(() -> new NotFoundException(
+                            String.format("Invoice not found, id: %s", invoiceId), Type.INVOICE));
             log.debug("Found invoice with id: {}", invoiceId);
             return invoice;
         } catch (InvoiceNotFound ex) {
@@ -38,7 +42,9 @@ public class InvoicingServiceImpl implements InvoicingService {
     public InvoicePayment getInvoicePayment(String invoiceId, String paymentId) {
         try {
             log.debug("Looking for invoicePayment with id: {}", invoiceId);
-            var invoicePayment = invoicingClient.getPayment(invoiceId, paymentId);
+            var invoicePayment = Optional.ofNullable(invoicingClient.getPayment(invoiceId, paymentId))
+                    .orElseThrow(() -> new NotFoundException(
+                            String.format("InvoicePayment not found, id: %s, paymentId: %s", invoiceId, paymentId), Type.PAYMENT));
             log.debug("Found invoicePayment with id: {}", invoiceId);
             return invoicePayment;
         } catch (InvoiceNotFound ex) {

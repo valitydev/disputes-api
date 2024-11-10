@@ -1,8 +1,6 @@
 package dev.vality.disputes.provider.payments;
 
 import dev.vality.bouncer.decisions.ArbiterSrv;
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
@@ -109,9 +107,7 @@ public class ProviderPaymentsHandlerTest {
         var providerCallbackIds = new ArrayList<UUID>();
         for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
             providerCallbackIds.add(providerCallback.getId());
-            var invoicePayment = MockUtil.createInvoicePayment(providerCallback.getPaymentId());
-            invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-            when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+            when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(providerCallback.getPaymentId()));
             var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
             when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                     .thenReturn(getCapturedInvoicePaymentAdjustment("adjustmentId", reason));

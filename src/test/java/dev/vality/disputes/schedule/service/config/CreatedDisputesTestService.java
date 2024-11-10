@@ -1,7 +1,5 @@
 package dev.vality.disputes.schedule.service.config;
 
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
@@ -54,9 +52,7 @@ public class CreatedDisputesTestService {
         var paymentId = "1";
         var providerDisputeId = generateId();
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());

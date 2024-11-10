@@ -1,7 +1,5 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorMessage;
@@ -74,9 +72,10 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
+        when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
+        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -89,9 +88,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -114,9 +111,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
@@ -137,9 +132,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
@@ -164,9 +157,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
@@ -190,9 +181,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
@@ -214,9 +203,7 @@ public class CreatedDisputesServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-        var invoicePayment = MockUtil.createInvoicePayment(paymentId);
-        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());

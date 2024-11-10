@@ -56,7 +56,7 @@ public abstract class DisputeDaoTest {
         disputeDao.save(random);
         assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
         disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0));
-        assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+        assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, DisputeStatus.pending).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }
 
