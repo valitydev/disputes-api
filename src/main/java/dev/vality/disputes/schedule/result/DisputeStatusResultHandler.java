@@ -31,14 +31,14 @@ public class DisputeStatusResultHandler {
     private final MdcTopicProducer mdcTopicProducer;
     private final ProviderPaymentsCallbackServiceSrv.Iface providerPaymentsCallbackHandler;
 
-    public void handleStatusPending(Dispute dispute, ProviderData providerData) {
+    public void handlePendingResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
         // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
         // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
         disputesService.setNextStepToPending(dispute, providerData);
     }
 
-    public void handleStatusFail(Dispute dispute, DisputeStatusResult result) {
+    public void handleFailedResult(Dispute dispute, DisputeStatusResult result) {
         var failure = result.getStatusFail().getFailure();
         var errorMessage = ErrorFormatter.getErrorMessage(failure);
         if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
@@ -48,9 +48,15 @@ public class DisputeStatusResultHandler {
         }
     }
 
-    public void handleStatusSuccess(Dispute dispute, DisputeStatusResult result) {
-        callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
-        mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
+    public void handleFailedResult(Dispute dispute, String errorMessage) {
+        disputesService.finishFailed(dispute, errorMessage);
+    }
+
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, boolean notify) {
+        if (notify) {
+            callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
+            mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
+        }
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
         createAdjustmentWhenFailedPaymentSuccess(dispute);
@@ -62,17 +68,13 @@ public class DisputeStatusResultHandler {
         disputesService.setNextStepToManualPending(dispute, ErrorMessage.POOLING_EXPIRED);
     }
 
-    public void handleFailResult(Dispute dispute, String errorMessage) {
-        disputesService.finishFailed(dispute, errorMessage);
-    }
-
     public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
         // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново, должно быть 0% заходов сюда
         disputesService.setNextStepToCreated(dispute, providerData);
     }
 
-    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException e) {
-        var errorMessage = e.getErrorDefinition().getErrorReason();
+    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
+        var errorMessage = ex.getErrorDefinition().getErrorReason();
         handleUnexpectedResultMapping(dispute, errorMessage, null);
     }
 

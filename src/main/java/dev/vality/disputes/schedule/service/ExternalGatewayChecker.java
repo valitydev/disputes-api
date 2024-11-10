@@ -22,20 +22,20 @@ public class ExternalGatewayChecker {
     private final CloseableHttpClient httpClient;
     private final ProviderDisputesRouting providerDisputesRouting;
 
-    public boolean isProviderDisputesUnexpectedResultMapping(WRuntimeException e) {
-        return e.getErrorDefinition() != null
-                && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
-                && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
-                && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && e.getErrorDefinition().getErrorReason() != null
-                && e.getErrorDefinition().getErrorReason().contains("Unexpected result, code = ");
+    public boolean isProviderDisputesUnexpectedResultMapping(WRuntimeException ex) {
+        return ex.getErrorDefinition() != null
+                && ex.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
+                && ex.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
+                && ex.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
+                && ex.getErrorDefinition().getErrorReason() != null
+                && ex.getErrorDefinition().getErrorReason().contains("Unexpected result, code = ");
     }
 
-    public boolean isProviderDisputesApiNotExist(ProviderData providerData, WRuntimeException e) {
-        return e.getErrorDefinition() != null
-                && e.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
-                && e.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
-                && e.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
+    public boolean isProviderDisputesApiNotExist(ProviderData providerData, WRuntimeException ex) {
+        return ex.getErrorDefinition() != null
+                && ex.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
+                && ex.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
+                && ex.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
                 && isProviderDisputesApiNotFound(providerData);
     }
 

@@ -59,9 +59,9 @@ public class PendingDisputesService {
             var providerData = getProviderData(dispute);
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
-                    case STATUS_SUCCESS -> disputeStatusResultHandler.handleStatusSuccess(dispute, result);
-                    case STATUS_FAIL -> disputeStatusResultHandler.handleStatusFail(dispute, result);
-                    case STATUS_PENDING -> disputeStatusResultHandler.handleStatusPending(dispute, providerData);
+                    case STATUS_SUCCESS -> disputeStatusResultHandler.handleSucceededResult(dispute, result, true);
+                    case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
+                    case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
                 }
             };
@@ -72,8 +72,8 @@ public class PendingDisputesService {
         } catch (NotFoundException ex) {
             log.error("NotFound when handle PendingDisputesService.callPendingDisputeRemotely, type={}", ex.getType(), ex);
             switch (ex.getType()) {
-                case INVOICE -> disputeStatusResultHandler.handleFailResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
-                case PAYMENT -> disputeStatusResultHandler.handleFailResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
+                case INVOICE -> disputeStatusResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
+                case PAYMENT -> disputeStatusResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
                 case PROVIDERDISPUTE -> disputeStatusResultHandler.handleProviderDisputeNotFound(
                         dispute, getProviderData(dispute));
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
@@ -84,7 +84,7 @@ public class PendingDisputesService {
             disputeStatusResultHandler.handlePoolingExpired(dispute);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle PendingDisputesService.callCreateDisputeRemotely", ex);
-            disputeStatusResultHandler.handleFailResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+            disputeStatusResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("DisputeStatusWasUpdatedByAnotherThread when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
         }
@@ -93,7 +93,7 @@ public class PendingDisputesService {
     private void checkDisputeStatusByRemoteClient(Dispute dispute, Runnable checkDisputeStatusByRemoteClient) {
         woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
                 checkDisputeStatusByRemoteClient,
-                e -> disputeStatusResultHandler.handleUnexpectedResultMapping(dispute, e));
+                ex -> disputeStatusResultHandler.handleUnexpectedResultMapping(dispute, ex));
     }
 
     private ProviderData getProviderData(Dispute dispute) {

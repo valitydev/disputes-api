@@ -56,6 +56,23 @@ public class DisputesService {
         log.debug("Dispute status has been set to succeeded {}", dispute);
     }
 
+    public void finishFailed(String invoiceId, String paymentId, String errorMessage) {
+        var disputes = disputeDao.get(invoiceId, paymentId).stream()
+                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
+                .sorted(Comparator.comparing(Dispute::getCreatedAt))
+                .toList();
+        for (var dispute : disputes) {
+            try {
+                checkPendingStatuses(dispute);
+                finishFailed(dispute, errorMessage);
+            } catch (NotFoundException ex) {
+                log.warn("NotFound when handle DisputesService.finishFailed, type={}", ex.getType(), ex);
+            } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
+                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishFailed", ex);
+            }
+        }
+    }
+
     public void finishFailed(Dispute dispute, String errorMessage) {
         log.warn("Trying to set failed Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
         disputeDao.finishFailed(dispute.getId(), errorMessage);

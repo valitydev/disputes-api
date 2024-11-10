@@ -32,39 +32,40 @@ import static org.springframework.http.ResponseEntity.status;
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
+@SuppressWarnings({"LineLength"})
 public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
 
     @ExceptionHandler({InvoicingPaymentStatusRestrictionsException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleInvoicingPaymentStatusRestrictionsException(InvoicingPaymentStatusRestrictionsException e) {
-        log.warn("<- Res [400]: Payment should be failed", e);
+    public Object handleInvoicingPaymentStatusRestrictionsException(InvoicingPaymentStatusRestrictionsException ex) {
+        log.warn("<- Res [400]: Payment should be failed", ex);
         return new GeneralError()
                 .message("Blocked: Payment should be failed");
     }
 
     @ExceptionHandler({InvalidMimeTypeException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleInvalidMimeTypeException(InvalidMimeTypeException e) {
-        log.warn("<- Res [400]: MimeType not valid", e);
+    public Object handleInvalidMimeTypeException(InvalidMimeTypeException ex) {
+        log.warn("<- Res [400]: MimeType not valid", ex);
         return new GeneralError()
-                .message(e.getMessage());
+                .message(ex.getMessage());
     }
 
     @ExceptionHandler({InvalidMediaTypeException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleInvalidMediaTypeException(InvalidMediaTypeException e) {
-        log.warn("<- Res [400]: MimeType not valid", e);
+    public Object handleInvalidMediaTypeException(InvalidMediaTypeException ex) {
+        log.warn("<- Res [400]: MimeType not valid", ex);
         return new GeneralError()
-                .message(e.getMessage());
+                .message(ex.getMessage());
     }
 
     @ExceptionHandler({ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleConstraintViolationException(ConstraintViolationException e) {
-        log.warn("<- Res [400]: Not valid", e);
-        var errorMessage = e.getConstraintViolations().stream()
+    public Object handleConstraintViolationException(ConstraintViolationException ex) {
+        log.warn("<- Res [400]: Not valid", ex);
+        var errorMessage = ex.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
         return new GeneralError()
@@ -73,49 +74,49 @@ public class ErrorControllerAdvice {
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        log.warn("<- Res [400]: MethodArgument not valid", e);
+    public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.warn("<- Res [400]: MethodArgument not valid", ex);
         return new GeneralError()
-                .message(e.getMessage());
+                .message(ex.getMessage());
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
-        log.warn("<- Res [400]: Missing ServletRequestParameter", e);
+    public Object handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        log.warn("<- Res [400]: Missing ServletRequestParameter", ex);
         return new GeneralError()
-                .message(e.getMessage());
+                .message(ex.getMessage());
     }
 
     @ExceptionHandler({TokenKeeperException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public void handleAccessDeniedException(TokenKeeperException e) {
-        log.warn("<- Res [401]: Request denied access", e);
+    public void handleAccessDeniedException(TokenKeeperException ex) {
+        log.warn("<- Res [401]: Request denied access", ex);
     }
 
     @ExceptionHandler({AuthorizationException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public void handleAccessDeniedException(AuthorizationException e) {
-        log.warn("<- Res [401]: Request denied access", e);
+    public void handleAccessDeniedException(AuthorizationException ex) {
+        log.warn("<- Res [401]: Request denied access", ex);
     }
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public void handleNotFoundException(NotFoundException e) {
-        log.warn("<- Res [404]: Not found, type={}", e.getType(), e);
+    public void handleNotFoundException(NotFoundException ex) {
+        log.warn("<- Res [404]: Not found, type={}", ex.getType(), ex);
     }
 
     @ExceptionHandler({HttpMediaTypeNotAcceptableException.class})
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
-    public void handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException e) {
-        log.warn("<- Res [406]: MediaType not acceptable", e);
+    public void handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        log.warn("<- Res [406]: MediaType not acceptable", ex);
     }
 
     @ExceptionHandler({HttpMediaTypeNotSupportedException.class})
-    public ResponseEntity<?> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException e, WebRequest request) {
-        log.warn("<- Res [415]: MediaType not supported", e);
+    public ResponseEntity<?> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, WebRequest request) {
+        log.warn("<- Res [415]: MediaType not supported", ex);
         return status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .headers(httpHeaders(e))
+                .headers(httpHeaders(ex))
                 .build();
     }
 
@@ -123,26 +124,26 @@ public class ErrorControllerAdvice {
 
     @ExceptionHandler(HttpClientErrorException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public void handleHttpClientErrorException(HttpClientErrorException e) {
+    public void handleHttpClientErrorException(HttpClientErrorException ex) {
         log.error("<- Res [500]: Error with using inner http client, code={}, body={}",
-                e.getStatusCode(), e.getResponseBodyAsString(), e);
+                ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
     }
 
     @ExceptionHandler(HttpTimeoutException.class)
     @ResponseStatus(HttpStatus.GATEWAY_TIMEOUT)
-    public void handleHttpTimeoutException(HttpTimeoutException e) {
-        log.error("<- Res [504]: Timeout with using inner http client", e);
+    public void handleHttpTimeoutException(HttpTimeoutException ex) {
+        log.error("<- Res [504]: Timeout with using inner http client", ex);
     }
 
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public void handleException(Throwable e) {
-        log.error("<- Res [500]: Unrecognized inner error", e);
+    public void handleException(Throwable ex) {
+        log.error("<- Res [500]: Unrecognized inner error", ex);
     }
 
-    private HttpHeaders httpHeaders(HttpMediaTypeNotSupportedException e) {
+    private HttpHeaders httpHeaders(HttpMediaTypeNotSupportedException ex) {
         var headers = new HttpHeaders();
-        var mediaTypes = e.getSupportedMediaTypes();
+        var mediaTypes = ex.getSupportedMediaTypes();
         if (!CollectionUtils.isEmpty(mediaTypes)) {
             headers.setAccept(mediaTypes);
         }

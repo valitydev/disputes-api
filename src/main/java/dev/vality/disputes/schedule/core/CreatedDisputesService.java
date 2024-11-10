@@ -58,9 +58,9 @@ public class CreatedDisputesService {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
                 switch (result.getSetField()) {
-                    case SUCCESS_RESULT -> disputeCreateResultHandler.handleSuccessResult(
+                    case SUCCESS_RESULT -> disputeCreateResultHandler.handleSucceededResult(
                             dispute, result, providerData);
-                    case FAIL_RESULT -> disputeCreateResultHandler.handleFailResult(dispute, result);
+                    case FAIL_RESULT -> disputeCreateResultHandler.handleFailedResult(dispute, result);
                     case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
                 }
@@ -80,16 +80,16 @@ public class CreatedDisputesService {
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle CreatedDisputesService.callCreateDisputeRemotely, type={}", ex.getType(), ex);
             switch (ex.getType()) {
-                case INVOICE -> disputeCreateResultHandler.handleFailResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
-                case PAYMENT -> disputeCreateResultHandler.handleFailResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
+                case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
+                case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
                 case ATTACHMENT, FILEMETA ->
-                        disputeCreateResultHandler.handleFailResult(dispute, ErrorMessage.NO_ATTACHMENTS);
+                        disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.NO_ATTACHMENTS);
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
-            disputeCreateResultHandler.handleFailResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+            disputeCreateResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("DisputeStatusWasUpdatedByAnotherThread when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
         }

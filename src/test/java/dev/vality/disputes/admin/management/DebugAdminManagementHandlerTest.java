@@ -78,6 +78,14 @@ public class DebugAdminManagementHandlerTest {
     }
 
     @Test
+    public void testApprovePendingWithCallHg() {
+        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        debugAdminManagementController.approvePending(getApproveRequest(disputeId, false));
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
     public void testApprovePendingWithSkipHg() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));

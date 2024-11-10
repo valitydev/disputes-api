@@ -30,7 +30,7 @@ public class DisputeCreateResultHandler {
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
-    public void handleSuccessResult(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
+    public void handleSucceededResult(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
         providerDisputeDao.save(result.getSuccessResult().getProviderDisputeId(), dispute);
         var isDefaultRouteUrl = defaultRemoteClient.routeUrlEquals(providerData);
         if (isDefaultRouteUrl) {
@@ -40,7 +40,7 @@ public class DisputeCreateResultHandler {
         }
     }
 
-    public void handleFailResult(Dispute dispute, DisputeCreatedResult result) {
+    public void handleFailedResult(Dispute dispute, DisputeCreatedResult result) {
         var failure = result.getFailResult().getFailure();
         var errorMessage = ErrorFormatter.getErrorMessage(failure);
         if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
@@ -50,7 +50,7 @@ public class DisputeCreateResultHandler {
         }
     }
 
-    public void handleFailResult(Dispute dispute, String errorMessage) {
+    public void handleFailedResult(Dispute dispute, String errorMessage) {
         disputesService.finishFailed(dispute, errorMessage);
     }
 
@@ -60,8 +60,8 @@ public class DisputeCreateResultHandler {
         disputesService.setNextStepToAlreadyExist(dispute);
     }
 
-    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException e) {
-        var errorMessage = e.getErrorDefinition().getErrorReason();
+    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
+        var errorMessage = ex.getErrorDefinition().getErrorReason();
         handleUnexpectedResultMapping(dispute, errorMessage, null);
     }
 

@@ -7,6 +7,9 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.provider.DisputeStatusSuccessResult;
+import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.FileStorageService;
@@ -38,6 +41,7 @@ public class AdminManagementDisputesService {
     private final FileStorageService fileStorageService;
     private final DisputesService disputesService;
     private final ProviderDataService providerDataService;
+    private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final CloseableHttpClient httpClient;
 
     @Transactional
@@ -58,12 +62,17 @@ public class AdminManagementDisputesService {
         var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
         var changedAmount = approveParam.getChangedAmount()
                 .filter(s -> dispute.getStatus() == DisputeStatus.pending
-                        || dispute.getStatus() == DisputeStatus.manual_pending)
-                .orElse(null);
-        if (dispute.getStatus() == DisputeStatus.pending
+                        || dispute.getStatus() == DisputeStatus.manual_pending);
+        if ((dispute.getStatus() == DisputeStatus.pending
+                || dispute.getStatus() == DisputeStatus.manual_pending)
+                && !approveParam.isSkipCallHgForCreateAdjustment()) {
+            disputeStatusResultHandler.handleSucceededResult(dispute, changedAmount
+                    .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
+                    .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult())), false);
+        } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
-            disputesService.finishSucceeded(dispute, changedAmount);
+            disputesService.finishSucceeded(dispute, changedAmount.orElse(null));
         } else {
             log.debug("Request was skipped by inappropriate status {}", dispute);
         }

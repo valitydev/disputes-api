@@ -55,7 +55,6 @@ public class ProviderPaymentsService {
             createCashFlowAdjustment(providerCallback, invoicePayment);
             createCapturedAdjustment(providerCallback, invoicePayment);
             finishSucceeded(providerCallback);
-            disputeFinishSucceeded(providerCallback);
         } catch (NotFoundException ex) {
             log.error("NotFound when handle ProviderPaymentsService.callHgForCreateAdjustment, type={}", ex.getType(), ex);
             switch (ex.getType()) {
@@ -103,6 +102,7 @@ public class ProviderPaymentsService {
         providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to succeeded {}", providerCallback.getInvoiceId());
+        disputeFinishSucceeded(providerCallback);
     }
 
     private void finishFailed(ProviderCallback providerCallback, String errorReason) {
@@ -111,6 +111,7 @@ public class ProviderPaymentsService {
         providerCallback.setErrorReason(errorReason);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to failed {}", providerCallback.getInvoiceId());
+        disputeFinishSucceeded(providerCallback, errorReason);
     }
 
     private void disputeFinishSucceeded(ProviderCallback providerCallback) {
@@ -118,6 +119,14 @@ public class ProviderPaymentsService {
             disputesService.finishSucceeded(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), providerCallback.getChangedAmount());
         } catch (Throwable ex) {
             log.error("Received exception while disputesService.finishSucceeded", ex);
+        }
+    }
+
+    private void disputeFinishSucceeded(ProviderCallback providerCallback, String errorMessage) {
+        try {
+            disputesService.finishFailed(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), errorMessage);
+        } catch (Throwable ex) {
+            log.error("Received exception while disputesService.finishFailed", ex);
         }
     }
 }
