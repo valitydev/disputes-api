@@ -2,7 +2,7 @@ package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
-import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.service.DisputesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,16 +13,16 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "dispute.isScheduleForgottenDisputesNotificationsEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class ForgottenDisputesNotificationsTask {
 
-    private final DisputeDao disputeDao;
+    private final DisputesService disputesService;
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
     @Scheduled(cron = "${dispute.cronForgottenDisputesNotifications:-}")
     public void processForgottenDisputes() {
-        var forgottenDisputes = disputeDao.getForgottenDisputes();
+        var forgottenDisputes = disputesService.getForgottenDisputes();
         if (!forgottenDisputes.isEmpty()) {
             callbackNotifier.sendForgottenDisputes(forgottenDisputes);
             mdcTopicProducer.sendForgottenDisputes(forgottenDisputes);

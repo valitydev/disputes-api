@@ -1,6 +1,6 @@
 package dev.vality.disputes.config;
 
-import dev.vality.disputes.service.MDCTaskDecorator;
+import dev.vality.disputes.service.MdcTaskDecorator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -8,13 +8,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 
 @Configuration
-@SuppressWarnings("AbbreviationAsWordInName")
-public class AsyncMDCConfiguration {
+public class AsyncMdcConfiguration {
 
     @Bean("disputesAsyncServiceExecutor")
     public Executor disputesAsyncServiceExecutor() {
         var executor = new ThreadPoolTaskExecutor();
-        executor.setTaskDecorator(new MDCTaskDecorator());
+        executor.setTaskDecorator(new MdcTaskDecorator());
         executor.initialize();
         executor.setThreadNamePrefix("disputesAsyncService-thread-");
         return executor;

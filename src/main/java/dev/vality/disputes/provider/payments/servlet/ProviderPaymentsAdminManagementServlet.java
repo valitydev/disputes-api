@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 
 @WebServlet("/v1/provider-payments-admin-management")
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsAdminManagementServlet extends GenericServlet {
 
     @Autowired

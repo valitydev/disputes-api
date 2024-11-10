@@ -8,8 +8,8 @@ import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsIfaceBuilder;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
@@ -59,7 +59,7 @@ public class ProviderPaymentsHandlerTest {
     @MockBean
     private DominantService dominantService;
     @MockBean
-    private ProviderPaymentsIfaceBuilder providerPaymentsIfaceBuilder;
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private ProviderPaymentsService providerPaymentsService;
     @Autowired
@@ -85,7 +85,7 @@ public class ProviderPaymentsHandlerTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
-        when(providerPaymentsIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var approveParams = new ArrayList<ApproveParams>();
         for (int i = 0; i < 4; i++) {
             var invoiceId = String.valueOf(i);

@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @TestComponent
 @Import({DisputeApiTestConfig.class, WiremockAddressesHolder.class})
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class DisputeApiTestService {
 
     @Autowired

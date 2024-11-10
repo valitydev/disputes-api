@@ -57,13 +57,13 @@ public class OtelConfig {
     private static void registerGlobalOpenTelemetry(OpenTelemetry openTelemetry) {
         try {
             GlobalOpenTelemetry.set(openTelemetry);
-        } catch (Exception e) {
-            log.warn("please initialize the ObservabilitySdk before starting the application");
+        } catch (Throwable ex) {
+            log.warn("Please initialize the ObservabilitySdk before starting the application", ex);
             GlobalOpenTelemetry.resetForTest();
             try {
                 GlobalOpenTelemetry.set(openTelemetry);
-            } catch (Exception ex) {
-                log.warn("unable to set GlobalOpenTelemetry", ex);
+            } catch (Throwable ex1) {
+                log.warn("Unable to set GlobalOpenTelemetry", ex1);
             }
         }
     }

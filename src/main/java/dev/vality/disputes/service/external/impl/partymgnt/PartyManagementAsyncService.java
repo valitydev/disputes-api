@@ -21,8 +21,8 @@ public class PartyManagementAsyncService {
         try {
             var shop = partyManagementService.getShop(partyId, shopId);
             return CompletableFuture.completedFuture(shop);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 }

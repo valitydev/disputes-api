@@ -5,7 +5,6 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -21,7 +20,7 @@ import java.util.UUID;
 import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 
 @Component
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class DisputeDao extends AbstractGenericDao {
 
     private final RowMapper<Dispute> disputeRowMapper;
@@ -42,18 +41,6 @@ public class DisputeDao extends AbstractGenericDao {
         return Optional.ofNullable(keyHolder.getKeyAs(UUID.class)).orElseThrow();
     }
 
-    public Dispute get(UUID disputeId, String invoiceId, String paymentId) {
-        var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.ID.eq(disputeId)
-                        // мы не можем позволить получить несанкционированный доступ к данным, ограничившись disputeId
-                        .and(DISPUTE.INVOICE_ID.eq(invoiceId))
-                        .and(DISPUTE.PAYMENT_ID.eq(paymentId)));
-        return Optional.ofNullable(fetchOne(query, disputeRowMapper))
-                .orElseThrow(
-                        () -> new NotFoundException(
-                                String.format("Dispute not found, disputeId='%s', invoiceId='%s', paymentId='%s'", disputeId, invoiceId, paymentId)));
-    }
-
     public List<Dispute> get(String invoiceId, String paymentId) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.INVOICE_ID.eq(invoiceId)
@@ -62,10 +49,22 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public Optional<Dispute> get(UUID disputeId) {
+    public Dispute get(UUID disputeId) {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.ID.eq(disputeId));
-        return Optional.ofNullable(fetchOne(query, disputeRowMapper));
+        return Optional.ofNullable(fetchOne(query, disputeRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Dispute not found, disputeId='%s'", disputeId), NotFoundException.Type.DISPUTE));
+    }
+
+    public Dispute getDisputeForUpdateSkipLocked(UUID disputeId) {
+        var query = getDslContext().selectFrom(DISPUTE)
+                .where(DISPUTE.ID.eq(disputeId))
+                .forUpdate()
+                .skipLocked();
+        return Optional.ofNullable(fetchOne(query, disputeRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Dispute not found, disputeId='%s'", disputeId), NotFoundException.Type.DISPUTE));
     }
 
     public List<Dispute> getDisputesForUpdateSkipLocked(int limit, DisputeStatus disputeStatus) {
@@ -80,69 +79,59 @@ public class DisputeDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public List<Dispute> getDisputesForHgCall(int limit) {
-        var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.STATUS.eq(DisputeStatus.create_adjustment)
-                        .and(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT.eq(false)))
-                .orderBy(DISPUTE.NEXT_CHECK_AFTER)
-                .limit(limit)
-                .forUpdate()
-                .skipLocked();
-        return Optional.ofNullable(fetch(query, disputeRowMapper))
-                .orElse(List.of());
-    }
-
     public List<Dispute> getForgottenDisputes() {
         var query = getDslContext().selectFrom(DISPUTE)
                 .where(DISPUTE.STATUS.ne(DisputeStatus.created)
                         .and(DISPUTE.STATUS.ne(DisputeStatus.pending))
                         .and(DISPUTE.STATUS.ne(DisputeStatus.failed))
                         .and(DISPUTE.STATUS.ne(DisputeStatus.cancelled))
-                        .and(DISPUTE.STATUS.ne(DisputeStatus.succeeded))
-                        .and(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT.eq(true)))
-                .orderBy(DISPUTE.NEXT_CHECK_AFTER)
-                .forUpdate()
-                .skipLocked();
+                        .and(DISPUTE.STATUS.ne(DisputeStatus.succeeded)))
+                .orderBy(DISPUTE.NEXT_CHECK_AFTER);
         return Optional.ofNullable(fetch(query, disputeRowMapper))
                 .orElse(List.of());
     }
 
-    @Nullable
-    public Dispute getDisputeForUpdateSkipLocked(UUID disputeId) {
-        var query = getDslContext().selectFrom(DISPUTE)
-                .where(DISPUTE.ID.eq(disputeId))
-                .forUpdate()
-                .skipLocked();
-        return fetchOne(query, disputeRowMapper);
+    public void setNextStepToCreated(UUID disputeId, LocalDateTime nextCheckAfter) {
+        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status) {
-        return update(disputeId, status, null, null, null, null, null);
+    public void setNextStepToPending(UUID disputeId, LocalDateTime nextCheckAfter) {
+        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter) {
-        return update(disputeId, status, nextCheckAfter, null, null, null, null);
+    public void setNextStepToCreateAdjustment(UUID disputeId, Long changedAmount) {
+        update(disputeId, DisputeStatus.create_adjustment, null, null, changedAmount, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status, String errorMessage) {
-        return update(disputeId, status, null, errorMessage, null, null, null);
+    public void setNextStepToManualCreated(UUID disputeId, String errorMessage) {
+        update(disputeId, DisputeStatus.manual_created, null, errorMessage, null, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status, String errorMessage, String mapping) {
-        return update(disputeId, status, null, errorMessage, null, null, mapping);
+    public void setNextStepToManualPending(UUID disputeId, String errorMessage) {
+        update(disputeId, DisputeStatus.manual_pending, null, errorMessage, null, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status, Long changedAmount) {
-        return update(disputeId, status, null, null, changedAmount, null, null);
+    public void setNextStepToAlreadyExist(UUID disputeId) {
+        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null);
     }
 
-    public UUID update(UUID disputeId, DisputeStatus status, Long changedAmount,
-                       Boolean skipCallHgForCreateAdjustment) {
-        return update(disputeId, status, null, null, changedAmount, skipCallHgForCreateAdjustment, null);
+    public void finishSucceeded(UUID disputeId, Long changedAmount) {
+        update(disputeId, DisputeStatus.succeeded, null, null, changedAmount, null);
     }
 
-    private UUID update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage,
-                        Long changedAmount, Boolean skipCallHgForCreateAdjustment, String mapping) {
+    public void finishFailed(UUID disputeId, String errorMessage) {
+        update(disputeId, DisputeStatus.failed, null, errorMessage, null, null);
+    }
+
+    public void finishFailedWithMapping(UUID disputeId, String errorMessage, String mapping) {
+        update(disputeId, DisputeStatus.failed, null, errorMessage, null, mapping);
+    }
+
+    public void finishCancelled(UUID disputeId, String errorMessage, String mapping) {
+        update(disputeId, DisputeStatus.cancelled, null, errorMessage, null, mapping);
+    }
+
+    private UUID update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage, Long changedAmount, String mapping) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
@@ -156,9 +145,6 @@ public class DisputeDao extends AbstractGenericDao {
         }
         if (changedAmount != null) {
             set = set.set(DISPUTE.CHANGED_AMOUNT, changedAmount);
-        }
-        if (skipCallHgForCreateAdjustment != null) {
-            set = set.set(DISPUTE.SKIP_CALL_HG_FOR_CREATE_ADJUSTMENT, skipCallHgForCreateAdjustment);
         }
         var query = set
                 .where(DISPUTE.ID.eq(disputeId));

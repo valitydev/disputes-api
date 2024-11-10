@@ -72,6 +72,5 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
         log.debug("Trying to call adminCallbackDisputesTgBotClient.sendForgottenDisputes() {}", notifications.size());
         adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
         log.debug("adminCallbackDisputesTgBotClient.sendForgottenDisputes() has been called {}", notifications.size());
-
     }
 }

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "provider.payments.isScheduleCreateAdjustmentsEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsTask {
 
     private final ExecutorService providerPaymentsThreadPool;

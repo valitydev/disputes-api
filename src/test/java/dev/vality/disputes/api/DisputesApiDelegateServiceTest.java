@@ -6,7 +6,6 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
@@ -41,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 @Import(WiremockAddressesHolder.class)
 public class DisputesApiDelegateServiceTest {
 
@@ -137,7 +136,7 @@ public class DisputesApiDelegateServiceTest {
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
         verify(bouncerClient, times(3)).judge(any(), any());
-        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
         // new after failed
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
@@ -157,7 +156,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getProxy(any());
         verify(partyManagementAsyncService, times(2)).getShop(any(), any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
-        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
     }
 
     @Test

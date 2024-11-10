@@ -5,6 +5,7 @@ import dev.vality.damsel.domain.CurrencyRef;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.api.model.PaymentParams;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessData;
 import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
@@ -18,6 +19,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"LineLength"})
 public class PaymentParamsBuilder {
 
     private final ProviderDataService providerDataService;
@@ -28,7 +30,6 @@ public class PaymentParamsBuilder {
         var invoice = accessData.getInvoice().getInvoice();
         log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
-        // http 500
         var currency = providerDataService.getCurrency(getCurrencyRef(payment));
         var shop = partyManagementAsyncService.getShop(invoice.getOwnerId(), invoice.getShopId());
         var paymentParams = PaymentParams.builder()
@@ -39,9 +40,8 @@ public class PaymentParamsBuilder {
                 .providerTrxId(getProviderTrxId(payment))
                 .currencyName(currency.getName())
                 .currencySymbolicCode(currency.getSymbolicCode())
-                .currencyNumericCode((int) currency.getNumericCode())
-                .currencyExponent((int) currency.getExponent())
-                // http 500
+                .currencyNumericCode(currency.isSetNumericCode() ? (int) currency.getNumericCode() : null)
+                .currencyExponent(currency.isSetExponent() ? (int) currency.getExponent() : null)
                 .options(providerDataService.getProviderData(payment).getOptions())
                 .shopId(invoice.getShopId())
                 .shopDetailsName(shop.get().getDetails().getName())
@@ -62,7 +62,7 @@ public class PaymentParamsBuilder {
     private String getProviderTrxId(InvoicePayment payment) {
         return Optional.ofNullable(payment.getLastTransactionInfo())
                 .map(TransactionInfo::getId)
-                // http 500
-                .orElseThrow();
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Payment with id: %s and filled ProviderTrxId not found!", payment.getPayment().getId()), NotFoundException.Type.PROVIDERTRXID));
     }
 }

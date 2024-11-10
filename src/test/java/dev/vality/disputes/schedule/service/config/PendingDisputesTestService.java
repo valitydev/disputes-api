@@ -4,7 +4,7 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
-import dev.vality.disputes.schedule.service.ProviderDisputesIfaceBuilder;
+import dev.vality.disputes.schedule.service.ProviderDisputesThriftInterfaceBuilder;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -20,11 +20,11 @@ import static org.mockito.Mockito.when;
 
 @TestComponent
 @Import({CreatedDisputesTestService.class})
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class PendingDisputesTestService {
 
     @Autowired
-    private ProviderDisputesIfaceBuilder providerDisputesIfaceBuilder;
+    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
     @Autowired
     private DisputeDao disputeDao;
     @Autowired
@@ -37,10 +37,10 @@ public class PendingDisputesTestService {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusSuccessResult());
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        pendingDisputesService.callPendingDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         return disputeId;
     }
 }

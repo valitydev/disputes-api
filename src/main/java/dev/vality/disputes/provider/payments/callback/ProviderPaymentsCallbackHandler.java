@@ -4,9 +4,10 @@ import dev.vality.damsel.domain.Currency;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.api.service.PaymentParamsBuilder;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsIfaceBuilder;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsRouting;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessService;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
@@ -22,14 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallbackServiceSrv.Iface {
 
     private final AccessService accessService;
     private final PaymentParamsBuilder paymentParamsBuilder;
     private final ProviderDataService providerDataService;
     private final ProviderPaymentsRouting providerPaymentsRouting;
-    private final ProviderPaymentsIfaceBuilder providerPaymentsIfaceBuilder;
+    private final ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     private final ProviderCallbackDao providerCallbackDao;
 
     @Value("${provider.payments.isProviderCallbackEnabled}")
@@ -37,19 +38,21 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
 
     @Override
     @Transactional
-    public void createAdjustmentWhenFailedPaymentSuccess(ProviderPaymentsCallbackParams providerPaymentsCallbackParams) throws TException {
-        log.info("Got providerPaymentsCallbackParams {}", providerPaymentsCallbackParams);
+    public void createAdjustmentWhenFailedPaymentSuccess(ProviderPaymentsCallbackParams callback) throws TException {
+        log.info("Got providerPaymentsCallbackParams {}", callback);
         if (!enabled) {
             return;
         }
-        if (providerPaymentsCallbackParams.getInvoiceId().isEmpty()) {
+        if (callback.getInvoiceId().isEmpty()) {
+            log.info("InvoiceId should be set, finish");
             return;
         }
         try {
-            var accessData = accessService.approveUserAccess(providerPaymentsCallbackParams.getInvoiceId().get(),
-                    providerPaymentsCallbackParams.getPaymentId().get(), false);
+            var accessData = accessService.approveUserAccess(callback.getInvoiceId().get(), callback.getPaymentId().get(), false);
             log.info("Got accessData {}", accessData);
-            if (!accessData.getPayment().getPayment().getStatus().isSetFailed()) {
+            var invoicePaymentStatus = accessData.getPayment().getPayment().getStatus();
+            if (!invoicePaymentStatus.isSetCancelled() && !invoicePaymentStatus.isSetFailed()) {
+                log.info("Payment should be failed, finish");
                 return;
             }
             var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
@@ -57,7 +60,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             var providerData = providerDataService.getProviderData(paymentParams.getProviderId(), paymentParams.getTerminalId());
             providerPaymentsRouting.initRouteUrl(providerData);
             var transactionContext = getTransactionContext(paymentParams);
-            var remoteClient = providerPaymentsIfaceBuilder.buildTHSpawnClient(providerData.getRouteUrl());
+            var remoteClient = providerPaymentsThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
             var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext, getCurrency(paymentParams));
             log.info("Called remoteClient.checkPaymentStatus {} {}", transactionContext, paymentStatusResult);
             if (paymentStatusResult.isSuccess()) {
@@ -67,10 +70,14 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
                 providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
                 providerCallback.setAmount(paymentParams.getInvoiceAmount());
                 providerCallbackDao.save(providerCallback);
-                log.info("Saved providerCallback {}", providerCallback);
+                log.info("Saved providerCallback, finish {}", providerCallback);
+            } else {
+                log.info("remoteClient.checkPaymentStatus result was skipped by failed status, finish");
             }
-        } catch (Throwable e) {
-            log.warn("Failed to handle ProviderPaymentsCallbackParams", e);
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
+        } catch (Throwable ex) {
+            log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
         }
     }
 

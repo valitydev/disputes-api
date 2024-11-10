@@ -8,30 +8,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ApiAttachmentsService {
 
     private final FileMetaDao fileMetaDao;
     private final FileStorageService fileStorageService;
 
-    @Transactional
     public void createAttachments(CreateRequest req, UUID disputeId) {
         log.debug("Trying to save Attachments {}", disputeId);
         for (var attachment : req.getAttachments()) {
             // validate
             MediaType.valueOf(attachment.getMimeType());
-            // http 500
             var fileId = fileStorageService.saveFile(attachment.getData());
             var fileMeta = new FileMeta(fileId, disputeId, attachment.getMimeType());
-            log.debug("Trying to save Attachment {}", fileMeta);
-            // http 500
             fileMetaDao.save(fileMeta);
         }
         log.debug("Attachments have been saved {}", disputeId);

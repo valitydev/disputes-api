@@ -12,35 +12,33 @@ import java.util.function.Consumer;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
-public class WRuntimeExceptionCatcher {
+@SuppressWarnings({"LineLength"})
+public class WoodyRuntimeExceptionCatcher {
 
     private final ExternalGatewayChecker externalGatewayChecker;
 
     public void catchProviderDisputesApiNotExist(ProviderData providerData, Runnable runnable, Runnable defaultRemoteClientRunnable) {
         try {
             runnable.run();
-        } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isProviderDisputesApiNotExist(providerData, e)) {
-                // отправлять на ручной разбор, если API диспутов на провайдере не реализовано
-                // (тогда при тесте соединения вернется 404)
-                log.warn("Trying to call defaultRemoteClient.createDispute(), externalGatewayChecker", e);
+        } catch (WRuntimeException ex) {
+            if (externalGatewayChecker.isProviderDisputesApiNotExist(providerData, ex)) {
+                log.info("Trying to call defaultRemoteClient.createDispute() by case remoteClient.createDispute()==404", ex);
                 defaultRemoteClientRunnable.run();
                 return;
             }
-            throw e;
+            throw ex;
         }
     }
 
     public void catchUnexpectedResultMapping(Runnable runnable, Consumer<WRuntimeException> unexpectedResultMappingHandler) {
         try {
             runnable.run();
-        } catch (WRuntimeException e) {
-            if (externalGatewayChecker.isProviderDisputesUnexpectedResultMapping(e)) {
-                unexpectedResultMappingHandler.accept(e);
+        } catch (WRuntimeException ex) {
+            if (externalGatewayChecker.isProviderDisputesUnexpectedResultMapping(ex)) {
+                unexpectedResultMappingHandler.accept(ex);
                 return;
             }
-            throw e;
+            throw ex;
         }
     }
 }

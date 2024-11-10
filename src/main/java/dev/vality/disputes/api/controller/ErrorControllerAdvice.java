@@ -1,7 +1,7 @@
 package dev.vality.disputes.api.controller;
 
 import dev.vality.disputes.exception.AuthorizationException;
-import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
+import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.TokenKeeperException;
 import dev.vality.swag.disputes.model.GeneralError;
@@ -36,12 +36,12 @@ public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
 
-    @ExceptionHandler({InvoicingPaymentStatusPendingException.class})
+    @ExceptionHandler({InvoicingPaymentStatusRestrictionsException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleInvalidMimeTypeException(InvoicingPaymentStatusPendingException e) {
-        log.warn("<- Res [400]: Payment has non-final status", e);
+    public Object handleInvoicingPaymentStatusRestrictionsException(InvoicingPaymentStatusRestrictionsException e) {
+        log.warn("<- Res [400]: Payment should be failed", e);
         return new GeneralError()
-                .message("Payment has non-final status");
+                .message("Blocked: Payment should be failed");
     }
 
     @ExceptionHandler({InvalidMimeTypeException.class})
@@ -102,7 +102,7 @@ public class ErrorControllerAdvice {
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public void handleNotFoundException(NotFoundException e) {
-        log.warn("<- Res [404]: Not found", e);
+        log.warn("<- Res [404]: Not found, type={}", e.getType(), e);
     }
 
     @ExceptionHandler({HttpMediaTypeNotAcceptableException.class})

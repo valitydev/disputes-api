@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsAdminManagementServiceSrv.Iface {
 
     private final ProviderCallbackDao providerCallbackDao;
@@ -25,11 +25,12 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
     @Override
     @Transactional
     public void cancel(CancelParamsRequest cancelParamsRequest) throws TException {
+        log.info("Got ProviderPayments CancelParamsRequest {}", cancelParamsRequest);
         if (cancelParamsRequest.isCancelAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
                     .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
-            log.info("batch by cancelParamsRequest {}", batch);
+            log.info("Batch by ProviderPayments cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (cancelParamsRequest.getCancelParams().isPresent()) {
             var invoicePaymentIds = cancelParamsRequest.getCancelParams().get().stream()
@@ -38,19 +39,21 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
                     .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
-            log.info("batch by cancelParamsRequest {}", batch);
+            log.info("Batch by ProviderPayments cancelParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         }
+        log.info("Finish ProviderPayments CancelParamsRequest {}", cancelParamsRequest);
     }
 
     @Override
     @Transactional
     public void approve(ApproveParamsRequest approveParamsRequest) throws TException {
+        log.info("Got ProviderPayments ApproveParamsRequest {}", approveParamsRequest);
         if (approveParamsRequest.isApproveAll()) {
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.info("batch by approveParamsRequest {}", batch);
+            log.info("Batch by ProviderPayments approveParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
             var invoicePaymentIds = approveParamsRequest.getApproveParams().get().stream()
@@ -59,9 +62,10 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.info("batch by approveParamsRequest {}", batch);
+            log.info("Batch by ProviderPayments approveParamsRequest {}", batch);
             providerCallbackDao.updateBatch(batch);
         }
+        log.info("Got ProviderPayments ApproveParamsRequest {}", approveParamsRequest);
     }
 
     private void setCancelled(CancelParamsRequest cancelParamsRequest, ProviderCallback providerCallback) {

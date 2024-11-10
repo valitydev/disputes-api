@@ -21,8 +21,8 @@ public class DominantAsyncService {
         try {
             var currency = dominantService.getCurrency(currencyRef);
             return CompletableFuture.completedFuture(currency);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 
@@ -31,8 +31,8 @@ public class DominantAsyncService {
         try {
             var terminal = dominantService.getTerminal(terminalRef);
             return CompletableFuture.completedFuture(terminal);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 
@@ -41,8 +41,8 @@ public class DominantAsyncService {
         try {
             var proxy = dominantService.getProxy(proxyRef);
             return CompletableFuture.completedFuture(proxy);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 
@@ -51,8 +51,8 @@ public class DominantAsyncService {
         try {
             var provider = dominantService.getProvider(providerRef);
             return CompletableFuture.completedFuture(provider);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 }

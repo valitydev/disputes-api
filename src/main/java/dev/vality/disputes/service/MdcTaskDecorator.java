@@ -5,8 +5,7 @@ import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 
 @Slf4j
-@SuppressWarnings("AbbreviationAsWordInName")
-public class MDCTaskDecorator implements TaskDecorator {
+public class MdcTaskDecorator implements TaskDecorator {
 
     @Override
     public Runnable decorate(Runnable runnable) {

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import static dev.vality.disputes.domain.tables.ProviderCallback.PROVIDER_CALLBACK;
 
 @Component
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ProviderCallbackDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderCallback> providerCallbackRowMapper;

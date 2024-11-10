@@ -2,9 +2,8 @@ package dev.vality.disputes.api.service;
 
 import dev.vality.disputes.api.converter.DisputeConverter;
 import dev.vality.disputes.api.model.PaymentParams;
-import dev.vality.disputes.constant.ErrorReason;
+import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.swag.disputes.model.CreateRequest;
@@ -14,26 +13,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
+
+import static dev.vality.disputes.exception.NotFoundException.Type;
+import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUSES;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ApiDisputesService {
 
-    public static final Set<DisputeStatus> DISPUTE_PENDING = pendings();
     private final DisputeDao disputeDao;
     private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;
 
     public Optional<Dispute> checkExistBeforeCreate(String invoiceId, String paymentId) {
         log.debug("Trying to checkExistBeforeCreate() Dispute, invoiceId={}", invoiceId);
-        // http 500
         var disputes = disputeDao.get(invoiceId, paymentId);
         var first = disputes.stream()
-                .filter(dispute -> DISPUTE_PENDING.contains(dispute.getStatus()))
+                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
                 .findFirst();
         log.debug("Done checkExistBeforeCreate(), invoiceId={}", invoiceId);
         return first;
@@ -41,12 +40,9 @@ public class ApiDisputesService {
 
     @Transactional
     public UUID createDispute(CreateRequest req, PaymentParams paymentParams) {
-        log.debug("Start creating Dispute {}", paymentParams);
+        log.info("Start creating Dispute {}", paymentParams);
         var dispute = disputeConverter.convert(paymentParams, req.getAmount(), req.getReason());
-        log.debug("Trying to save Dispute {}", dispute);
-        // http 500
         var disputeId = disputeDao.save(dispute);
-        log.debug("Dispute has been saved {}", dispute);
         apiAttachmentsService.createAttachments(req, disputeId);
         log.debug("Finish creating Dispute {}", dispute);
         return disputeId;
@@ -54,19 +50,14 @@ public class ApiDisputesService {
 
     public Dispute getDispute(String disputeId) {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
-        // http 404,500
-        var dispute = disputeDao.get(parseFormat(disputeId))
-                .orElseThrow(
-                        () -> new NotFoundException(
-                                String.format("Dispute not found, disputeId='%s'", disputeId)));
-        if (ErrorReason.NO_ATTACHMENTS.equals(dispute.getErrorMessage())
-                || ErrorReason.INVOICE_NOT_FOUND.equals(dispute.getErrorMessage())
-                || ErrorReason.PAYMENT_NOT_FOUND.equals(dispute.getErrorMessage())) {
-            // NO_ATTACHMENTS|... нет резона отдавать наружу по http, тк она не является смысловой для юзера
-            // это внутренний флаг, что получили 500 при работе с внутренними данными и лучше создать диспут заново
-            // http 404
-            throw new NotFoundException(String.format("Dispute not found, disputeId='%s', error='%s'", disputeId, dispute.getErrorMessage()));
-        }
+        var dispute = Optional.ofNullable(parseFormat(disputeId))
+                .map(disputeDao::get)
+                .filter(d -> !(ErrorMessage.NO_ATTACHMENTS.equals(d.getErrorMessage())
+                        || ErrorMessage.INVOICE_NOT_FOUND.equals(d.getErrorMessage())
+                        || ErrorMessage.PAYMENT_NOT_FOUND.equals(d.getErrorMessage())
+                        || ErrorMessage.PAYMENT_STATUS_RESTRICTIONS.equals(d.getErrorMessage())))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Dispute not found, disputeId='%s'", disputeId), Type.DISPUTE));
         log.debug("Dispute has been found, disputeId={}", disputeId);
         return dispute;
     }
@@ -74,18 +65,8 @@ public class ApiDisputesService {
     private UUID parseFormat(String disputeId) {
         try {
             return UUID.fromString(disputeId);
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(String.format("Dispute not found, disputeId='%s'", disputeId));
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
-    }
-
-    private static Set<DisputeStatus> pendings() {
-        return Set.of(
-                DisputeStatus.created,
-                DisputeStatus.pending,
-                DisputeStatus.manual_created,
-                DisputeStatus.manual_pending,
-                DisputeStatus.create_adjustment,
-                DisputeStatus.already_exist_created);
     }
 }

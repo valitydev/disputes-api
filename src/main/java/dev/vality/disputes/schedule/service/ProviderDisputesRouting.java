@@ -27,15 +27,14 @@ public class ProviderDisputesRouting {
     }
 
     private String createDefaultRouteUrl(String defaultProviderUrl) {
-        log.debug("Creating url by appending postfix");
         try {
             return UriComponentsBuilder.fromUri(URI.create(defaultProviderUrl))
                     .pathSegment(DISPUTES_URL_POSTFIX_DEFAULT)
                     .encode()
                     .build()
                     .toUriString();
-        } catch (Exception e) {
-            throw new RoutingException("Unable to create default provider url: ", e);
+        } catch (Throwable ex) {
+            throw new RoutingException("Unable to create default provider url: ", ex);
         }
     }
 }

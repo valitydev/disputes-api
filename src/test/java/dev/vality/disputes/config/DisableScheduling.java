@@ -12,7 +12,6 @@ import java.lang.annotation.Target;
 @TestPropertySource(properties = {
         "dispute.isScheduleCreatedEnabled=false",
         "dispute.isSchedulePendingEnabled=false",
-        "dispute.isScheduleCreateAdjustmentsEnabled=false",
         "dispute.isScheduleForgottenDisputesNotificationsEnabled=false",
         "provider.payments.isScheduleCreateAdjustmentsEnabled=false",
 })

@@ -7,7 +7,7 @@ import java.util.Base64;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 
-@SuppressWarnings({"FileTabCharacter", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class WiremockUtils {
 
     public static void mockS3AttachmentUpload() {

@@ -59,9 +59,8 @@ public class NetworkConfig {
     }
 
     @Bean
-    @SuppressWarnings("LocalVariableName")
     public FilterRegistrationBean woodyFilter() {
-        var wFlow = new WFlow();
+        var woodyFlow = new WFlow();
         var filter = new OncePerRequestFilter() {
 
             @Override
@@ -70,11 +69,11 @@ public class NetworkConfig {
                                             FilterChain filterChain) throws ServletException, IOException {
                 if ((request.getLocalPort() == restPort)
                         && request.getServletPath().startsWith(restEndpoint)) {
-                    wFlow.createServiceFork(() -> {
+                    woodyFlow.createServiceFork(() -> {
                         try {
                             filterChain.doFilter(request, response);
-                        } catch (IOException | ServletException e) {
-                            sneakyThrow(e);
+                        } catch (IOException | ServletException ex) {
+                            sneakyThrow(ex);
                         }
                     }).run();
                     return;

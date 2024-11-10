@@ -31,8 +31,8 @@ public class TokenKeeperServiceImpl implements TokenKeeperService {
             var token = getBearerToken();
             return tokenKeeperClient.authenticate(
                     token.orElseThrow(() -> new TokenKeeperException("Token not found!")), new TokenSourceContext());
-        } catch (TException e) {
-            throw new TokenKeeperException("Error while call token keeper: ", e);
+        } catch (TException ex) {
+            throw new TokenKeeperException("Error while call token keeper: ", ex);
         }
     }
 

@@ -36,73 +36,73 @@ public class DebugAdminManagementHandlerTest {
     @Test
     public void testCancelCreateAdjustment() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId.toString()));
-        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).get().getStatus());
+        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testCancelPending() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId.toString()));
-        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).get().getStatus());
+        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testCancelFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        disputeDao.update(disputeId, DisputeStatus.failed);
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId.toString()));
-        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.finishFailed(disputeId, null);
+        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testApproveCreateAdjustmentWithCallHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId.toString(), false));
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugAdminManagementController.approvePending(getApproveRequest(disputeId, false));
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     public void testApproveCreateAdjustmentWithSkipHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId.toString(), true));
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     public void testApprovePendingWithSkipHg() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId.toString(), true));
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     public void testApproveFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        disputeDao.update(disputeId, DisputeStatus.failed);
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId.toString(), true));
-        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
+        disputeDao.finishFailed(disputeId, null);
+        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testBindCreatedCreateAdjustment() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         var providerDisputeId = generateId();
-        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId.toString(), providerDisputeId));
-        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     public void testBindCreatedPending() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
         var providerDisputeId = generateId();
-        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId.toString(), providerDisputeId));
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -110,11 +110,11 @@ public class DebugAdminManagementHandlerTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var providerDisputeId = generateId();
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.manual_created);
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        disputeDao.setNextStepToManualCreated(disputeId, null);
         debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.manual_pending, disputeDao.get(UUID.fromString(disputeId)).get().getStatus());
-        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -122,11 +122,11 @@ public class DebugAdminManagementHandlerTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var providerDisputeId = generateId();
-        var disputeId = disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId();
-        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.already_exist_created);
+        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        disputeDao.setNextStepToAlreadyExist(disputeId);
         debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-        assertEquals(DisputeStatus.pending, disputeDao.get(UUID.fromString(disputeId)).get().getStatus());
-        disputeDao.update(UUID.fromString(disputeId), DisputeStatus.failed);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -134,8 +134,8 @@ public class DebugAdminManagementHandlerTest {
     public void testGetDispute() {
         WiremockUtils.mockS3AttachmentDownload();
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(disputeId.toString(), true));
+        var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(disputeId, true));
         assertEquals(1, disputes.getDisputes().size());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        disputeDao.finishFailed(disputeId, null);
     }
 }

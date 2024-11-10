@@ -1,11 +1,14 @@
 package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.admin.*;
-import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
+import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.schedule.service.ProviderDataService;
+import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -21,110 +24,77 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.UUID;
 
-import static dev.vality.disputes.api.service.ApiDisputesService.DISPUTE_PENDING;
+import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUSES;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class AdminManagementDisputesService {
 
-    private final DisputeDao disputeDao;
     private final ProviderDisputeDao providerDisputeDao;
     private final FileMetaDao fileMetaDao;
     private final FileStorageService fileStorageService;
+    private final DisputesService disputesService;
+    private final ProviderDataService providerDataService;
     private final CloseableHttpClient httpClient;
 
     @Transactional
     public void cancelPendingDispute(CancelParams cancelParams) {
         var disputeId = cancelParams.getDisputeId();
-        log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
-        if (dispute == null) {
-            return;
-        }
-        var cancelReason = cancelParams.getCancelReason().orElse(null);
-        var mapping = cancelParams.getMapping().orElse(null);
-        log.debug("GetForUpdateSkipLocked has been found {}", dispute);
-        if (DISPUTE_PENDING.contains(dispute.getStatus())) {
+        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
+        if (DISPUTE_PENDING_STATUSES.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
-            log.warn("Trying to set cancelled Dispute status {}, {}, {}", dispute, mapping, cancelReason);
-            disputeDao.update(dispute.getId(), DisputeStatus.cancelled, cancelReason, mapping);
-            log.debug("Dispute status has been set to cancelled {}", dispute);
+            disputesService.finishCancelled(dispute, cancelParams.getMapping().orElse(null), cancelParams.getCancelReason().orElse(null));
         } else {
-            log.info("Request was skipped by inappropriate status {}", dispute);
+            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 
     @Transactional
     public void approvePendingDispute(ApproveParams approveParam) {
         var disputeId = approveParam.getDisputeId();
-        log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
-        if (dispute == null) {
-            return;
-        }
-        log.debug("GetForUpdateSkipLocked has been found {}", dispute);
-        var skipCallHg = approveParam.isSkipCallHgForCreateAdjustment();
-        var targetStatus = skipCallHg ? DisputeStatus.succeeded : DisputeStatus.create_adjustment;
-        if (dispute.getStatus() == DisputeStatus.create_adjustment) {
-            log.info("Trying to set {} Dispute status {}", targetStatus, dispute);
-            // changedAmount не обновляем, тк уже заапрувлено на этапе чек статуса
-            disputeDao.update(dispute.getId(), targetStatus, null, skipCallHg);
-            log.debug("Dispute status has been set to {} {}", targetStatus, dispute);
-            return;
-        }
+        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
+        var changedAmount = approveParam.getChangedAmount()
+                .filter(s -> dispute.getStatus() == DisputeStatus.pending
+                        || dispute.getStatus() == DisputeStatus.manual_pending)
+                .orElse(null);
         if (dispute.getStatus() == DisputeStatus.pending
-                || dispute.getStatus() == DisputeStatus.manual_pending) {
-            log.info("Trying to set {} Dispute status {}", targetStatus, dispute);
-            disputeDao.update(dispute.getId(), targetStatus, approveParam.getChangedAmount().orElse(null), skipCallHg);
-            log.debug("Dispute status has been set to {} {}", targetStatus, dispute);
-            return;
+                || dispute.getStatus() == DisputeStatus.manual_pending
+                || dispute.getStatus() == DisputeStatus.create_adjustment) {
+            disputesService.finishSuccess(dispute, changedAmount);
+        } else {
+            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
-        log.info("Request was skipped by inappropriate status {}", dispute);
     }
 
     @Transactional
     public void bindCreatedDispute(BindParams bindParam) {
         var disputeId = bindParam.getDisputeId();
-        log.debug("Trying to getForUpdateSkipLocked {}", disputeId);
-        var dispute = disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
-        if (dispute == null) {
-            return;
-        }
+        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
         var providerDisputeId = bindParam.getProviderDisputeId();
-        log.debug("GetForUpdateSkipLocked has been found {}", dispute);
         if (dispute.getStatus() == DisputeStatus.manual_created) {
             // обрабатываем здесь только вручную созданные диспуты, у остальных предполагается,
             // что providerDisputeId будет сохранен после создания диспута по API провайдера
-            log.info("Trying to set manual_pending Dispute status {}", dispute);
-            providerDisputeDao.save(new ProviderDispute(providerDisputeId, dispute.getId()));
-            disputeDao.update(dispute.getId(), DisputeStatus.manual_pending);
-            log.debug("Dispute status has been set to manual_pending {}", dispute);
+            providerDisputeDao.save(providerDisputeId, dispute);
+            disputesService.setNextStepToManualPending(dispute, ErrorMessage.NEXT_STEP_AFTER_BIND_PARAMS);
         } else if (dispute.getStatus() == DisputeStatus.already_exist_created) {
-            log.info("Trying to set pending Dispute status {}", dispute);
-            providerDisputeDao.save(new ProviderDispute(providerDisputeId, dispute.getId()));
-            disputeDao.update(dispute.getId(), DisputeStatus.pending);
-            log.debug("Dispute status has been set to pending {}", dispute);
+            providerDisputeDao.save(providerDisputeId, dispute);
+            var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+            disputesService.setNextStepToPending(dispute, providerData);
         } else {
-            log.info("Request was skipped by inappropriate status {}", dispute);
+            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 
     @SneakyThrows
     public Dispute getDispute(DisputeParams disputeParams, boolean withAttachments) {
         var disputeId = disputeParams.getDisputeId();
-        var disputeOptional = disputeDao.get(UUID.fromString(disputeId));
-        if (disputeOptional.isEmpty()) {
-            log.debug("Trying to get Dispute but null {}", disputeId);
-            return null;
-        }
-        var dispute = disputeOptional.get();
+        var dispute = disputesService.get(disputeId);
         var disputeResult = new Dispute();
         disputeResult.setDisputeId(disputeId);
-        disputeResult.setProviderDisputeId(Optional.ofNullable(providerDisputeDao.get(dispute.getId()))
+        disputeResult.setProviderDisputeId(getProviderDispute(dispute)
                 .map(ProviderDispute::getProviderDisputeId)
                 .orElse(null));
         disputeResult.setInvoiceId(dispute.getInvoiceId());
@@ -137,25 +107,36 @@ public class AdminManagementDisputesService {
         disputeResult.setChangedAmount(Optional.ofNullable(dispute.getChangedAmount())
                 .map(String::valueOf)
                 .orElse(null));
-        disputeResult.setSkipCallHgForCreateAdjustment(dispute.getSkipCallHgForCreateAdjustment());
         log.debug("Dispute getDispute {}", disputeResult);
-        var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
-        if (disputeFiles == null || !withAttachments) {
+        if (!withAttachments) {
             return disputeResult;
         }
-        disputeResult.setAttachments(new ArrayList<>());
-        for (var disputeFile : disputeFiles) {
-            var downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
-            var data = httpClient.execute(
-                    new HttpGet(downloadUrl),
-                    new AbstractHttpClientResponseHandler<byte[]>() {
-                        @Override
-                        public byte[] handleEntity(HttpEntity entity) throws IOException {
-                            return EntityUtils.toByteArray(entity);
-                        }
-                    });
-            disputeResult.getAttachments().get().add(new Attachment().setData(data));
+        try {
+            disputeResult.setAttachments(new ArrayList<>());
+            for (var disputeFile : fileMetaDao.getDisputeFiles(dispute.getId())) {
+                var downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
+                var data = httpClient.execute(
+                        new HttpGet(downloadUrl),
+                        new AbstractHttpClientResponseHandler<byte[]>() {
+                            @Override
+                            public byte[] handleEntity(HttpEntity entity) throws IOException {
+                                return EntityUtils.toByteArray(entity);
+                            }
+                        });
+                disputeResult.getAttachments().get().add(new Attachment().setData(data));
+            }
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
         }
         return disputeResult;
+    }
+
+    private Optional<ProviderDispute> getProviderDispute(dev.vality.disputes.domain.tables.pojos.Dispute dispute) {
+        try {
+            return Optional.of(providerDisputeDao.get(dispute.getId()));
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
+            return Optional.empty();
+        }
     }
 }

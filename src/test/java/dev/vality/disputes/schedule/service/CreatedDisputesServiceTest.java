@@ -4,7 +4,7 @@ import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
-import dev.vality.disputes.constant.ErrorReason;
+import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class CreatedDisputesServiceTest {
 
     @Autowired
-    private ProviderDisputesIfaceBuilder providerDisputesIfaceBuilder;
+    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -63,9 +63,9 @@ public class CreatedDisputesServiceTest {
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
-        assertEquals(ErrorReason.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).get().getErrorMessage());
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
+        assertEquals(ErrorMessage.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).getErrorMessage());
     }
 
     @Test
@@ -78,9 +78,9 @@ public class CreatedDisputesServiceTest {
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
-        assertEquals(ErrorReason.NO_ATTACHMENTS, disputeDao.get(disputeId).get().getErrorMessage());
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
+        assertEquals(ErrorMessage.NO_ATTACHMENTS, disputeDao.get(disputeId).getErrorMessage());
     }
 
     @Test
@@ -97,15 +97,15 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     public void testDisputeCreatedSuccessResult() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -125,10 +125,10 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).get().getStatus());
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
@@ -150,12 +150,12 @@ public class CreatedDisputesServiceTest {
         var disputeCreatedFailResult = createDisputeCreatedFailResult();
         disputeCreatedFailResult.getFailResult().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
         when(providerMock.createDispute(any())).thenReturn(disputeCreatedFailResult);
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
-        assertTrue(disputeDao.get(disputeId).get().getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
+        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -176,12 +176,12 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxyWithRealAddress(serverPort).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).get().getStatus());
-        assertTrue(disputeDao.get(disputeId).get().getErrorMessage().contains("Unexpected result"));
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
+        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -201,11 +201,11 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxyNotFoundCase(serverPort).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
@@ -225,10 +225,10 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
-        when(providerDisputesIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
-        createdDisputesService.callCreateDisputeRemotely(dispute.get());
-        assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).get().getStatus());
-        disputeDao.update(disputeId, DisputeStatus.failed);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 }

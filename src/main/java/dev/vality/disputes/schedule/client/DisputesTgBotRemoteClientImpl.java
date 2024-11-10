@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.provider.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {
 
     private final DisputesTgBotService disputesTgBotService;

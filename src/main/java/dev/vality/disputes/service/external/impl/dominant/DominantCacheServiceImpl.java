@@ -5,6 +5,7 @@ import dev.vality.damsel.domain_config.Reference;
 import dev.vality.damsel.domain_config.*;
 import dev.vality.disputes.exception.DominantException;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.exception.NotFoundException.Type;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"LineLength"})
 public class DominantCacheServiceImpl {
 
     private final RepositoryClientSrv.Iface dominantClient;
@@ -34,8 +36,7 @@ public class DominantCacheServiceImpl {
                     currencyRef, revisionReference);
             return currency;
         } catch (VersionNotFound | ObjectNotFound ex) {
-            throw new NotFoundException(String.format("Version not found, currencyRef='%s', revisionReference='%s'",
-                    currencyRef, revisionReference), ex);
+            throw new NotFoundException(String.format("Version not found, currencyRef='%s', revisionReference='%s'", currencyRef, revisionReference), ex, Type.CURRENCY);
         } catch (TException ex) {
             throw new DominantException(String.format("Failed to get currency, currencyRef='%s', " +
                     "revisionReference='%s'", currencyRef, revisionReference), ex);
@@ -59,8 +60,7 @@ public class DominantCacheServiceImpl {
                     terminalRef, revisionReference);
             return terminal;
         } catch (VersionNotFound | ObjectNotFound ex) {
-            throw new NotFoundException(String.format("Version not found, terminalRef='%s', revisionReference='%s'",
-                    terminalRef, revisionReference), ex);
+            throw new NotFoundException(String.format("Version not found, terminalRef='%s', revisionReference='%s'", terminalRef, revisionReference), ex, Type.TERMINAL);
         } catch (TException ex) {
             throw new DominantException(String.format("Failed to get terminal, terminalRef='%s'," +
                     " revisionReference='%s'", terminalRef, revisionReference), ex);
@@ -84,8 +84,7 @@ public class DominantCacheServiceImpl {
                     providerRef, revisionReference);
             return provider;
         } catch (VersionNotFound | ObjectNotFound ex) {
-            throw new NotFoundException(String.format("Version not found, providerRef='%s', revisionReference='%s'",
-                    providerRef, revisionReference), ex);
+            throw new NotFoundException(String.format("Version not found, providerRef='%s', revisionReference='%s'", providerRef, revisionReference), ex, Type.PROVIDER);
         } catch (TException ex) {
             throw new DominantException(String.format("Failed to get provider, providerRef='%s'," +
                     " revisionReference='%s'", providerRef, revisionReference), ex);
@@ -109,16 +108,14 @@ public class DominantCacheServiceImpl {
             log.debug("Proxy has been found, proxyRef='{}', revisionReference='{}'", proxyRef, revisionReference);
             return proxy;
         } catch (VersionNotFound | ObjectNotFound ex) {
-            throw new NotFoundException(String.format("Version not found, proxyRef='%s', revisionReference='%s'",
-                    proxyRef, revisionReference), ex);
+            throw new NotFoundException(String.format("Version not found, proxyRef='%s', revisionReference='%s'", proxyRef, revisionReference), ex, Type.PROXY);
         } catch (TException ex) {
             throw new DominantException(String.format("Failed to get proxy, proxyRef='%s', revisionReference='%s'",
                     proxyRef, revisionReference), ex);
         }
     }
 
-    private VersionedObject checkoutObject(Reference revisionReference, dev.vality.damsel.domain.Reference reference)
-            throws TException {
+    private VersionedObject checkoutObject(Reference revisionReference, dev.vality.damsel.domain.Reference reference) throws TException {
         return dominantClient.checkoutObject(revisionReference, reference);
     }
 }
