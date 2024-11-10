@@ -4,12 +4,14 @@ import dev.vality.damsel.domain.Currency;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.api.service.PaymentParamsBuilder;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsRouting;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessService;
+import dev.vality.disputes.utils.PaymentStatusValidator;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.provider.payments.TransactionContext;
@@ -50,11 +52,8 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         try {
             var accessData = accessService.approveUserAccess(callback.getInvoiceId().get(), callback.getPaymentId().get(), false);
             log.info("Got accessData {}", accessData);
-            var invoicePaymentStatus = accessData.getPayment().getPayment().getStatus();
-            if (!invoicePaymentStatus.isSetCancelled() && !invoicePaymentStatus.isSetFailed()) {
-                log.info("Payment should be failed, finish");
-                return;
-            }
+            // validate
+            PaymentStatusValidator.checkStatus(accessData.getPayment());
             var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
             log.info("Got paymentParams {}", paymentParams);
             var providerData = providerDataService.getProviderData(paymentParams.getProviderId(), paymentParams.getTerminalId());
@@ -76,6 +75,8 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
+        } catch (InvoicingPaymentStatusRestrictionsException ex) {
+            log.error("InvoicingPaymentRestrictionStatus when handle ProviderPaymentsCallbackParams", ex);
         } catch (Throwable ex) {
             log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
         }

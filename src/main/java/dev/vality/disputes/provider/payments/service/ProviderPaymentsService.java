@@ -1,5 +1,6 @@
 package dev.vality.disputes.provider.payments.service;
 
+import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
@@ -8,7 +9,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
-import dev.vality.disputes.provider.payments.handler.ProviderPaymentsErrorResultHandler;
+import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
@@ -31,7 +32,6 @@ public class ProviderPaymentsService {
     private final ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter providerPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
     private final ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
-    private final ProviderPaymentsErrorResultHandler providerPaymentsErrorResultHandler;
     private final DisputesService disputesService;
 
     @Transactional
@@ -45,47 +45,72 @@ public class ProviderPaymentsService {
 
     @Transactional
     public void callHgForCreateAdjustment(ProviderCallback providerCallback) {
-        var forUpdate = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallback.getId());
-        if (forUpdate == null || forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
-            log.debug("ProviderCallback locked or wrong status {}", forUpdate);
-            return;
-        }
         try {
+            // validate
+            checkCreateAdjustmentStatus(providerCallback);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(providerCallback.getInvoiceId(), providerCallback.getPaymentId());
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
-            if (!providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)
-                    && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount())) {
-                var cashFlowParams = providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter.convert(providerCallback);
-                invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), cashFlowParams);
-            } else {
-                log.info("Creating CashFlowAdjustment was skipped {}", providerCallback);
-            }
-            if (!providerPaymentsAdjustmentExtractor.isCapturedAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)) {
-                var capturedParams = providerPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter.convert(providerCallback);
-                invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), capturedParams);
-            } else {
-                log.info("Creating CapturedAdjustment was skipped {}", providerCallback);
-            }
-            log.info("Trying to set succeeded ProviderCallback status {}", providerCallback);
-            providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
-            providerCallbackDao.update(providerCallback);
-            log.debug("ProviderCallback status has been set to succeeded {}", providerCallback.getInvoiceId());
+            createCashFlowAdjustment(providerCallback, invoicePayment);
+            createCapturedAdjustment(providerCallback, invoicePayment);
+            finishSuccess(providerCallback);
             disputeFinishSuccess(providerCallback);
         } catch (NotFoundException ex) {
             log.error("NotFound when handle ProviderPaymentsService.callHgForCreateAdjustment, type={}", ex.getType(), ex);
             switch (ex.getType()) {
-                case INVOICE -> providerPaymentsErrorResultHandler.finishFailed(
-                        providerCallback, ErrorMessage.INVOICE_NOT_FOUND);
-                case PAYMENT -> providerPaymentsErrorResultHandler.finishFailed(
-                        providerCallback, ErrorMessage.PAYMENT_NOT_FOUND);
+                case INVOICE -> finishFailed(providerCallback, ErrorMessage.INVOICE_NOT_FOUND);
+                case PAYMENT -> finishFailed(providerCallback, ErrorMessage.PAYMENT_NOT_FOUND);
+                case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallbackDao);
                 default -> throw ex;
             }
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error("InvoicingPaymentRestrictionStatusException when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
-            providerPaymentsErrorResultHandler.finishFailed(providerCallback, ErrorMessage.PAYMENT_STATUS_RESTRICTIONS);
+            log.error("InvoicingPaymentRestrictionStatus when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
+            finishFailed(providerCallback, ErrorMessage.PAYMENT_STATUS_RESTRICTIONS);
+        } catch (ProviderCallbackStatusWasUpdatedByAnotherThreadException ex) {
+            log.debug("ProviderCallbackStatusWasUpdatedByAnotherThread when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
         }
+    }
+
+    public void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {
+        var forUpdate = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallback.getId());
+        if (forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
+            throw new ProviderCallbackStatusWasUpdatedByAnotherThreadException();
+        }
+    }
+
+    private void createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
+        if (!providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)
+                && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount())) {
+            var cashFlowParams = providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter.convert(providerCallback);
+            invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), cashFlowParams);
+        } else {
+            log.info("Creating CashFlowAdjustment was skipped {}", providerCallback);
+        }
+    }
+
+    private void createCapturedAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
+        if (!providerPaymentsAdjustmentExtractor.isCapturedAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)) {
+            var capturedParams = providerPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter.convert(providerCallback);
+            invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), capturedParams);
+        } else {
+            log.info("Creating CapturedAdjustment was skipped {}", providerCallback);
+        }
+    }
+
+    private void finishSuccess(ProviderCallback providerCallback) {
+        log.info("Trying to set succeeded ProviderCallback status {}", providerCallback);
+        providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
+        providerCallbackDao.update(providerCallback);
+        log.debug("ProviderCallback status has been set to succeeded {}", providerCallback.getInvoiceId());
+    }
+
+    private void finishFailed(ProviderCallback providerCallback, String errorReason) {
+        log.warn("Trying to set failed ProviderCallback status with '{}' errorReason, {}", errorReason, providerCallback.getInvoiceId());
+        providerCallback.setStatus(ProviderPaymentsStatus.failed);
+        providerCallback.setErrorReason(errorReason);
+        providerCallbackDao.update(providerCallback);
+        log.debug("ProviderCallback status has been set to failed {}", providerCallback.getInvoiceId());
     }
 
     private void disputeFinishSuccess(ProviderCallback providerCallback) {

@@ -88,7 +88,7 @@ public class CreatedDisputesService {
                 default -> throw ex;
             }
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error("InvoicingPaymentRestrictionStatusException when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
+            log.error("InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
             disputeCreateResultHandler.handleFailResult(dispute, ErrorMessage.PAYMENT_STATUS_RESTRICTIONS);
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("DisputeStatusWasUpdatedByAnotherThread when handle CreatedDisputesService.callCreateDisputeRemotely", ex);

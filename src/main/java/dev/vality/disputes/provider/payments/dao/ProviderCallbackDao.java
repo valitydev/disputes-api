@@ -3,8 +3,8 @@ package dev.vality.disputes.provider.payments.dao;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import jakarta.annotation.Nullable;
 import org.jooq.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
@@ -42,13 +42,14 @@ public class ProviderCallbackDao extends AbstractGenericDao {
         return Optional.ofNullable(keyHolder.getKeyAs(UUID.class)).orElseThrow();
     }
 
-    @Nullable
     public ProviderCallback getProviderCallbackForUpdateSkipLocked(UUID id) {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
                 .where(PROVIDER_CALLBACK.ID.eq(id))
                 .forUpdate()
                 .skipLocked();
-        return fetchOne(query, providerCallbackRowMapper);
+        return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("ProviderCallback not found, id='%s'", id), NotFoundException.Type.PROVIDERCALLBACK));
     }
 
     public List<ProviderCallback> getProviderCallbacksForHgCall(int limit) {

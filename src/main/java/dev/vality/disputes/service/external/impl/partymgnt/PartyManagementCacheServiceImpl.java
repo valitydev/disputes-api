@@ -10,7 +10,6 @@ import dev.vality.disputes.exception.PartyException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import static dev.vality.disputes.exception.NotFoundException.Type;
@@ -27,7 +26,6 @@ public class PartyManagementCacheServiceImpl {
         this.partyManagementClient = partyManagementClient;
     }
 
-    @Cacheable(value = "shops", key = "#root.args[1]", cacheManager = "shopsCacheManager")
     public Shop getShop(String partyId, String shopId) {
         log.info("Trying to get shop, partyId='{}', shopId='{}'", partyId, shopId);
         var party = getParty(partyId);
