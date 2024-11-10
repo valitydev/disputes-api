@@ -62,7 +62,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
             log.info("Got paymentParams {}", paymentParams);
             var providerData = providerDataService.getProviderData(paymentParams.getProviderId(), paymentParams.getTerminalId());
-            var paymentStatusResult = callCheckPaymentStatusRemotely(providerData, paymentParams);
+            var paymentStatusResult = checkPaymentStatusByRemoteClient(providerData, paymentParams);
             if (paymentStatusResult.isSuccess()) {
                 var providerCallback = new ProviderCallback();
                 providerCallback.setInvoiceId(paymentParams.getInvoiceId());
@@ -82,7 +82,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
     }
 
     @SneakyThrows
-    private PaymentStatusResult callCheckPaymentStatusRemotely(ProviderData providerData, PaymentParams paymentParams) {
+    private PaymentStatusResult checkPaymentStatusByRemoteClient(ProviderData providerData, PaymentParams paymentParams) {
         try {
             providerPaymentsRouting.initRouteUrl(providerData);
             var transactionContext = buildTransactionContext(paymentParams);

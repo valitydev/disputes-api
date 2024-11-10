@@ -9,6 +9,8 @@ import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.utils.ErrorFormatter;
+import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
+import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class DisputeStatusResultHandler {
     private final DisputesService disputesService;
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
+    private final ProviderPaymentsCallbackServiceSrv.Iface providerPaymentsCallbackHandler;
 
     public void handleStatusPending(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
@@ -50,6 +53,7 @@ public class DisputeStatusResultHandler {
         mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
+        createAdjustmentWhenFailedPaymentSuccess(dispute);
     }
 
     public void handlePoolingExpired(Dispute dispute) {
@@ -77,5 +81,16 @@ public class DisputeStatusResultHandler {
         callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
         disputesService.setNextStepToManualPending(dispute, errorMessage);
+    }
+
+    private void createAdjustmentWhenFailedPaymentSuccess(Dispute dispute) {
+        try {
+            providerPaymentsCallbackHandler.createAdjustmentWhenFailedPaymentSuccess(
+                    new ProviderPaymentsCallbackParams()
+                            .setInvoiceId(dispute.getInvoiceId())
+                            .setPaymentId(dispute.getPaymentId()));
+        } catch (Throwable ex) {
+            log.error("Received exception while DisputeStatusResultHandler.createAdjustmentWhenFailedPaymentSuccess", ex);
+        }
     }
 }
