@@ -54,8 +54,8 @@ public class ProviderPaymentsService {
             PaymentStatusValidator.checkStatus(invoicePayment);
             createCashFlowAdjustment(providerCallback, invoicePayment);
             createCapturedAdjustment(providerCallback, invoicePayment);
-            finishSuccess(providerCallback);
-            disputeFinishSuccess(providerCallback);
+            finishSucceeded(providerCallback);
+            disputeFinishSucceeded(providerCallback);
         } catch (NotFoundException ex) {
             log.error("NotFound when handle ProviderPaymentsService.callHgForCreateAdjustment, type={}", ex.getType(), ex);
             switch (ex.getType()) {
@@ -98,7 +98,7 @@ public class ProviderPaymentsService {
         }
     }
 
-    private void finishSuccess(ProviderCallback providerCallback) {
+    private void finishSucceeded(ProviderCallback providerCallback) {
         log.info("Trying to set succeeded ProviderCallback status {}", providerCallback);
         providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
         providerCallbackDao.update(providerCallback);
@@ -113,11 +113,11 @@ public class ProviderPaymentsService {
         log.debug("ProviderCallback status has been set to failed {}", providerCallback.getInvoiceId());
     }
 
-    private void disputeFinishSuccess(ProviderCallback providerCallback) {
+    private void disputeFinishSucceeded(ProviderCallback providerCallback) {
         try {
-            disputesService.finishSuccess(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), providerCallback.getChangedAmount());
+            disputesService.finishSucceeded(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), providerCallback.getChangedAmount());
         } catch (Throwable ex) {
-            log.error("Received exception while disputesService.finishSuccess", ex);
+            log.error("Received exception while disputesService.finishSucceeded", ex);
         }
     }
 }

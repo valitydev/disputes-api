@@ -63,7 +63,7 @@ public class AdminManagementDisputesService {
         if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
-            disputesService.finishSuccess(dispute, changedAmount);
+            disputesService.finishSucceeded(dispute, changedAmount);
         } else {
             log.debug("Request was skipped by inappropriate status {}", dispute);
         }

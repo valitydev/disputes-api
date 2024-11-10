@@ -28,7 +28,7 @@ public class DisputesService {
     private final DisputeDao disputeDao;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
-    public void finishSuccess(String invoiceId, String paymentId, Long changedAmount) {
+    public void finishSucceeded(String invoiceId, String paymentId, Long changedAmount) {
         var disputes = disputeDao.get(invoiceId, paymentId).stream()
                 .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
                 .sorted(Comparator.comparing(Dispute::getCreatedAt))
@@ -38,19 +38,19 @@ public class DisputesService {
                 var dispute = disputes.get(i);
                 checkPendingStatuses(dispute);
                 if (i == disputes.size() - 1) {
-                    finishSuccess(dispute, changedAmount);
+                    finishSucceeded(dispute, changedAmount);
                 } else {
                     finishFailed(dispute, ErrorMessage.AUTO_FAIL_BY_CREATE_ADJUSTMENT_CALL);
                 }
             } catch (NotFoundException ex) {
-                log.warn("NotFound when handle DisputesService.finishSuccess, type={}", ex.getType(), ex);
+                log.warn("NotFound when handle DisputesService.finishSucceeded, type={}", ex.getType(), ex);
             } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishSuccess", ex);
+                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishSucceeded", ex);
             }
         }
     }
 
-    public void finishSuccess(Dispute dispute, Long changedAmount) {
+    public void finishSucceeded(Dispute dispute, Long changedAmount) {
         log.info("Trying to set succeeded Dispute status {}", dispute);
         disputeDao.finishSucceeded(dispute.getId(), changedAmount);
         log.debug("Dispute status has been set to succeeded {}", dispute);
