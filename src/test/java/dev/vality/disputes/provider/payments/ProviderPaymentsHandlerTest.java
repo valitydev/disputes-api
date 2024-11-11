@@ -9,8 +9,8 @@ import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentE
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.provider.payments.*;
@@ -53,7 +53,7 @@ public class ProviderPaymentsHandlerTest {
     @MockBean
     private DominantAsyncService dominantAsyncService;
     @MockBean
-    private PartyManagementAsyncService partyManagementAsyncService;
+    private PartyManagementService partyManagementService;
     @MockBean
     private DominantService dominantService;
     @MockBean
@@ -76,7 +76,7 @@ public class ProviderPaymentsHandlerTest {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
+        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -88,7 +88,7 @@ public class ProviderPaymentsHandlerTest {
         for (int i = 0; i < 4; i++) {
             var invoiceId = String.valueOf(i);
             var invoice = createInvoice(invoiceId, invoiceId);
-            when(invoicingClient.get(any(), any())).thenReturn(invoice);
+            when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
             var request = new ProviderPaymentsCallbackParams()
                     .setInvoiceId(invoiceId)
                     .setPaymentId(invoiceId);

@@ -1,30 +1,24 @@
 package dev.vality.disputes.provider.payments.callback;
 
-import dev.vality.damsel.domain.Currency;
-import dev.vality.disputes.api.model.PaymentParams;
-import dev.vality.disputes.api.service.PaymentParamsBuilder;
+import dev.vality.damsel.domain.TransactionInfo;
+import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
-import dev.vality.disputes.domain.tables.pojos.RetryProviderPaymentCheckStatus;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
-import dev.vality.disputes.provider.payments.dao.RetryProviderPaymentCheckStatusDao;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsRouting;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
-import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ProviderDataService;
-import dev.vality.disputes.security.AccessService;
+import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
-import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
-import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 @SuppressWarnings({"LineLength"})
 public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallbackServiceSrv.Iface {
 
-    private final AccessService accessService;
-    private final PaymentParamsBuilder paymentParamsBuilder;
+    private final InvoicingService invoicingService;
     private final ProviderDataService providerDataService;
-    private final ProviderPaymentsRouting providerPaymentsRouting;
-    private final ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     private final ProviderCallbackDao providerCallbackDao;
-    private final RetryProviderPaymentCheckStatusDao retryProviderPaymentCheckStatusDao;
+    private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
     @Value("${provider.payments.isProviderCallbackEnabled}")
     private boolean enabled;
@@ -50,25 +41,27 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         if (!enabled) {
             return;
         }
-        if (callback.getInvoiceId().isEmpty()) {
+        if (callback.getInvoiceId().isEmpty() && callback.getPaymentId().isEmpty()) {
             log.info("InvoiceId should be set, finish");
             return;
         }
         try {
-            var accessData = accessService.approveUserAccess(callback.getInvoiceId().get(), callback.getPaymentId().get(), false);
-            log.info("Got accessData {}", accessData);
+            var invoiceId = callback.getInvoiceId().get();
+            var paymentId = callback.getPaymentId().get();
+            var invoicePayment = invoicingService.getInvoicePayment(invoiceId, paymentId);
+            log.info("Got invoicePayment {}", invoicePayment);
             // validate
-            PaymentStatusValidator.checkStatus(accessData.getPayment());
-            var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
-            log.info("Got paymentParams {}", paymentParams);
-            var providerData = providerDataService.getProviderData(paymentParams.getProviderId(), paymentParams.getTerminalId());
-            var paymentStatusResult = checkPaymentStatusByRemoteClient(providerData, paymentParams);
+            PaymentStatusValidator.checkStatus(invoicePayment);
+            var providerData = providerDataService.getProviderData(invoicePayment);
+            var currency = providerDataService.getCurrency(invoicePayment);
+            var providerTrxId = getProviderTrxId(invoicePayment);
+            var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(invoiceId, paymentId, providerTrxId, currency, providerData);
             if (paymentStatusResult.isSuccess()) {
                 var providerCallback = new ProviderCallback();
-                providerCallback.setInvoiceId(paymentParams.getInvoiceId());
-                providerCallback.setPaymentId(paymentParams.getPaymentId());
+                providerCallback.setInvoiceId(invoiceId);
+                providerCallback.setPaymentId(paymentId);
                 providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
-                providerCallback.setAmount(paymentParams.getInvoiceAmount());
+                providerCallback.setAmount(invoicePayment.getPayment().getCost().getAmount());
                 providerCallbackDao.save(providerCallback);
                 log.info("Saved providerCallback, finish {}", providerCallback);
             } else {
@@ -81,46 +74,10 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         }
     }
 
-    @SneakyThrows
-    private PaymentStatusResult checkPaymentStatusByRemoteClient(ProviderData providerData, PaymentParams paymentParams) {
-        try {
-            providerPaymentsRouting.initRouteUrl(providerData);
-            var transactionContext = buildTransactionContext(paymentParams);
-            var remoteClient = providerPaymentsThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
-            var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext, buildCurrency(paymentParams));
-            log.info("Called remoteClient.checkPaymentStatus {} {}", transactionContext, paymentStatusResult);
-            return paymentStatusResult;
-        } catch (TException ex) {
-            log.warn("Failed when handle ProviderPaymentsCallbackHandler.callCheckPaymentStatusRemotely, save invoice for future retry", ex);
-            var retryProviderPaymentCheckStatus = new RetryProviderPaymentCheckStatus();
-            retryProviderPaymentCheckStatus.setInvoiceId(paymentParams.getInvoiceId());
-            retryProviderPaymentCheckStatus.setPaymentId(paymentParams.getPaymentId());
-            // todo добавить шедулатор, вначале проверяет PaymentStatusValidator.checkStatus(accessData.getPayment());
-            //  потому что, если они будут лежать в бд вечность (это касается и ProviderCallback)
-            //  то статусы платежей успеют обновится (на сверках, еще как то, типа по запросам мерчей)
-            //  и нужно будет зафиналить в фейлы в ProviderCallback (тк уже не актуально) + удалить из бд RetryProviderPaymentCheckStatus
-            //  тк записи в бд RetryProviderPaymentCheckStatus временные, после финализации уже не нужны
-            //  PS еще здесь может оказаться запрос еще у провайдера не реализована апи checkStatus и мы тогда не потеряем данные
-            retryProviderPaymentCheckStatusDao.save(retryProviderPaymentCheckStatus);
-            throw ex;
-        }
-    }
-
-    private TransactionContext buildTransactionContext(PaymentParams paymentParams) {
-        var transactionContext = new TransactionContext();
-        transactionContext.setProviderTrxId(paymentParams.getProviderTrxId());
-        transactionContext.setInvoiceId(paymentParams.getInvoiceId());
-        transactionContext.setPaymentId(paymentParams.getPaymentId());
-        transactionContext.setTerminalOptions(paymentParams.getOptions());
-        return transactionContext;
-    }
-
-    private Currency buildCurrency(PaymentParams paymentParams) {
-        var currency = new Currency();
-        currency.setName(paymentParams.getCurrencyName());
-        currency.setSymbolicCode(paymentParams.getCurrencySymbolicCode());
-        currency.setNumericCode(paymentParams.getCurrencyNumericCode().shortValue());
-        currency.setExponent(paymentParams.getCurrencyExponent().shortValue());
-        return currency;
+    private String getProviderTrxId(InvoicePayment payment) {
+        return Optional.ofNullable(payment.getLastTransactionInfo())
+                .map(TransactionInfo::getId)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Payment with id: %s and filled ProviderTrxId not found!", payment.getPayment().getId()), NotFoundException.Type.PROVIDERTRXID));
     }
 }

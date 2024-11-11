@@ -1,14 +1,12 @@
 package dev.vality.disputes.api.service;
 
-import dev.vality.damsel.domain.Cash;
-import dev.vality.damsel.domain.CurrencyRef;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessData;
-import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
+import dev.vality.disputes.service.external.PartyManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -23,15 +21,15 @@ import java.util.Optional;
 public class PaymentParamsBuilder {
 
     private final ProviderDataService providerDataService;
-    private final PartyManagementAsyncService partyManagementAsyncService;
+    private final PartyManagementService partyManagementService;
 
     @SneakyThrows
     public PaymentParams buildGeneralPaymentContext(AccessData accessData) {
         var invoice = accessData.getInvoice().getInvoice();
         log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
-        var currency = providerDataService.getCurrency(getCurrencyRef(payment));
-        var shop = partyManagementAsyncService.getShop(invoice.getOwnerId(), invoice.getShopId());
+        var currency = providerDataService.getCurrency(payment);
+        var shop = partyManagementService.getShop(invoice.getOwnerId(), invoice.getShopId());
         var paymentParams = PaymentParams.builder()
                 .invoiceId(invoice.getId())
                 .paymentId(payment.getPayment().getId())
@@ -40,23 +38,15 @@ public class PaymentParamsBuilder {
                 .providerTrxId(getProviderTrxId(payment))
                 .currencyName(currency.getName())
                 .currencySymbolicCode(currency.getSymbolicCode())
-                .currencyNumericCode(currency.isSetNumericCode() ? (int) currency.getNumericCode() : null)
-                .currencyExponent(currency.isSetExponent() ? (int) currency.getExponent() : null)
+                .currencyNumericCode((int) currency.getNumericCode())
+                .currencyExponent((int) currency.getExponent())
                 .options(providerDataService.getProviderData(payment).getOptions())
                 .shopId(invoice.getShopId())
-                .shopDetailsName(shop.get().getDetails().getName())
+                .shopDetailsName(shop.getDetails().getName())
                 .invoiceAmount(payment.getPayment().getCost().getAmount())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);
         return paymentParams;
-    }
-
-    private CurrencyRef getCurrencyRef(InvoicePayment payment) {
-        return Optional.of(payment)
-                .filter(p -> p.getPayment().isSetCost())
-                .map(p -> p.getPayment().getCost())
-                .map(Cash::getCurrency)
-                .orElse(null);
     }
 
     private String getProviderTrxId(InvoicePayment payment) {

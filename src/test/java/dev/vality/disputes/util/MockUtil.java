@@ -129,11 +129,10 @@ public class MockUtil {
                 .setNumericCode((short) 643));
     }
 
-    public static CompletableFuture<Shop> createShop() {
-        return CompletableFuture.completedFuture(new Shop()
+    public static Shop createShop() {
+        return new Shop()
                 .setId("sjop_id")
-                .setDetails(new ShopDetails("shop_details_name"))
-        );
+                .setDetails(new ShopDetails("shop_details_name"));
     }
 
     public static AuthData createAuthData() {

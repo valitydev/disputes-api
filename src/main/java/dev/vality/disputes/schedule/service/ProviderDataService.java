@@ -1,7 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.domain.Currency;
-import dev.vality.damsel.domain.CurrencyRef;
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.payment_processing.InvoicePayment;
@@ -44,7 +43,7 @@ public class ProviderDataService {
     }
 
     @SneakyThrows
-    public Currency getCurrency(CurrencyRef currencyRef) {
-        return currencyRef == null ? new Currency() : dominantAsyncService.getCurrency(currencyRef).get();
+    public Currency getCurrency(InvoicePayment payment) {
+        return dominantAsyncService.getCurrency(payment.getPayment().getCost().getCurrency()).get();
     }
 }

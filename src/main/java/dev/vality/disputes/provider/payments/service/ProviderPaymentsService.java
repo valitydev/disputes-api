@@ -71,7 +71,7 @@ public class ProviderPaymentsService {
         }
     }
 
-    public void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {
+    private void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {
         var forUpdate = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallback.getId());
         if (forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
             throw new ProviderCallbackStatusWasUpdatedByAnotherThreadException();
@@ -118,7 +118,7 @@ public class ProviderPaymentsService {
         try {
             disputesService.finishSucceeded(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), providerCallback.getChangedAmount());
         } catch (Throwable ex) {
-            log.error("Received exception while disputesService.finishSucceeded", ex);
+            log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class ProviderPaymentsService {
         try {
             disputesService.finishFailed(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), errorMessage);
         } catch (Throwable ex) {
-            log.error("Received exception while disputesService.finishFailed", ex);
+            log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
         }
     }
 }

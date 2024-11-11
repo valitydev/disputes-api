@@ -60,10 +60,6 @@ service:
   party-management:
     url: http://localhost:8022/change_it
     networkTimeout: 5000
-    cache:
-      shops:
-        poolSize: 10
-        ttlSec: 86400
   disputes-tg-bot:
     provider:
       url: http://localhost:8022/change_it
