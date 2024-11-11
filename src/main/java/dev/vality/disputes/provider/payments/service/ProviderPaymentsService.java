@@ -50,10 +50,10 @@ public class ProviderPaymentsService {
             providerCallback.setPaymentId(transactionContext.getPaymentId());
             providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
             providerCallback.setAmount(amount);
+            log.info("Save providerCallback {}", providerCallback);
             providerCallbackDao.save(providerCallback);
-            log.info("Saved providerCallback, finish {}", providerCallback);
         } else {
-            log.info("providerPaymentsRemoteClient.checkPaymentStatus result was skipped by failed status, finish");
+            log.info("providerPaymentsRemoteClient.checkPaymentStatus result was skipped by failed status");
         }
         return paymentStatusResult;
     }

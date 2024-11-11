@@ -67,7 +67,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
-            log.warn("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
+            log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
         }
     }
 
@@ -75,8 +75,8 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         try {
             providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (Throwable ex) {
-            log.error("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
             if (ex instanceof TException) {
+                log.error("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
                 var retryProviderPaymentCheckStatus = new RetryProviderPaymentCheckStatus();
                 retryProviderPaymentCheckStatus.setInvoiceId(transactionContext.getInvoiceId());
                 retryProviderPaymentCheckStatus.setPaymentId(transactionContext.getPaymentId());
@@ -87,7 +87,6 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
                 //  тк записи в бд RetryProviderPaymentCheckStatus временные, после финализации уже не нужны
                 //  PS еще здесь может оказаться запрос еще у провайдера не реализована апи checkStatus и мы тогда не потеряем данные
                 retryProviderPaymentCheckStatusDao.save(retryProviderPaymentCheckStatus);
-                log.info("Saved RetryProviderPaymentCheckStatus, finish {}", retryProviderPaymentCheckStatus);
             } else {
                 throw ex;
             }
