@@ -52,6 +52,15 @@ public class ProviderCallbackDao extends AbstractGenericDao {
                         String.format("ProviderCallback not found, id='%s'", id), NotFoundException.Type.PROVIDERCALLBACK));
     }
 
+    public ProviderCallback get(String invoiceId, String paymentId) {
+        var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
+                .where(PROVIDER_CALLBACK.INVOICE_ID.concat(PROVIDER_CALLBACK.PAYMENT_ID).eq(invoiceId + paymentId));
+        return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("ProviderCallback not found, id='%s%s'", invoiceId, paymentId), NotFoundException.Type.PROVIDERCALLBACK));
+
+    }
+
     public List<ProviderCallback> getProviderCallbacksForHgCall(int limit) {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
                 .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment)

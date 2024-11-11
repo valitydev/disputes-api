@@ -6,6 +6,7 @@ import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
@@ -27,6 +28,7 @@ import java.util.Optional;
 public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallbackServiceSrv.Iface {
 
     private final InvoicingService invoicingService;
+    private final ProviderPaymentsService providerPaymentsService;
     private final ProviderDataService providerDataService;
     private final ProviderCallbackDao providerCallbackDao;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
@@ -52,6 +54,8 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             log.info("Got invoicePayment {}", invoicePayment);
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
+            // validate
+            providerPaymentsService.checkProviderCallbackExist(invoiceId, paymentId);
             var providerData = providerDataService.getProviderData(invoicePayment);
             var currency = providerDataService.getCurrency(invoicePayment);
             var providerTrxId = getProviderTrxId(invoicePayment);

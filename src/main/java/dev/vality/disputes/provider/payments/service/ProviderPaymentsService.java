@@ -9,6 +9,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
@@ -33,6 +34,15 @@ public class ProviderPaymentsService {
     private final ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
     private final DisputesService disputesService;
+
+    public void checkProviderCallbackExist(String invoiceId, String paymentId) {
+        try {
+            providerCallbackDao.get(invoiceId, paymentId);
+            throw new ProviderCallbackAlreadyExistException();
+        } catch (NotFoundException ignored) {
+            log.debug("It's new provider callback");
+        }
+    }
 
     @Transactional
     public List<ProviderCallback> getPaymentsForHgCall(int batchSize) {
