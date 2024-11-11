@@ -93,7 +93,7 @@ public class CreatedDisputesService {
                 createDisputeByDefaultClient(dispute, createDisputeByDefaultClient);
             }
         } catch (NotFoundException ex) {
-            log.warn("NotFound when handle CreatedDisputesService.callCreateDisputeRemotely, type={}", ex.getType(), ex);
+            log.error("NotFound when handle CreatedDisputesService.callCreateDisputeRemotely, type={}", ex.getType(), ex);
             switch (ex.getType()) {
                 case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
                 case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);

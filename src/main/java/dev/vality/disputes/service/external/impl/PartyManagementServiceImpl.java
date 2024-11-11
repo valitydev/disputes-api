@@ -22,14 +22,14 @@ public class PartyManagementServiceImpl implements PartyManagementService {
     private final PartyManagementSrv.Iface partyManagementClient;
 
     public Shop getShop(String partyId, String shopId) {
-        log.info("Trying to get shop, partyId='{}', shopId='{}'", partyId, shopId);
+        log.debug("Trying to get shop, partyId='{}', shopId='{}'", partyId, shopId);
         var party = getParty(partyId);
         var shop = party.getShops().get(shopId);
         if (shop == null) {
             throw new NotFoundException(
                     String.format("Shop not found, partyId='%s', shopId='%s'", partyId, shopId), NotFoundException.Type.SHOP);
         }
-        log.info("Shop has been found, partyId='{}', shopId='{}'", partyId, shopId);
+        log.debug("Shop has been found, partyId='{}', shopId='{}'", partyId, shopId);
         return shop;
     }
 
@@ -42,10 +42,10 @@ public class PartyManagementServiceImpl implements PartyManagementService {
     }
 
     private Party getParty(String partyId, PartyRevisionParam partyRevisionParam) {
-        log.info("Trying to get party, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
+        log.debug("Trying to get party, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
         try {
             var party = partyManagementClient.checkout(partyId, partyRevisionParam);
-            log.info("Party has been found, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
+            log.debug("Party has been found, partyId='{}', partyRevisionParam='{}'", partyId, partyRevisionParam);
             return party;
         } catch (PartyNotFound ex) {
             throw new NotFoundException(
@@ -58,9 +58,9 @@ public class PartyManagementServiceImpl implements PartyManagementService {
 
     private long getPartyRevision(String partyId) {
         try {
-            log.info("Trying to get revision, partyId='{}'", partyId);
+            log.debug("Trying to get revision, partyId='{}'", partyId);
             var revision = partyManagementClient.getRevision(partyId);
-            log.info("Revision has been found, partyId='{}', revision='{}'", partyId, revision);
+            log.debug("Revision has been found, partyId='{}', revision='{}'", partyId, revision);
             return revision;
         } catch (PartyNotFound ex) {
             throw new NotFoundException(String.format("Party not found, partyId='%s'", partyId), ex, NotFoundException.Type.PARTY);

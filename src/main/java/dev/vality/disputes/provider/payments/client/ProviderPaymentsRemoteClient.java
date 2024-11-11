@@ -22,10 +22,9 @@ public class ProviderPaymentsRemoteClient {
 
     @SneakyThrows
     public PaymentStatusResult checkPaymentStatus(TransactionContext transactionContext, Currency currency, ProviderData providerData) {
+        log.info("Trying to call ProviderPaymentsThriftInterfaceBuilder.checkPaymentStatus() {}", transactionContext);
         providerPaymentsRouting.initRouteUrl(providerData);
         var remoteClient = providerPaymentsThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
-        var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext, currency);
-        log.info("Called remoteClient.checkPaymentStatus {} {}", transactionContext, paymentStatusResult);
-        return paymentStatusResult;
+        return remoteClient.checkPaymentStatus(transactionContext, currency);
     }
 }

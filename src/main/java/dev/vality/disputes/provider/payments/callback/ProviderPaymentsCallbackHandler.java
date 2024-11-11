@@ -54,7 +54,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             var invoiceId = callback.getInvoiceId().get();
             var paymentId = callback.getPaymentId().get();
             var invoicePayment = invoicingService.getInvoicePayment(invoiceId, paymentId);
-            log.info("Got invoicePayment {}", invoicePayment);
+            log.debug("Got invoicePayment {}", invoicePayment);
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
             // validate
@@ -75,7 +75,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
         try {
             providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (Throwable ex) {
-            log.warn("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
+            log.error("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
             if (ex instanceof TException) {
                 var retryProviderPaymentCheckStatus = new RetryProviderPaymentCheckStatus();
                 retryProviderPaymentCheckStatus.setInvoiceId(transactionContext.getInvoiceId());

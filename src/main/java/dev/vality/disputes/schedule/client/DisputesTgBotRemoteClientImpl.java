@@ -35,12 +35,12 @@ public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {
 
     @Override
     public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
-        log.debug("Trying to build disputeParams {}", dispute.getId());
+        log.info("Trying to call disputesTgBotService.createDispute() {}", dispute.getId());
         var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions());
         providerData.setRouteUrl(routeUrl);
         log.debug("Trying to disputesTgBotService.createDispute() call {}", dispute.getId());
         var result = disputesTgBotService.createDispute(disputeParams);
-        log.info("disputesTgBotService.createDispute() has been called {} {}", dispute.getId(), result);
+        log.debug("disputesTgBotService.createDispute() has been called {} {}", dispute.getId(), result);
         return result;
     }
 }

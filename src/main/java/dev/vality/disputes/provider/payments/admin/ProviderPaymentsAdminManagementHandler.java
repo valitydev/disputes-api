@@ -30,7 +30,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
                     .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
-            log.info("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
+            log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
             providerCallbackDao.updateBatch(batch);
         } else if (cancelParamsRequest.getCancelParams().isPresent()) {
             var invoicePaymentIds = cancelParamsRequest.getCancelParams().get().stream()
@@ -39,7 +39,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
                     .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
                     .toList();
-            log.info("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
+            log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
             providerCallbackDao.updateBatch(batch);
         }
         log.info("Finish ProviderPayments CancelParamsRequest {}", cancelParamsRequest);
@@ -54,7 +54,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
                     .filter(ProviderCallback::getSkipCallHgForCreateAdjustment)
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.info("Batch by ProviderPayments approveParamsRequest {}", batch.size());
+            log.debug("Batch by ProviderPayments approveParamsRequest {}", batch.size());
             providerCallbackDao.updateBatch(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
             var invoicePaymentIds = approveParamsRequest.getApproveParams().get().stream()
@@ -64,7 +64,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
                     .filter(ProviderCallback::getSkipCallHgForCreateAdjustment)
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.info("Batch by ProviderPayments approveParamsRequest {}", batch.size());
+            log.debug("Batch by ProviderPayments approveParamsRequest {}", batch.size());
             providerCallbackDao.updateBatch(batch);
         }
         log.info("Got ProviderPayments ApproveParamsRequest {}", approveParamsRequest);

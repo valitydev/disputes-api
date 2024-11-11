@@ -29,7 +29,7 @@ public class AccessService {
     private boolean authEnabled;
 
     public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData) {
-        log.info("Start building AccessData {}{}", invoiceId, paymentId);
+        log.debug("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
         if (checkUserAccessData) {
             checkUserAccessData(accessData);
@@ -48,7 +48,7 @@ public class AccessService {
     }
 
     private void checkUserAccessData(AccessData accessData) {
-        log.info("Check the user's rights to perform dispute operation");
+        log.debug("Check the user's rights to perform dispute operation");
         try {
             var resolution = bouncerService.getResolution(accessData);
             switch (resolution.getSetField()) {
