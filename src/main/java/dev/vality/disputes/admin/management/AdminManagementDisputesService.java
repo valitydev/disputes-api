@@ -66,9 +66,8 @@ public class AdminManagementDisputesService {
         if ((dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending)
                 && !approveParam.isSkipCallHgForCreateAdjustment()) {
-            disputeStatusResultHandler.handleSucceededResult(dispute, changedAmount
-                    .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
-                    .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult())), false);
+            var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+            disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount.orElse(null)), providerData, false);
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
@@ -147,5 +146,11 @@ public class AdminManagementDisputesService {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
             return Optional.empty();
         }
+    }
+
+    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
+        return Optional.ofNullable(changedAmount)
+                .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
+                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 }

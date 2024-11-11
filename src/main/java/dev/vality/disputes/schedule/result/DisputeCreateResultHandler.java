@@ -55,9 +55,9 @@ public class DisputeCreateResultHandler {
     }
 
     public void handleAlreadyExistResult(Dispute dispute) {
+        disputesService.setNextStepToAlreadyExist(dispute);
         callbackNotifier.sendDisputeAlreadyCreated(dispute);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.already_exist_created, "dispute already exist");
-        disputesService.setNextStepToAlreadyExist(dispute);
     }
 
     public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
@@ -66,9 +66,9 @@ public class DisputeCreateResultHandler {
     }
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
-        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created, errorMessage);
         disputesService.setNextStepToManualCreated(dispute, errorMessage);
+        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
+        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created, errorMessage);
     }
 }

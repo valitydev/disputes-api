@@ -40,7 +40,7 @@ public class ProviderPaymentsService {
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
-    public void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long invoiceAmount) {
+    public void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
         if (paymentStatusResult.isSuccess()) {
@@ -48,7 +48,7 @@ public class ProviderPaymentsService {
             providerCallback.setInvoiceId(transactionContext.getInvoiceId());
             providerCallback.setPaymentId(transactionContext.getPaymentId());
             providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
-            providerCallback.setAmount(invoiceAmount);
+            providerCallback.setAmount(amount);
             providerCallbackDao.save(providerCallback);
             log.info("Saved providerCallback, finish {}", providerCallback);
         } else {

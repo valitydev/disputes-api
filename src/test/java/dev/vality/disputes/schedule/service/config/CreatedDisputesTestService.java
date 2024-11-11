@@ -4,12 +4,15 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.service.ProviderDisputesThriftInterfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.file.storage.FileStorageSrv;
+import dev.vality.provider.payments.PaymentStatusResult;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -25,12 +28,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestComponent
-@Import({DisputeApiTestService.class, RemoteClientTestConfig.class, DefaultRemoteClientTestConfig.class, CallbackNotifierTestConfig.class})
+@Import({DisputeApiTestService.class, RemoteClientTestConfig.class, ProviderPaymentsRemoteClientTestConfig.class, CallbackNotifierTestConfig.class})
 @SuppressWarnings({"LineLength"})
 public class CreatedDisputesTestService {
 
     @Autowired
     private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
+    @Autowired
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -62,6 +67,9 @@ public class CreatedDisputesTestService {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());

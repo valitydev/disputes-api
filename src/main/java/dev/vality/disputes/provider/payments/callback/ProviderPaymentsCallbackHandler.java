@@ -1,15 +1,20 @@
 package dev.vality.disputes.provider.payments.callback;
 
+import dev.vality.damsel.domain.Currency;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
+import dev.vality.disputes.domain.tables.pojos.RetryProviderPaymentCheckStatus;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.dao.RetryProviderPaymentCheckStatusDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
+import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
@@ -25,6 +30,7 @@ import java.util.Optional;
 @SuppressWarnings({"LineLength"})
 public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallbackServiceSrv.Iface {
 
+    private final RetryProviderPaymentCheckStatusDao retryProviderPaymentCheckStatusDao;
     private final InvoicingService invoicingService;
     private final ProviderPaymentsService providerPaymentsService;
     private final ProviderDataService providerDataService;
@@ -57,14 +63,36 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData);
             var currency = providerDataService.getCurrency(invoicePayment);
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
-            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
+            checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
-            log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
+            log.warn("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
         }
     }
 
+    private void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long invoiceAmount) {
+        try {
+            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
+        } catch (Throwable ex) {
+            log.warn("Failed when handle ProviderPaymentsCallbackHandler.checkPaymentStatusAndSave, save invoice for future retry", ex);
+            if (ex instanceof TException) {
+                var retryProviderPaymentCheckStatus = new RetryProviderPaymentCheckStatus();
+                retryProviderPaymentCheckStatus.setInvoiceId(transactionContext.getInvoiceId());
+                retryProviderPaymentCheckStatus.setPaymentId(transactionContext.getPaymentId());
+                // todo добавить шедулатор, вначале проверяет PaymentStatusValidator.checkStatus(accessData.getPayment());
+                //  потому что, если они будут лежать в бд вечность (это касается и ProviderCallback)
+                //  то статусы платежей успеют обновится (на сверках, еще как то, типа по запросам мерчей)
+                //  и нужно будет зафиналить в фейлы в ProviderCallback (тк уже не актуально) + удалить из бд RetryProviderPaymentCheckStatus
+                //  тк записи в бд RetryProviderPaymentCheckStatus временные, после финализации уже не нужны
+                //  PS еще здесь может оказаться запрос еще у провайдера не реализована апи checkStatus и мы тогда не потеряем данные
+                retryProviderPaymentCheckStatusDao.save(retryProviderPaymentCheckStatus);
+                log.info("Saved RetryProviderPaymentCheckStatus, finish {}", retryProviderPaymentCheckStatus);
+            } else {
+                throw ex;
+            }
+        }
+    }
 
     private String getProviderTrxId(InvoicePayment payment) {
         return Optional.ofNullable(payment.getLastTransactionInfo())

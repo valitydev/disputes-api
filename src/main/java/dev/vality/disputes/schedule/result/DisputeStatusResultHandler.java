@@ -6,11 +6,12 @@ import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.utils.ErrorFormatter;
-import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
-import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +27,12 @@ import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAP
 @SuppressWarnings({"LineLength"})
 public class DisputeStatusResultHandler {
 
+    private final TransactionContextConverter transactionContextConverter;
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final DisputesService disputesService;
+    private final ProviderPaymentsService providerPaymentsService;
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
-    private final ProviderPaymentsCallbackServiceSrv.Iface providerPaymentsCallbackHandler;
 
     public void handlePendingResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
@@ -52,20 +55,20 @@ public class DisputeStatusResultHandler {
         disputesService.finishFailed(dispute, errorMessage);
     }
 
-    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, boolean notify) {
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify) {
+        var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
+        disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
+        createAdjustment(dispute, providerData);
         if (notify) {
             callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
             mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
         }
-        var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
-        disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
-        createAdjustmentWhenFailedPaymentSuccess(dispute);
     }
 
     public void handlePoolingExpired(Dispute dispute) {
-        callbackNotifier.sendDisputePoolingExpired(dispute);
         mdcTopicProducer.sendPoolingExpired(dispute);
         disputesService.setNextStepToManualPending(dispute, ErrorMessage.POOLING_EXPIRED);
+        callbackNotifier.sendDisputePoolingExpired(dispute);
     }
 
     public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
@@ -80,19 +83,14 @@ public class DisputeStatusResultHandler {
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
+        disputesService.setNextStepToManualPending(dispute, errorMessage);
         callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
-        disputesService.setNextStepToManualPending(dispute, errorMessage);
     }
 
-    private void createAdjustmentWhenFailedPaymentSuccess(Dispute dispute) {
-        try {
-            providerPaymentsCallbackHandler.createAdjustmentWhenFailedPaymentSuccess(
-                    new ProviderPaymentsCallbackParams()
-                            .setInvoiceId(dispute.getInvoiceId())
-                            .setPaymentId(dispute.getPaymentId()));
-        } catch (Throwable ex) {
-            log.error("Received exception while DisputeStatusResultHandler.createAdjustmentWhenFailedPaymentSuccess", ex);
-        }
+    private void createAdjustment(Dispute dispute, ProviderData providerData) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+        var currency = disputeCurrencyConverter.convert(dispute);
+        providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
     }
 }
