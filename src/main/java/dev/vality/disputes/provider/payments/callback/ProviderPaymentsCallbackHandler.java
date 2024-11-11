@@ -2,10 +2,8 @@ package dev.vality.disputes.provider.payments.callback;
 
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.exception.NotFoundException;
-import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
-import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.external.InvoicingService;
@@ -30,8 +28,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
     private final InvoicingService invoicingService;
     private final ProviderPaymentsService providerPaymentsService;
     private final ProviderDataService providerDataService;
-    private final ProviderCallbackDao providerCallbackDao;
-    private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
+    private final TransactionContextConverter transactionContextConverter;
 
     @Value("${provider.payments.isProviderCallbackEnabled}")
     private boolean enabled;
@@ -55,28 +52,19 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
             // validate
-            providerPaymentsService.checkProviderCallbackExist(invoiceId, paymentId);
-            var providerData = providerDataService.getProviderData(invoicePayment);
-            var currency = providerDataService.getCurrency(invoicePayment);
             var providerTrxId = getProviderTrxId(invoicePayment);
-            var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(invoiceId, paymentId, providerTrxId, currency, providerData);
-            if (paymentStatusResult.isSuccess()) {
-                var providerCallback = new ProviderCallback();
-                providerCallback.setInvoiceId(invoiceId);
-                providerCallback.setPaymentId(paymentId);
-                providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
-                providerCallback.setAmount(invoicePayment.getPayment().getCost().getAmount());
-                providerCallbackDao.save(providerCallback);
-                log.info("Saved providerCallback, finish {}", providerCallback);
-            } else {
-                log.info("remoteClient.checkPaymentStatus result was skipped by failed status, finish");
-            }
+            var providerData = providerDataService.getProviderData(invoicePayment);
+            var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData);
+            var currency = providerDataService.getCurrency(invoicePayment);
+            var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
+            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
             log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
         }
     }
+
 
     private String getProviderTrxId(InvoicePayment payment) {
         return Optional.ofNullable(payment.getLastTransactionInfo())

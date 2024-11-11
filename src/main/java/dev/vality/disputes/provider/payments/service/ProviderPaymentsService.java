@@ -1,19 +1,23 @@
 package dev.vality.disputes.provider.payments.service;
 
+import dev.vality.damsel.domain.Currency;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
+import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,13 +38,21 @@ public class ProviderPaymentsService {
     private final ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
     private final DisputesService disputesService;
+    private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
-    public void checkProviderCallbackExist(String invoiceId, String paymentId) {
-        try {
-            providerCallbackDao.get(invoiceId, paymentId);
-            throw new ProviderCallbackAlreadyExistException();
-        } catch (NotFoundException ignored) {
-            log.debug("It's new provider callback");
+    public void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long invoiceAmount) {
+        checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
+        var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
+        if (paymentStatusResult.isSuccess()) {
+            var providerCallback = new ProviderCallback();
+            providerCallback.setInvoiceId(transactionContext.getInvoiceId());
+            providerCallback.setPaymentId(transactionContext.getPaymentId());
+            providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
+            providerCallback.setAmount(invoiceAmount);
+            providerCallbackDao.save(providerCallback);
+            log.info("Saved providerCallback, finish {}", providerCallback);
+        } else {
+            log.info("providerPaymentsRemoteClient.checkPaymentStatus result was skipped by failed status, finish");
         }
     }
 
@@ -137,6 +149,15 @@ public class ProviderPaymentsService {
             disputesService.finishFailed(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), errorMessage);
         } catch (Throwable ex) {
             log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
+        }
+    }
+
+    private void checkProviderCallbackExist(String invoiceId, String paymentId) {
+        try {
+            providerCallbackDao.get(invoiceId, paymentId);
+            throw new ProviderCallbackAlreadyExistException();
+        } catch (NotFoundException ignored) {
+            log.debug("It's new provider callback");
         }
     }
 }

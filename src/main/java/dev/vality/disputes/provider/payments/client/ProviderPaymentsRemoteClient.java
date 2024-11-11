@@ -25,10 +25,9 @@ public class ProviderPaymentsRemoteClient {
     private final RetryProviderPaymentCheckStatusDao retryProviderPaymentCheckStatusDao;
 
     @SneakyThrows
-    public PaymentStatusResult checkPaymentStatus(String invoiceId, String paymentId, String providerTrxId, Currency currency, ProviderData providerData) {
+    public PaymentStatusResult checkPaymentStatus(TransactionContext transactionContext, Currency currency, ProviderData providerData) {
         try {
             providerPaymentsRouting.initRouteUrl(providerData);
-            var transactionContext = buildTransactionContext(invoiceId, paymentId, providerTrxId, providerData);
             var remoteClient = providerPaymentsThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
             var paymentStatusResult = remoteClient.checkPaymentStatus(transactionContext, currency);
             log.info("Called remoteClient.checkPaymentStatus {} {}", transactionContext, paymentStatusResult);
@@ -36,8 +35,8 @@ public class ProviderPaymentsRemoteClient {
         } catch (TException ex) {
             log.warn("Failed when handle ProviderPaymentsCallbackHandler.callCheckPaymentStatusRemotely, save invoice for future retry", ex);
             var retryProviderPaymentCheckStatus = new RetryProviderPaymentCheckStatus();
-            retryProviderPaymentCheckStatus.setInvoiceId(invoiceId);
-            retryProviderPaymentCheckStatus.setPaymentId(paymentId);
+            retryProviderPaymentCheckStatus.setInvoiceId(transactionContext.getInvoiceId());
+            retryProviderPaymentCheckStatus.setPaymentId(transactionContext.getPaymentId());
             // todo добавить шедулатор, вначале проверяет PaymentStatusValidator.checkStatus(accessData.getPayment());
             //  потому что, если они будут лежать в бд вечность (это касается и ProviderCallback)
             //  то статусы платежей успеют обновится (на сверках, еще как то, типа по запросам мерчей)
@@ -48,14 +47,4 @@ public class ProviderPaymentsRemoteClient {
             throw ex;
         }
     }
-
-    private TransactionContext buildTransactionContext(String invoiceId, String paymentId, String providerTrxId, ProviderData providerData) {
-        var transactionContext = new TransactionContext();
-        transactionContext.setProviderTrxId(providerTrxId);
-        transactionContext.setInvoiceId(invoiceId);
-        transactionContext.setPaymentId(paymentId);
-        transactionContext.setTerminalOptions(providerData.getOptions());
-        return transactionContext;
-    }
-
 }
