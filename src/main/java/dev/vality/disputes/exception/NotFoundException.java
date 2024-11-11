@@ -1,12 +1,37 @@
 package dev.vality.disputes.exception;
 
+import lombok.Getter;
+
+@Getter
 public class NotFoundException extends RuntimeException {
 
-    public NotFoundException(String message) {
+    private final Type type;
+
+    public NotFoundException(String message, Type type) {
         super(message);
+        this.type = type;
     }
 
-    public NotFoundException(String message, Throwable cause) {
+    public NotFoundException(String message, Throwable cause, Type type) {
         super(message, cause);
+        this.type = type;
+    }
+
+    public enum Type {
+        NONE,
+        INVOICE,
+        PAYMENT,
+        ATTACHMENT,
+        FILEMETA,
+        TERMINAL,
+        PROVIDER,
+        PROXY,
+        CURRENCY,
+        PARTY,
+        SHOP,
+        PROVIDERTRXID,
+        DISPUTE,
+        PROVIDERDISPUTE,
+        PROVIDERCALLBACK
     }
 }

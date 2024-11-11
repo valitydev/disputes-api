@@ -6,10 +6,9 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
+import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
 import dev.vality.disputes.util.WiremockUtils;
@@ -41,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 @Import(WiremockAddressesHolder.class)
 public class DisputesApiDelegateServiceTest {
 
@@ -54,7 +53,7 @@ public class DisputesApiDelegateServiceTest {
     @MockBean
     private DominantAsyncService dominantAsyncService;
     @MockBean
-    private PartyManagementAsyncService partyManagementAsyncService;
+    private PartyManagementService partyManagementService;
     @MockBean
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
@@ -72,7 +71,7 @@ public class DisputesApiDelegateServiceTest {
     public void init() {
         mocks = MockitoAnnotations.openMocks(this);
         preparedMocks = new Object[]{invoicingClient, tokenKeeperClient, bouncerClient,
-                fileStorageClient, dominantAsyncService, partyManagementAsyncService};
+                fileStorageClient, dominantAsyncService, partyManagementService};
     }
 
     @AfterEach
@@ -94,7 +93,7 @@ public class DisputesApiDelegateServiceTest {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
+        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
@@ -112,7 +111,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(1)).getCurrency(any());
         verify(dominantAsyncService, times(1)).getProvider(any());
         verify(dominantAsyncService, times(1)).getProxy(any());
-        verify(partyManagementAsyncService, times(1)).getShop(any(), any());
+        verify(partyManagementService, times(1)).getShop(any(), any());
         verify(fileStorageClient, times(1)).createNewFile(any(), any());
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
@@ -137,7 +136,7 @@ public class DisputesApiDelegateServiceTest {
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
         verify(bouncerClient, times(3)).judge(any(), any());
-        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
         // new after failed
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
@@ -155,9 +154,9 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getCurrency(any());
         verify(dominantAsyncService, times(2)).getProvider(any());
         verify(dominantAsyncService, times(2)).getProxy(any());
-        verify(partyManagementAsyncService, times(2)).getShop(any(), any());
+        verify(partyManagementService, times(2)).getShop(any(), any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
-        disputeDao.update(UUID.fromString(response.getDisputeId()), DisputeStatus.failed);
+        disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
     }
 
     @Test

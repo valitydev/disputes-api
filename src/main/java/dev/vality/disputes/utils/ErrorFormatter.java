@@ -2,8 +2,10 @@ package dev.vality.disputes.utils;
 
 import dev.vality.damsel.domain.Failure;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;
+import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@UtilityClass
 public class ErrorFormatter {
 
     public static String getErrorMessage(Failure failure) {

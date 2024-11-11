@@ -1,18 +1,21 @@
 package dev.vality.disputes.schedule.converter;
 
-import dev.vality.damsel.domain.Currency;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.Cash;
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.provider.TransactionContext;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class DisputeParamsConverter {
+
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
 
     public DisputeParams convert(Dispute dispute, List<Attachment> attachments, Map<String, String> terminalOptions) {
         var disputeParams = new DisputeParams();
@@ -26,11 +29,7 @@ public class DisputeParamsConverter {
         if (dispute.getAmount() != null) {
             var cash = new Cash();
             cash.setAmount(dispute.getAmount());
-            var currency = new Currency();
-            currency.setName(dispute.getCurrencyName());
-            currency.setSymbolicCode(dispute.getCurrencySymbolicCode());
-            currency.setNumericCode(dispute.getCurrencyNumericCode().shortValue());
-            currency.setExponent(dispute.getCurrencyExponent().shortValue());
+            var currency = disputeCurrencyConverter.convert(dispute);
             cash.setCurrency(currency);
             disputeParams.setCash(cash);
         }

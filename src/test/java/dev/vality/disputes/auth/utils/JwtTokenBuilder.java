@@ -53,8 +53,8 @@ public class JwtTokenBuilder {
                                     .put("roles", new JSONArray(roles))))
                     .put("preferred_username", username)
                     .put("email", email).toString();
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+        } catch (JSONException ex) {
+            throw new RuntimeException(ex);
         }
 
         return Jwts.builder()

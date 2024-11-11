@@ -1,4 +1,4 @@
-package dev.vality.disputes.servlet;
+package dev.vality.disputes.provider.payments.servlet;
 
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;

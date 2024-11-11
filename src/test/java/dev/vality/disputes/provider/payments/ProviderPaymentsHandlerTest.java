@@ -1,18 +1,16 @@
 package dev.vality.disputes.provider.payments;
 
 import dev.vality.bouncer.decisions.ArbiterSrv;
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsIfaceBuilder;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.service.external.DominantService;
+import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.provider.payments.*;
@@ -55,11 +53,11 @@ public class ProviderPaymentsHandlerTest {
     @MockBean
     private DominantAsyncService dominantAsyncService;
     @MockBean
-    private PartyManagementAsyncService partyManagementAsyncService;
+    private PartyManagementService partyManagementService;
     @MockBean
     private DominantService dominantService;
     @MockBean
-    private ProviderPaymentsIfaceBuilder providerPaymentsIfaceBuilder;
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private ProviderPaymentsService providerPaymentsService;
     @Autowired
@@ -78,19 +76,19 @@ public class ProviderPaymentsHandlerTest {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementAsyncService.getShop(any(), any())).thenReturn(createShop());
+        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
-        when(providerPaymentsIfaceBuilder.buildTHSpawnClient(any())).thenReturn(providerMock);
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var approveParams = new ArrayList<ApproveParams>();
         for (int i = 0; i < 4; i++) {
             var invoiceId = String.valueOf(i);
             var invoice = createInvoice(invoiceId, invoiceId);
-            when(invoicingClient.get(any(), any())).thenReturn(invoice);
+            when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
             var request = new ProviderPaymentsCallbackParams()
                     .setInvoiceId(invoiceId)
                     .setPaymentId(invoiceId);
@@ -109,9 +107,7 @@ public class ProviderPaymentsHandlerTest {
         var providerCallbackIds = new ArrayList<UUID>();
         for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
             providerCallbackIds.add(providerCallback.getId());
-            var invoicePayment = MockUtil.createInvoicePayment(providerCallback.getPaymentId());
-            invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
-            when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+            when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(providerCallback.getPaymentId()));
             var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
             when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                     .thenReturn(getCapturedInvoicePaymentAdjustment("adjustmentId", reason));

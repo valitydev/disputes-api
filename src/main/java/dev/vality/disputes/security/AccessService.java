@@ -3,19 +3,22 @@ package dev.vality.disputes.security;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.BouncerException;
-import dev.vality.disputes.exception.InvoicingPaymentStatusPendingException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.security.service.BouncerService;
 import dev.vality.disputes.security.service.TokenKeeperService;
 import dev.vality.disputes.service.external.InvoicingService;
+import dev.vality.disputes.utils.PaymentStatusValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import static dev.vality.disputes.exception.NotFoundException.Type;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@SuppressWarnings({"LineLength"})
 public class AccessService {
 
     private final InvoicingService invoicingService;
@@ -26,7 +29,7 @@ public class AccessService {
     private boolean authEnabled;
 
     public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData) {
-        log.info("Start building AccessData {}{}", invoiceId, paymentId);
+        log.debug("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
         if (checkUserAccessData) {
             checkUserAccessData(accessData);
@@ -36,25 +39,21 @@ public class AccessService {
     }
 
     private AccessData buildAccessData(String invoiceId, String paymentId, boolean checkUserAccessData) {
-        // http 500
         var invoice = invoicingService.getInvoice(invoiceId);
         return AccessData.builder()
                 .invoice(invoice)
                 .payment(getInvoicePayment(invoice, paymentId))
-                // http 500
                 .authData(checkUserAccessData ? tokenKeeperService.getAuthData() : null)
                 .build();
     }
 
     private void checkUserAccessData(AccessData accessData) {
-        log.info("Check the user's rights to perform dispute operation");
+        log.debug("Check the user's rights to perform dispute operation");
         try {
-            // http 500
             var resolution = bouncerService.getResolution(accessData);
             switch (resolution.getSetField()) {
                 case FORBIDDEN: {
                     if (authEnabled) {
-                        // http 500
                         throw new AuthorizationException("No rights to perform dispute");
                     } else {
                         log.warn("No rights to perform dispute operation, but auth is disabled");
@@ -66,10 +65,9 @@ public class AccessService {
                         var restrictions = resolution.getRestricted().getRestrictions();
                         if (restrictions.isSetCapi()) {
                             restrictions.getCapi().getOp().getShops().stream()
-                                    .filter(shop ->
-                                            shop.getId().equals(accessData.getInvoice().getInvoice().getShopId()))
+                                    .filter(shop -> shop.getId()
+                                            .equals(accessData.getInvoice().getInvoice().getShopId()))
                                     .findFirst()
-                                    // http 500
                                     .orElseThrow(() -> new AuthorizationException("No rights to perform dispute"));
                         }
                     } else {
@@ -80,15 +78,13 @@ public class AccessService {
                 case ALLOWED:
                     break;
                 default:
-                    // http 500
                     throw new BouncerException(String.format("Resolution %s cannot be processed", resolution));
             }
-        } catch (Exception e) {
+        } catch (Throwable ex) {
             if (authEnabled) {
-                // http 500
-                throw e;
+                throw ex;
             }
-            log.warn("Auth error occurred, but bouncer check is disabled: ", e);
+            log.warn("Auth error occurred, but bouncer check is disabled: ", ex);
         }
     }
 
@@ -97,14 +93,10 @@ public class AccessService {
         var invoicePayment = invoice.getPayments().stream()
                 .filter(p -> paymentId.equals(p.getPayment().getId()) && p.isSetRoute())
                 .findFirst()
-                // http 404
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Payment with id: %s and filled route and status not found!", paymentId)));
+                        String.format("Payment with id: %s and filled route not found!", paymentId), Type.PAYMENT));
         log.debug("Processing payment: {}", invoicePayment);
-        var status = invoicePayment.getPayment().getStatus();
-        if (!status.isSetCaptured() && !status.isSetCancelled() && !status.isSetFailed()) {
-            throw new InvoicingPaymentStatusPendingException();
-        }
+        PaymentStatusValidator.checkStatus(invoicePayment);
         return invoicePayment;
     }
 }

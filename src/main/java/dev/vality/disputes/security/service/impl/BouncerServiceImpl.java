@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class BouncerServiceImpl implements BouncerService {
 
     private final BouncerProperties bouncerProperties;
@@ -33,8 +33,8 @@ public class BouncerServiceImpl implements BouncerService {
             var resolution = judge.getResolution();
             log.debug("Resolution: {}", resolution);
             return resolution;
-        } catch (TException e) {
-            throw new BouncerException("Error while call bouncer", e);
+        } catch (TException ex) {
+            throw new BouncerException("Error while call bouncer", ex);
         }
     }
 }

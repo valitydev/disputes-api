@@ -2,90 +2,99 @@ package dev.vality.disputes.schedule.result;
 
 import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
-import dev.vality.disputes.constant.ErrorReason;
-import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
+import dev.vality.disputes.schedule.model.ProviderData;
+import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.utils.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class DisputeStatusResultHandler {
 
-    private final DisputeDao disputeDao;
-    private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final DisputesService disputesService;
+    private final ProviderPaymentsService providerPaymentsService;
+    private final TransactionContextConverter transactionContextConverter;
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
-    @Transactional
-    public void handleStatusPending(Dispute dispute, DisputeStatusResult result, Map<String, String> options) {
+    public void handlePendingResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
         // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
         // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
-        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
-        log.info("Trying to set pending Dispute status {}, {}", dispute, result);
-        disputeDao.update(dispute.getId(), DisputeStatus.pending, nextCheckAfter);
-        log.debug("Dispute status has been set to pending {}", dispute.getId());
+        disputesService.setNextStepToPending(dispute, providerData);
     }
 
-    @Transactional
-    public void handleStatusFail(Dispute dispute, DisputeStatusResult result) {
+    public void handleFailedResult(Dispute dispute, DisputeStatusResult result) {
         var failure = result.getStatusFail().getFailure();
         var errorMessage = ErrorFormatter.getErrorMessage(failure);
         if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
             handleUnexpectedResultMapping(dispute, failure.getCode(), failure.getReason());
         } else {
-            log.warn("Trying to set failed Dispute status {}, {}", dispute.getId(), errorMessage);
-            disputeDao.update(dispute.getId(), DisputeStatus.failed, errorMessage, failure.getCode());
-            log.debug("Dispute status has been set to failed {}", dispute.getId());
+            disputesService.finishFailedWithMapping(dispute, errorMessage, failure);
         }
     }
 
-    @Transactional
-    public void handleStatusSuccess(Dispute dispute, DisputeStatusResult result) {
-        callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
-        mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
+    public void handleFailedResult(Dispute dispute, String errorMessage) {
+        disputesService.finishFailed(dispute, errorMessage);
+    }
+
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify) {
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
-        log.info("Trying to set create_adjustment Dispute status {}, {}", dispute, result);
-        disputeDao.update(dispute.getId(), DisputeStatus.create_adjustment, changedAmount);
-        log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
+        disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
+        createAdjustment(dispute, providerData);
+        if (notify) {
+            callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
+            mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
+        }
     }
 
-    @Transactional
     public void handlePoolingExpired(Dispute dispute) {
-        callbackNotifier.sendDisputePoolingExpired(dispute);
         mdcTopicProducer.sendPoolingExpired(dispute);
-        log.warn("Trying to set manual_pending Dispute status with POOLING_EXPIRED error reason {}", dispute.getId());
-        disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, ErrorReason.POOLING_EXPIRED);
-        log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
+        disputesService.setNextStepToManualPending(dispute, ErrorMessage.POOLING_EXPIRED);
+        callbackNotifier.sendDisputePoolingExpired(dispute);
     }
 
-    @Transactional
-    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException e) {
-        var errorMessage = e.getErrorDefinition().getErrorReason();
+    public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
+        // вернуть в CreatedDisputeService и попробовать создать диспут в провайдере заново, должно быть 0% заходов сюда
+        disputesService.setNextStepToCreated(dispute, providerData);
+    }
+
+    public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
+        var errorMessage = ex.getErrorDefinition().getErrorReason();
         handleUnexpectedResultMapping(dispute, errorMessage, null);
     }
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
-        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
+        disputesService.setNextStepToManualPending(dispute, errorMessage);
+        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
-        log.warn("Trying to set manual_pending Dispute status {}, {}", dispute.getId(), errorMessage);
-        disputeDao.update(dispute.getId(), DisputeStatus.manual_pending, errorMessage);
-        log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
+    }
+
+    private void createAdjustment(Dispute dispute, ProviderData providerData) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+        var currency = disputeCurrencyConverter.convert(dispute);
+        var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
+        if (!paymentStatusResult.isSuccess()) {
+            throw new ProviderPaymentsUnexpectedPaymentStatus("Cant do createAdjustment");
+        }
     }
 }

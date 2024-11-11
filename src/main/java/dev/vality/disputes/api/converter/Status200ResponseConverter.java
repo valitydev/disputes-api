@@ -23,8 +23,8 @@ public class Status200ResponseConverter {
 
     private Status200Response.StatusEnum getStatus(Dispute dispute) {
         return switch (dispute.getStatus()) {
-            case created, pending, manual_created, manual_pending, create_adjustment, already_exist_created ->
-                    Status200Response.StatusEnum.PENDING;
+            case already_exist_created, manual_created, manual_pending, create_adjustment,
+                 created, pending -> Status200Response.StatusEnum.PENDING;
             case succeeded -> Status200Response.StatusEnum.SUCCEEDED;
             case cancelled, failed -> Status200Response.StatusEnum.FAILED;
         };

@@ -18,7 +18,7 @@ import java.util.UUID;
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.provider.enabled", havingValue = "false")
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class DummyRemoteClientImpl implements DefaultRemoteClient {
 
     private final String routeUrl = "tg-bot";

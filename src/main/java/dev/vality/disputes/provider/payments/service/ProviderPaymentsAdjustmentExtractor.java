@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsAdjustmentExtractor {
 
     public static final String PROVIDER_PAYMENT_MASK = "providerCallbackId=%s";

@@ -2,8 +2,8 @@ package dev.vality.disputes.schedule.service.config;
 
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.service.external.impl.partymgnt.PartyManagementAsyncService;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,6 +23,6 @@ public class DisputeApiTestConfig {
     @MockBean
     private FileStorageSrv.Iface fileStorageClient;
     @MockBean
-    private PartyManagementAsyncService partyManagementAsyncService;
+    private PartyManagementService partyManagementService;
 
 }

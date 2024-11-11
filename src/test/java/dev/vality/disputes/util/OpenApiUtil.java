@@ -4,8 +4,10 @@ import lombok.experimental.UtilityClass;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.util.UUID;
+
 @UtilityClass
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class OpenApiUtil {
 
     public String getContentCreateRequest(String invoiceId, String paymentId) {
@@ -49,7 +51,7 @@ public class OpenApiUtil {
                 """, paymentId);
     }
 
-    public static String getCancelRequest(String disputeId) {
+    public static String getCancelRequest(UUID disputeId) {
         return String.format("""
                 {
                   "cancelParams": [
@@ -62,7 +64,7 @@ public class OpenApiUtil {
                 """, disputeId);
     }
 
-    public static String getApproveRequest(String disputeId, boolean skipHg) {
+    public static String getApproveRequest(UUID disputeId, boolean skipHg) {
         return String.format("""
                 {
                   "approveParams": [
@@ -75,7 +77,7 @@ public class OpenApiUtil {
                 """, disputeId, skipHg);
     }
 
-    public static String getBindCreatedRequest(String disputeId, String providerDisputeId) {
+    public static String getBindCreatedRequest(UUID disputeId, String providerDisputeId) {
         return String.format("""
                   {
                     "bindParams": [
@@ -88,7 +90,7 @@ public class OpenApiUtil {
                 """, disputeId, providerDisputeId);
     }
 
-    public static String getGetDisputeRequest(String disputeId, boolean withAttachments) {
+    public static String getGetDisputeRequest(UUID disputeId, boolean withAttachments) {
         return String.format("""
                   {
                     "disputeParams": [

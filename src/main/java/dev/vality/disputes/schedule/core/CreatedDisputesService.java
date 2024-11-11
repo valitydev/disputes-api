@@ -1,124 +1,143 @@
 package dev.vality.disputes.schedule.core;
 
-import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.constant.ErrorReason;
-import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
+import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
-import dev.vality.disputes.schedule.catcher.WRuntimeExceptionCatcher;
+import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.provider.DisputeStatusSuccessResult;
+import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.schedule.catcher.WoodyRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
+import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.result.DisputeCreateResultHandler;
-import dev.vality.disputes.schedule.result.ErrorResultHandler;
+import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.AttachmentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
+import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
+import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.provider.payments.PaymentStatusResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_CAPTURED_BLOCKED;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"MemberName", "ParameterName", "LineLength", "MissingSwitchDefault"})
+@SuppressWarnings({"LineLength"})
 public class CreatedDisputesService {
 
     private final RemoteClient remoteClient;
-    private final DisputeDao disputeDao;
+    private final DisputesService disputesService;
     private final AttachmentsService attachmentsService;
     private final InvoicingService invoicingService;
     private final ProviderDataService providerDataService;
+    private final TransactionContextConverter transactionContextConverter;
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final DefaultRemoteClient defaultRemoteClient;
+    private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
     private final DisputeCreateResultHandler disputeCreateResultHandler;
-    private final ErrorResultHandler errorResultHandler;
-    private final WRuntimeExceptionCatcher wRuntimeExceptionCatcher;
+    private final DisputeStatusResultHandler disputeStatusResultHandler;
+    private final WoodyRuntimeExceptionCatcher woodyRuntimeExceptionCatcher;
 
     @Transactional
     public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
-        var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.created);
-        if (!locked.isEmpty()) {
-            log.debug("CreatedDisputesForUpdateSkipLocked has been found, size={}", locked.size());
-        }
-        return locked;
+        return disputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
     }
 
     @Transactional
     public void callCreateDisputeRemotely(Dispute dispute) {
-        log.debug("Trying to getDisputeForUpdateSkipLocked {}", dispute);
-        var forUpdate = disputeDao.getDisputeForUpdateSkipLocked(dispute.getId());
-        if (forUpdate == null || forUpdate.getStatus() != DisputeStatus.created) {
-            log.debug("Dispute locked or wrong status {}", forUpdate);
-            return;
+        try {
+            // validate
+            disputesService.checkCreatedStatus(dispute);
+            // validate
+            var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
+            // validate
+            PaymentStatusValidator.checkStatus(invoicePayment);
+            var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+            var paymentStatusResult = checkProviderPaymentStatus(dispute, providerData);
+            if (paymentStatusResult.isSuccess()) {
+                handleSucceededResultWithCreateAdjustment(dispute, paymentStatusResult, providerData);
+            }
+            var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
+                switch (result.getSetField()) {
+                    case SUCCESS_RESULT -> disputeCreateResultHandler.handleSucceededResult(
+                            dispute, result, providerData);
+                    case FAIL_RESULT -> disputeCreateResultHandler.handleFailedResult(dispute, result);
+                    case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
+                    default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
+                }
+            };
+            var attachments = attachmentsService.getAttachments(dispute);
+            var createDisputeByRemoteClient = (Runnable) () -> finishCreateDisputeResult.accept(
+                    remoteClient.createDispute(dispute, attachments, providerData));
+            var createDisputeByDefaultClient = (Runnable) () -> finishCreateDisputeResult.accept(
+                    defaultRemoteClient.createDispute(dispute, attachments, providerData));
+            if (providerData.getOptions().containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST)) {
+                createDisputeByRemoteClient(dispute, providerData, createDisputeByRemoteClient, createDisputeByDefaultClient);
+            } else {
+                log.info("Trying to call defaultRemoteClient.createDispute() by case options!=DISPUTE_FLOW_PROVIDERS_API_EXIST");
+                createDisputeByDefaultClient(dispute, createDisputeByDefaultClient);
+            }
+        } catch (NotFoundException ex) {
+            log.error("NotFound when handle CreatedDisputesService.callCreateDisputeRemotely, type={}", ex.getType(), ex);
+            switch (ex.getType()) {
+                case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
+                case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
+                case ATTACHMENT, FILEMETA ->
+                        disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.NO_ATTACHMENTS);
+                case DISPUTE -> log.debug("Dispute locked {}", dispute);
+                default -> throw ex;
+            }
+        } catch (InvoicingPaymentStatusRestrictionsException ex) {
+            log.error("InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
+            disputeCreateResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+        } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
+            log.debug("DisputeStatusWasUpdatedByAnotherThread when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
         }
-        log.debug("GetDisputeForUpdateSkipLocked has been found {}", dispute);
-        var invoicePayment = getInvoicePayment(dispute);
-        if (invoicePayment == null || !invoicePayment.isSetRoute()) {
-            errorResultHandler.updateFailed(dispute, ErrorReason.PAYMENT_NOT_FOUND);
-            return;
-        }
-        var attachments = attachmentsService.getAttachments(dispute);
-        if (attachments == null || attachments.isEmpty()) {
-            errorResultHandler.updateFailed(dispute, ErrorReason.NO_ATTACHMENTS);
-            return;
-        }
-        var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-        var options = providerData.getOptions();
-        if ((invoicePayment.getPayment().getStatus().isSetCaptured() && isCapturedBlockedForDispute(options))
-                || isNotProviderDisputesApiExist(options)) {
-            // отправлять на ручной разбор, если выставлена опция
-            // DISPUTE_FLOW_CAPTURED_BLOCKED или не выставлена DISPUTE_FLOW_PROVIDERS_API_EXIST
-            log.warn("Trying to call defaultRemoteClient.createDispute(), options capt={}, apiExist={}", isCapturedBlockedForDispute(options), isNotProviderDisputesApiExist(options));
-            wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
-                    () -> {
-                        var result = defaultRemoteClient.createDispute(dispute, attachments, providerData);
-                        finishTask(dispute, result, providerData);
-                    },
-                    e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e));
-            return;
-        }
-        wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
-                () -> wRuntimeExceptionCatcher.catchProviderDisputesApiNotExist(
+    }
+
+    private void createDisputeByRemoteClient(Dispute dispute, ProviderData providerData, Runnable createDisputeByRemoteClient, Runnable createDisputeByDefaultClient) {
+        woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                () -> woodyRuntimeExceptionCatcher.catchProviderDisputesApiNotExist(
                         providerData,
-                        () -> {
-                            var result = remoteClient.createDispute(dispute, attachments, providerData);
-                            finishTask(dispute, result, providerData);
-                        },
-                        () -> wRuntimeExceptionCatcher.catchUnexpectedResultMapping(
-                                () -> {
-                                    var result = defaultRemoteClient.createDispute(dispute, attachments, providerData);
-                                    finishTask(dispute, result, providerData);
-                                },
-                                e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e))),
-                e -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, e));
+                        createDisputeByRemoteClient,
+                        () -> createDisputeByDefaultClient(dispute, createDisputeByDefaultClient)),
+                ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex));
     }
 
-    @Transactional
-    void finishTask(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
-        switch (result.getSetField()) {
-            case SUCCESS_RESULT -> disputeCreateResultHandler.handleSuccessResult(dispute, result, providerData);
-            case FAIL_RESULT -> disputeCreateResultHandler.handleFailResult(dispute, result);
-            case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
-        }
+    private void createDisputeByDefaultClient(Dispute dispute, Runnable createDisputeByDefaultClient) {
+        woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+                createDisputeByDefaultClient,
+                ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex));
     }
 
-    private boolean isCapturedBlockedForDispute(Map<String, String> options) {
-        return options.containsKey(DISPUTE_FLOW_CAPTURED_BLOCKED);
+    private PaymentStatusResult checkProviderPaymentStatus(Dispute dispute, ProviderData providerData) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+        var currency = disputeCurrencyConverter.convert(dispute);
+        return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
     }
 
-    private boolean isNotProviderDisputesApiExist(Map<String, String> options) {
-        return !options.containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST);
+    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult paymentStatusResult, ProviderData providerData) {
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(paymentStatusResult.getChangedAmount().orElse(null)), providerData, true);
     }
 
-    private InvoicePayment getInvoicePayment(Dispute dispute) {
-        return invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
+    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
+        return Optional.ofNullable(changedAmount)
+                .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
+                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 }

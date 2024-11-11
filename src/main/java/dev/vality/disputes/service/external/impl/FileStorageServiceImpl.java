@@ -22,9 +22,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 
+import static dev.vality.disputes.exception.NotFoundException.Type;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"LineLength"})
 public class FileStorageServiceImpl implements FileStorageService {
 
     private final FileStorageProperties fileStorageProperties;
@@ -52,14 +55,14 @@ public class FileStorageServiceImpl implements FileStorageService {
             log.debug("Trying to generate presigned url from file-storage with id: {}", fileId);
             var url = fileStorageClient.generateDownloadUrl(fileId, getTime().toString());
             if (StringUtils.isBlank(url)) {
-                throw new NotFoundException(String.format("Presigned url is null, fileId='%s'", fileId));
+                throw new NotFoundException(String.format("Presigned s3 url not found, fileId='%s'", fileId), Type.ATTACHMENT);
             }
             log.debug("Presigned url has been generated with id: {}", fileId);
             return url;
-        } catch (FileNotFound e) {
-            throw new NotFoundException(String.format("File not found, fileId='%s'", fileId), e);
-        } catch (TException e) {
-            throw new FileStorageException(String.format("Failed to generateDownloadUrl, fileId='%s'", fileId), e);
+        } catch (FileNotFound ex) {
+            throw new NotFoundException(String.format("File not found, fileId='%s'", fileId), ex, Type.ATTACHMENT);
+        } catch (TException ex) {
+            throw new FileStorageException(String.format("Failed to generateDownloadUrl, fileId='%s'", fileId), ex);
         }
     }
 

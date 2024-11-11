@@ -3,6 +3,7 @@ package dev.vality.disputes.polling;
 import dev.vality.adapter.flow.lib.model.PollingInfo;
 import dev.vality.disputes.config.properties.DisputesTimerProperties;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.exception.PoolingExpiredException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,11 +37,13 @@ public class PollingInfoService {
         return pollingInfo;
     }
 
-    public boolean isDeadline(Dispute dispute) {
-        return isDeadline(convert(dispute));
+    public void checkDeadline(Dispute dispute) {
+        if (isDeadline(convert(dispute))) {
+            throw new PoolingExpiredException();
+        }
     }
 
-    public boolean isDeadline(PollingInfo pollingInfo) {
+    private boolean isDeadline(PollingInfo pollingInfo) {
         var now = Instant.now();
         return now.isAfter(pollingInfo.getMaxDateTimePolling());
     }

@@ -22,9 +22,9 @@ public class ContextFragmentV1ToContextFragmentConverter {
     public ContextFragment convertContextFragment(dev.vality.bouncer.context.v1.ContextFragment v1Context) {
         try {
             return convertContextFragment(thriftSerializer.serialize(v1Context));
-        } catch (TException e) {
-            log.error("Error during ContextFragmentV1 serialization: ", e);
-            throw e;
+        } catch (TException ex) {
+            log.error("Error during ContextFragmentV1 serialization: ", ex);
+            throw ex;
         }
     }
 

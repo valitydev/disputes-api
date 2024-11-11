@@ -3,8 +3,8 @@ package dev.vality.disputes.provider.payments.dao;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import jakarta.annotation.Nullable;
 import org.jooq.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import static dev.vality.disputes.domain.tables.ProviderCallback.PROVIDER_CALLBACK;
 
 @Component
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 public class ProviderCallbackDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderCallback> providerCallbackRowMapper;
@@ -42,13 +42,23 @@ public class ProviderCallbackDao extends AbstractGenericDao {
         return Optional.ofNullable(keyHolder.getKeyAs(UUID.class)).orElseThrow();
     }
 
-    @Nullable
     public ProviderCallback getProviderCallbackForUpdateSkipLocked(UUID id) {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
                 .where(PROVIDER_CALLBACK.ID.eq(id))
                 .forUpdate()
                 .skipLocked();
-        return fetchOne(query, providerCallbackRowMapper);
+        return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("ProviderCallback not found, id='%s'", id), NotFoundException.Type.PROVIDERCALLBACK));
+    }
+
+    public ProviderCallback get(String invoiceId, String paymentId) {
+        var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
+                .where(PROVIDER_CALLBACK.INVOICE_ID.concat(PROVIDER_CALLBACK.PAYMENT_ID).eq(invoiceId + paymentId));
+        return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("ProviderCallback not found, id='%s%s'", invoiceId, paymentId), NotFoundException.Type.PROVIDERCALLBACK));
+
     }
 
     public List<ProviderCallback> getProviderCallbacksForHgCall(int limit) {

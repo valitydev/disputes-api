@@ -3,7 +3,6 @@ package dev.vality.disputes.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.vality.disputes.config.properties.AdaptersConnectionProperties;
 import dev.vality.disputes.config.properties.DominantCacheProperties;
-import dev.vality.disputes.config.properties.PartyManagementCacheProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -22,7 +21,6 @@ public class CacheConfig {
 
     private final AdaptersConnectionProperties adaptersConnectionProperties;
     private final DominantCacheProperties dominantCacheProperties;
-    private final PartyManagementCacheProperties partyManagementCacheProperties;
 
     @Bean
     @Primary
@@ -73,14 +71,6 @@ public class CacheConfig {
         return caffeineCacheManager;
     }
 
-    @Bean
-    public CacheManager shopsCacheManager() {
-        var caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(getCacheConfig(partyManagementCacheProperties.getShops()));
-        caffeineCacheManager.setCacheNames(List.of("shops"));
-        return caffeineCacheManager;
-    }
-
     private Caffeine adaptersConnectionsCacheConfig() {
         return Caffeine.newBuilder()
                 .expireAfterAccess(adaptersConnectionProperties.getTtlMin(), TimeUnit.MINUTES)
@@ -88,12 +78,6 @@ public class CacheConfig {
     }
 
     private Caffeine getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
-        return Caffeine.newBuilder()
-                .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
-                .maximumSize(cacheConfig.getPoolSize());
-    }
-
-    private Caffeine getCacheConfig(PartyManagementCacheProperties.CacheConfig cacheConfig) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
                 .maximumSize(cacheConfig.getPoolSize());

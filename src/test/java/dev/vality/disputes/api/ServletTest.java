@@ -27,7 +27,7 @@ import java.net.URI;
 import static dev.vality.disputes.config.NetworkConfig.*;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"ParameterName", "LineLength"})
+@SuppressWarnings({"LineLength"})
 @Import(WiremockAddressesHolder.class)
 @TestPropertySource(properties = {
         "server.port=${local.server.port}",
