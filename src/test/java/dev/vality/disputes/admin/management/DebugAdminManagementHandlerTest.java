@@ -3,11 +3,14 @@ package dev.vality.disputes.admin.management;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
 import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.WiremockUtils;
+import dev.vality.provider.payments.PaymentStatusResult;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +23,15 @@ import static dev.vality.disputes.util.OpenApiUtil.*;
 import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
 @Import({PendingDisputesTestService.class})
 public class DebugAdminManagementHandlerTest {
 
+    @Autowired
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private DisputeDao disputeDao;
     @Autowired
@@ -78,8 +84,12 @@ public class DebugAdminManagementHandlerTest {
     }
 
     @Test
+    @SneakyThrows
     public void testApprovePendingWithCallHg() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
         debugAdminManagementController.approvePending(getApproveRequest(disputeId, false));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);

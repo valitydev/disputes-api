@@ -17,6 +17,7 @@ import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +41,7 @@ public class ProviderPaymentsService {
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
-    public void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
+    public PaymentStatusResult checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
         if (paymentStatusResult.isSuccess()) {
@@ -54,6 +55,7 @@ public class ProviderPaymentsService {
         } else {
             log.info("providerPaymentsRemoteClient.checkPaymentStatus result was skipped by failed status, finish");
         }
+        return paymentStatusResult;
     }
 
     @Transactional

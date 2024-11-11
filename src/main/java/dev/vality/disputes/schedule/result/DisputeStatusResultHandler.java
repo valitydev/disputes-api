@@ -7,6 +7,7 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
@@ -27,10 +28,10 @@ import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAP
 @SuppressWarnings({"LineLength"})
 public class DisputeStatusResultHandler {
 
-    private final TransactionContextConverter transactionContextConverter;
-    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final DisputesService disputesService;
     private final ProviderPaymentsService providerPaymentsService;
+    private final TransactionContextConverter transactionContextConverter;
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
@@ -91,6 +92,9 @@ public class DisputeStatusResultHandler {
     private void createAdjustment(Dispute dispute, ProviderData providerData) {
         var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
         var currency = disputeCurrencyConverter.convert(dispute);
-        providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
+        var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
+        if (!paymentStatusResult.isSuccess()) {
+            throw new ProviderPaymentsUnexpectedPaymentStatus("Cant do createAdjustment");
+        }
     }
 }

@@ -14,11 +14,15 @@ public class DisputesStepResolver {
             DisputeStatus status, Boolean isDefaultRouteUrl, Failure failure,
             Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping, String handleFailedResultErrorMessage,
             Boolean isSuccessDisputeCheckStatusResult, Boolean isPoolingExpired, Boolean isProviderDisputeNotFound,
-            Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag) {
+            Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag,
+            Boolean isSuccessProviderPaymentStatus) {
         return switch (status) {
             case created -> {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
+                }
+                if (isSuccessProviderPaymentStatus) {
+                    yield DisputeStatus.create_adjustment;
                 }
                 if (handleFailedResultErrorMessage != null) {
                     yield DisputeStatus.failed;

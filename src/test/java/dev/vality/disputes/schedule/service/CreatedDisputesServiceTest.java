@@ -6,6 +6,7 @@ import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
 import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
@@ -13,7 +14,10 @@ import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.file.storage.FileStorageSrv;
+import dev.vality.provider.payments.PaymentStatusResult;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -31,10 +35,13 @@ import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
 @Import({CreatedDisputesTestService.class})
+@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class CreatedDisputesServiceTest {
 
     @Autowired
     private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
+    @Autowired
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private DominantService dominantService;
     @Autowired
@@ -76,6 +83,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -93,6 +101,7 @@ public class CreatedDisputesServiceTest {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -121,6 +130,7 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -144,6 +154,7 @@ public class CreatedDisputesServiceTest {
         disputeCreatedFailResult.getFailResult().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
         when(providerMock.createDispute(any())).thenReturn(disputeCreatedFailResult);
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
@@ -168,6 +179,7 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
@@ -191,6 +203,7 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -213,9 +226,16 @@ public class CreatedDisputesServiceTest {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
+    }
+
+    private void mockFailStatusProviderPayment() throws TException {
+        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(false));
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
     }
 }

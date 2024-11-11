@@ -6,22 +6,30 @@ import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadExcep
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
+import dev.vality.disputes.provider.DisputeStatusResult;
+import dev.vality.disputes.provider.DisputeStatusSuccessResult;
+import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.schedule.catcher.WoodyRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
+import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.result.DisputeCreateResultHandler;
+import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.AttachmentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.provider.payments.PaymentStatusResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
@@ -37,8 +45,12 @@ public class CreatedDisputesService {
     private final AttachmentsService attachmentsService;
     private final InvoicingService invoicingService;
     private final ProviderDataService providerDataService;
+    private final TransactionContextConverter transactionContextConverter;
+    private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final DefaultRemoteClient defaultRemoteClient;
+    private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
     private final DisputeCreateResultHandler disputeCreateResultHandler;
+    private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final WoodyRuntimeExceptionCatcher woodyRuntimeExceptionCatcher;
 
     @Transactional
@@ -56,6 +68,10 @@ public class CreatedDisputesService {
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+            var paymentStatusResult = checkProviderPaymentStatus(dispute, providerData);
+            if (paymentStatusResult.isSuccess()) {
+                handleSucceededResultWithCreateAdjustment(dispute, paymentStatusResult, providerData);
+            }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
                 switch (result.getSetField()) {
                     case SUCCESS_RESULT -> disputeCreateResultHandler.handleSucceededResult(
@@ -70,8 +86,7 @@ public class CreatedDisputesService {
                     remoteClient.createDispute(dispute, attachments, providerData));
             var createDisputeByDefaultClient = (Runnable) () -> finishCreateDisputeResult.accept(
                     defaultRemoteClient.createDispute(dispute, attachments, providerData));
-            var options = providerData.getOptions();
-            if (options.containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST)) {
+            if (providerData.getOptions().containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST)) {
                 createDisputeByRemoteClient(dispute, providerData, createDisputeByRemoteClient, createDisputeByDefaultClient);
             } else {
                 log.info("Trying to call defaultRemoteClient.createDispute() by case options!=DISPUTE_FLOW_PROVIDERS_API_EXIST");
@@ -108,5 +123,21 @@ public class CreatedDisputesService {
         woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
                 createDisputeByDefaultClient,
                 ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex));
+    }
+
+    private PaymentStatusResult checkProviderPaymentStatus(Dispute dispute, ProviderData providerData) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+        var currency = disputeCurrencyConverter.convert(dispute);
+        return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
+    }
+
+    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult paymentStatusResult, ProviderData providerData) {
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(paymentStatusResult.getChangedAmount().orElse(null)), providerData, true);
+    }
+
+    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
+        return Optional.ofNullable(changedAmount)
+                .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
+                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 }

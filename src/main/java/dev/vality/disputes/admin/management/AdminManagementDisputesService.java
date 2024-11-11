@@ -9,6 +9,7 @@ import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.provider.DisputeStatusSuccessResult;
+import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
@@ -67,7 +68,8 @@ public class AdminManagementDisputesService {
                 || dispute.getStatus() == DisputeStatus.manual_pending)
                 && !approveParam.isSkipCallHgForCreateAdjustment()) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount.orElse(null)), providerData, false);
+            // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
+            handleSucceededResultWithCreateAdjustment(dispute, changedAmount.orElse(null), providerData);
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
@@ -146,6 +148,10 @@ public class AdminManagementDisputesService {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
             return Optional.empty();
         }
+    }
+
+    private void handleSucceededResultWithCreateAdjustment(dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData) {
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, false);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
