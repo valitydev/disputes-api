@@ -153,7 +153,6 @@ public class AdminManagementDisputesService {
         if (dispute.getStatus() == DisputeStatus.pooling_expired) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var pollingInfo = pollingInfoService.initPollingInfo((dev.vality.disputes.domain.tables.pojos.Dispute) null, providerData.getOptions());
-            dispute.setCreatedAt(getLocalDateTime(pollingInfo.getStartDateTimePolling()));
             dispute.setNextCheckAfter(getNextCheckAfter(providerData, pollingInfo));
             dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));
             disputesService.setNextStepToPending(dispute, providerData);
