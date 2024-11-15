@@ -21,7 +21,7 @@ public class PendingDisputeHandler {
             pendingDisputesService.callPendingDisputeRemotely(dispute);
             return dispute.getId();
         } catch (Throwable ex) {
-            log.error("Received exception while scheduler processed callPendingDisputeRemotely", ex);
+            log.warn("Received exception while scheduler processed callPendingDisputeRemotely", ex);
             throw ex;
         } finally {
             currentThread.setName(oldName);
