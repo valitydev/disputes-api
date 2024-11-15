@@ -22,7 +22,7 @@ public class ProviderPaymentHandler {
             providerPaymentsService.callHgForCreateAdjustment(providerCallback);
             return providerCallback.getId();
         } catch (Throwable ex) {
-            log.warn("Received exception while scheduler processed ProviderPayments callHgForCreateAdjustment", ex);
+            log.error("Received exception while scheduler processed ProviderPayments callHgForCreateAdjustment", ex);
             throw ex;
         } finally {
             currentThread.setName(oldName);
