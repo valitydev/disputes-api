@@ -16,7 +16,7 @@ public interface DisputesTgBotService {
 
     void sendDisputeReadyForCreateAdjustment(DisputeReadyForCreateAdjustment disputeReadyForCreateAdjustment);
 
-    void sendDisputeFailedReviewRequired(DisputeFailedReviewRequired disputeFailedReviewRequired);
+    void sendDisputeManualPending(DisputeManualPending disputeManualPending);
 
     void sendForgottenDisputes(List<Notification> notifications);
 

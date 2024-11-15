@@ -28,6 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping({"/debug/v1/admin-management"})
 @Slf4j
+@SuppressWarnings({"LineLength"})
 public class DebugAdminManagementController {
 
     private final AdminManagementServiceSrv.Iface adminManagementHandler;
@@ -61,6 +62,13 @@ public class DebugAdminManagementController {
         var dispute = adminManagementHandler.getDisputes(objectMapper.readValue(body, DisputeParamsRequest.class));
         return objectMapper.convertValue(dispute, new TypeReference<>() {
         });
+    }
+
+    @PostMapping("/pooling-expired")
+    @SneakyThrows
+    public void setPendingForPoolingExpired(@RequestBody String body) {
+        log.debug("setPendingForPoolingExpired {}", body);
+        adminManagementHandler.setPendingForPoolingExpired(objectMapper.readValue(body, SetPendingForPoolingExpiredParamsRequest.class));
     }
 
     @GetMapping("/disputes")

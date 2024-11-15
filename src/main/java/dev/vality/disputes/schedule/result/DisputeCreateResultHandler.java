@@ -67,8 +67,8 @@ public class DisputeCreateResultHandler {
 
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
-        disputesService.setNextStepToManualCreated(dispute, errorMessage);
-        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_created, errorMessage);
+        disputesService.setNextStepToManualPending(dispute, errorMessage);
+        callbackNotifier.sendDisputeManualPending(dispute, errorMessage);
+        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
     }
 }

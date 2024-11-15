@@ -67,9 +67,9 @@ public class DisputeStatusResultHandler {
     }
 
     public void handlePoolingExpired(Dispute dispute) {
-        mdcTopicProducer.sendPoolingExpired(dispute);
-        disputesService.setNextStepToManualPending(dispute, ErrorMessage.POOLING_EXPIRED);
+        disputesService.setNextStepToPoolingExpired(dispute, ErrorMessage.POOLING_EXPIRED);
         callbackNotifier.sendDisputePoolingExpired(dispute);
+        mdcTopicProducer.sendPoolingExpired(dispute);
     }
 
     public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
@@ -85,7 +85,7 @@ public class DisputeStatusResultHandler {
     private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
         disputesService.setNextStepToManualPending(dispute, errorMessage);
-        callbackNotifier.sendDisputeFailedReviewRequired(dispute, errorCode, errorDescription);
+        callbackNotifier.sendDisputeManualPending(dispute, errorMessage);
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
     }
 

@@ -59,11 +59,11 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
 
     @Override
     @SneakyThrows
-    public void sendDisputeFailedReviewRequired(DisputeFailedReviewRequired disputeFailedReviewRequired) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() {}", disputeFailedReviewRequired.getId());
+    public void sendDisputeManualPending(DisputeManualPending disputeManualPending) {
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeManualPending() {}", disputeManualPending.getId());
         adminCallbackDisputesTgBotClient.notify(
-                new NotificationParamsRequest(List.of(Notification.disputeFailedReviewRequired(disputeFailedReviewRequired))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeFailedReviewRequired() has been called {}", disputeFailedReviewRequired.getId());
+                new NotificationParamsRequest(List.of(Notification.disputeManualPending(disputeManualPending))));
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeManualPending() has been called {}", disputeManualPending.getId());
     }
 
     @Override

@@ -12,7 +12,7 @@ public interface CallbackNotifier {
 
     void sendDisputeReadyForCreateAdjustment(Dispute dispute);
 
-    void sendDisputeFailedReviewRequired(Dispute dispute, String errorCode, String errorDescription);
+    void sendDisputeManualPending(Dispute dispute, String errorMessage);
 
     void sendForgottenDisputes(List<Dispute> disputes);
 

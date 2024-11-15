@@ -1,12 +1,14 @@
 package dev.vality.disputes.admin.management;
 
+import dev.vality.adapter.flow.lib.model.PollingInfo;
 import dev.vality.disputes.admin.*;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
+import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.provider.DisputeStatusSuccessResult;
 import dev.vality.disputes.schedule.model.ProviderData;
@@ -26,6 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -42,6 +47,8 @@ public class AdminManagementDisputesService {
     private final FileStorageService fileStorageService;
     private final DisputesService disputesService;
     private final ProviderDataService providerDataService;
+    private final PollingInfoService pollingInfoService;
+    private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final CloseableHttpClient httpClient;
 
@@ -63,15 +70,18 @@ public class AdminManagementDisputesService {
         var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
         var changedAmount = approveParam.getChangedAmount()
                 .filter(s -> dispute.getStatus() == DisputeStatus.pending
-                        || dispute.getStatus() == DisputeStatus.manual_pending);
+                        || dispute.getStatus() == DisputeStatus.manual_pending
+                        || dispute.getStatus() == DisputeStatus.pooling_expired);
         if ((dispute.getStatus() == DisputeStatus.pending
-                || dispute.getStatus() == DisputeStatus.manual_pending)
+                || dispute.getStatus() == DisputeStatus.manual_pending
+                || dispute.getStatus() == DisputeStatus.pooling_expired)
                 && !approveParam.isSkipCallHgForCreateAdjustment()) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
             handleSucceededResultWithCreateAdjustment(dispute, changedAmount.orElse(null), providerData);
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
+                || dispute.getStatus() == DisputeStatus.pooling_expired
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
             disputesService.finishSucceeded(dispute, changedAmount.orElse(null));
         } else {
@@ -84,12 +94,7 @@ public class AdminManagementDisputesService {
         var disputeId = bindParam.getDisputeId();
         var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
         var providerDisputeId = bindParam.getProviderDisputeId();
-        if (dispute.getStatus() == DisputeStatus.manual_created) {
-            // обрабатываем здесь только вручную созданные диспуты, у остальных предполагается,
-            // что providerDisputeId будет сохранен после создания диспута по API провайдера
-            providerDisputeDao.save(providerDisputeId, dispute);
-            disputesService.setNextStepToManualPending(dispute, ErrorMessage.NEXT_STEP_AFTER_BIND_PARAMS);
-        } else if (dispute.getStatus() == DisputeStatus.already_exist_created) {
+        if (dispute.getStatus() == DisputeStatus.already_exist_created) {
             providerDisputeDao.save(providerDisputeId, dispute);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             disputesService.setNextStepToPending(dispute, providerData);
@@ -141,6 +146,22 @@ public class AdminManagementDisputesService {
         return disputeResult;
     }
 
+    @Transactional
+    public void setPendingForPoolingExpiredDispute(SetPendingForPoolingExpiredParams setPendingForPoolingExpiredParams) {
+        var disputeId = setPendingForPoolingExpiredParams.getDisputeId();
+        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
+        if (dispute.getStatus() == DisputeStatus.pooling_expired) {
+            var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
+            var pollingInfo = pollingInfoService.initPollingInfo((dev.vality.disputes.domain.tables.pojos.Dispute) null, providerData.getOptions());
+            dispute.setCreatedAt(getLocalDateTime(pollingInfo.getStartDateTimePolling()));
+            dispute.setNextCheckAfter(getNextCheckAfter(providerData, pollingInfo));
+            dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));
+            disputesService.setNextStepToPending(dispute, providerData);
+        } else {
+            log.debug("Request was skipped by inappropriate status {}", dispute);
+        }
+    }
+
     private Optional<ProviderDispute> getProviderDispute(dev.vality.disputes.domain.tables.pojos.Dispute dispute) {
         try {
             return Optional.of(providerDisputeDao.get(dispute.getId()));
@@ -158,5 +179,13 @@ public class AdminManagementDisputesService {
         return Optional.ofNullable(changedAmount)
                 .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
                 .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
+    }
+
+    private LocalDateTime getLocalDateTime(Instant instant) {
+        return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    private LocalDateTime getNextCheckAfter(ProviderData providerData, PollingInfo pollingInfo) {
+        return exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, providerData.getOptions());
     }
 }

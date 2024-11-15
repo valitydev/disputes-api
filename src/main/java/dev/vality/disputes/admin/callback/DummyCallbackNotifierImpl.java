@@ -31,8 +31,8 @@ public class DummyCallbackNotifierImpl implements CallbackNotifier {
     }
 
     @Override
-    public void sendDisputeFailedReviewRequired(Dispute dispute, String errorCode, String errorDescription) {
-        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeFailedReviewRequired() {}", dispute.getId());
+    public void sendDisputeManualPending(Dispute dispute, String errorMessage) {
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeManualPending() {} {}", dispute.getId(), errorMessage);
     }
 
     @Override

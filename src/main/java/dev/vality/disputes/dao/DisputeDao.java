@@ -103,16 +103,16 @@ public class DisputeDao extends AbstractGenericDao {
         update(disputeId, DisputeStatus.create_adjustment, null, null, changedAmount, null);
     }
 
-    public void setNextStepToManualCreated(UUID disputeId, String errorMessage) {
-        update(disputeId, DisputeStatus.manual_created, null, errorMessage, null, null);
-    }
-
     public void setNextStepToManualPending(UUID disputeId, String errorMessage) {
         update(disputeId, DisputeStatus.manual_pending, null, errorMessage, null, null);
     }
 
     public void setNextStepToAlreadyExist(UUID disputeId) {
         update(disputeId, DisputeStatus.already_exist_created, null, null, null, null);
+    }
+
+    public void setNextStepToPoolingExpired(UUID disputeId, String errorMessage) {
+        update(disputeId, DisputeStatus.pooling_expired, null, errorMessage, null, null);
     }
 
     public void finishSucceeded(UUID disputeId, Long changedAmount) {

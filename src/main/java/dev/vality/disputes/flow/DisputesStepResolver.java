@@ -15,7 +15,7 @@ public class DisputesStepResolver {
             Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping, String handleFailedResultErrorMessage,
             Boolean isSuccessDisputeCheckStatusResult, Boolean isPoolingExpired, Boolean isProviderDisputeNotFound,
             Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag,
-            Boolean isSuccessProviderPaymentStatus) {
+            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired) {
         return switch (status) {
             case created -> {
                 if (isAdminCancelCall) {
@@ -27,13 +27,10 @@ public class DisputesStepResolver {
                 if (handleFailedResultErrorMessage != null) {
                     yield DisputeStatus.failed;
                 }
-                if (unexpectedResultMapping != null) {
-                    yield DisputeStatus.manual_created;
-                }
                 if (failure != null) {
                     var errorMessage = ErrorFormatter.getErrorMessage(failure);
                     if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
-                        yield DisputeStatus.manual_created;
+                        yield DisputeStatus.manual_pending;
                     }
                     yield DisputeStatus.failed;
                 }
@@ -59,7 +56,7 @@ public class DisputesStepResolver {
                     yield DisputeStatus.failed;
                 }
                 if (isPoolingExpired) {
-                    yield DisputeStatus.manual_pending;
+                    yield DisputeStatus.pooling_expired;
                 }
                 if (isProviderDisputeNotFound) {
                     yield DisputeStatus.created;
@@ -91,15 +88,6 @@ public class DisputesStepResolver {
                 }
                 yield DisputeStatus.succeeded;
             }
-            case manual_created -> {
-                if (isAdminCancelCall) {
-                    yield DisputeStatus.cancelled;
-                }
-                if (isAdminBindCall) {
-                    yield DisputeStatus.manual_pending;
-                }
-                throw new DeadEndFlowException();
-            }
             case manual_pending -> {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
@@ -121,9 +109,25 @@ public class DisputesStepResolver {
                 }
                 throw new DeadEndFlowException();
             }
+            case pooling_expired -> {
+                if (isAdminCancelCall) {
+                    yield DisputeStatus.cancelled;
+                }
+                if (isAdminApproveCall && !isSkipHgCallApproveFlag) {
+                    yield DisputeStatus.create_adjustment;
+                }
+                if (isAdminApproveCall) {
+                    yield DisputeStatus.succeeded;
+                }
+                if (isSetPendingForPoolingExpired) {
+                    yield DisputeStatus.pending;
+                }
+                throw new DeadEndFlowException();
+            }
             case cancelled -> DisputeStatus.cancelled;
             case failed -> DisputeStatus.failed;
             case succeeded -> DisputeStatus.succeeded;
+            default -> throw new DeadEndFlowException();
         };
     }
 

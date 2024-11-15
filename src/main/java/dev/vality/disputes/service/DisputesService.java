@@ -111,12 +111,6 @@ public class DisputesService {
         log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
     }
 
-    public void setNextStepToManualCreated(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set manual_created Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
-        disputeDao.setNextStepToManualCreated(dispute.getId(), errorMessage);
-        log.debug("Dispute status has been set to manual_created {}", dispute.getId());
-    }
-
     public void setNextStepToManualPending(Dispute dispute, String errorMessage) {
         log.warn("Trying to set manual_pending Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
         disputeDao.setNextStepToManualPending(dispute.getId(), errorMessage);
@@ -127,6 +121,12 @@ public class DisputesService {
         log.info("Trying to set already_exist_created Dispute status {}", dispute);
         disputeDao.setNextStepToAlreadyExist(dispute.getId());
         log.debug("Dispute status has been set to already_exist_created {}", dispute);
+    }
+
+    public void setNextStepToPoolingExpired(Dispute dispute, String errorMessage) {
+        log.warn("Trying to set pooling_expired Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
+        disputeDao.setNextStepToPoolingExpired(dispute.getId(), errorMessage);
+        log.debug("Dispute status has been set to pooling_expired {}", dispute.getId());
     }
 
     public List<Dispute> getForgottenDisputes() {
@@ -186,9 +186,9 @@ public class DisputesService {
         return Set.of(
                 DisputeStatus.created,
                 DisputeStatus.pending,
-                DisputeStatus.manual_created,
                 DisputeStatus.manual_pending,
                 DisputeStatus.create_adjustment,
-                DisputeStatus.already_exist_created);
+                DisputeStatus.already_exist_created,
+                DisputeStatus.pooling_expired);
     }
 }

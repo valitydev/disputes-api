@@ -77,17 +77,16 @@ public class OpenApiUtil {
                 """, disputeId, skipHg);
     }
 
-    public static String getBindCreatedRequest(UUID disputeId, String providerDisputeId) {
+    public static String getSetPendingForPoolingExpiredParamsRequest(UUID disputeId) {
         return String.format("""
                   {
-                    "bindParams": [
+                    "setPendingForPoolingExpiredParams": [
                       {
-                        "disputeId": "%s",
-                        "providerDisputeId": "%s"
+                        "disputeId": "%s"
                       }
                     ]
                   }
-                """, disputeId, providerDisputeId);
+                """, disputeId);
     }
 
     public static String getGetDisputeRequest(UUID disputeId, boolean withAttachments) {
@@ -101,5 +100,18 @@ public class OpenApiUtil {
                     "withAttachments": %s
                   }
                 """, disputeId, withAttachments);
+    }
+
+    public static String getBindCreatedRequest(UUID disputeId, String providerDisputeId) {
+        return String.format("""
+                  {
+                    "bindParams": [
+                      {
+                        "disputeId": "%s",
+                        "providerDisputeId": "%s"
+                      }
+                    ]
+                  }
+                """, disputeId, providerDisputeId);
     }
 }

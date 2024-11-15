@@ -138,7 +138,7 @@ public class CreatedDisputesServiceTest {
 
     @Test
     @SneakyThrows
-    public void testManualCreatedWhenDisputeCreatedFailResultWithDisputesUnknownMapping() {
+    public void testManualPendingWhenDisputeCreatedFailResultWithDisputesUnknownMapping() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
@@ -157,14 +157,14 @@ public class CreatedDisputesServiceTest {
         mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
         assertTrue(disputeDao.get(disputeId).getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
         disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     @SneakyThrows
-    public void testManualCreatedWhenUnexpectedResultMapping() {
+    public void testManualPendingWhenUnexpectedResultMapping() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
@@ -182,7 +182,7 @@ public class CreatedDisputesServiceTest {
         mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.manual_created, disputeDao.get(disputeId).getStatus());
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
         assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
         disputeDao.finishFailed(disputeId, null);
     }
