@@ -21,6 +21,7 @@ import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,9 @@ public class ProviderPaymentsService {
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
+    @Value("${provider.payments.isSkipCallHgForCreateAdjustment}")
+    private boolean isSkipCallHgForCreateAdjustment;
+
     public PaymentStatusResult checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
@@ -50,6 +54,7 @@ public class ProviderPaymentsService {
             providerCallback.setPaymentId(transactionContext.getPaymentId());
             providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
             providerCallback.setAmount(amount);
+            providerCallback.setSkipCallHgForCreateAdjustment(isSkipCallHgForCreateAdjustment);
             log.info("Save providerCallback {}", providerCallback);
             providerCallbackDao.save(providerCallback);
         } else {
