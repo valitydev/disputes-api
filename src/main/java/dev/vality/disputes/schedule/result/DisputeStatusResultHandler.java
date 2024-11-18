@@ -7,6 +7,7 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
@@ -92,9 +93,13 @@ public class DisputeStatusResultHandler {
     private void createAdjustment(Dispute dispute, ProviderData providerData) {
         var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
         var currency = disputeCurrencyConverter.convert(dispute);
-        var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
-        if (!paymentStatusResult.isSuccess()) {
-            throw new ProviderPaymentsUnexpectedPaymentStatus("Cant do createAdjustment");
+        try {
+            var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
+            if (!paymentStatusResult.isSuccess()) {
+                throw new ProviderPaymentsUnexpectedPaymentStatus("Cant do createAdjustment");
+            }
+        } catch (ProviderCallbackAlreadyExistException ex) {
+            log.warn("ProviderCallbackAlreadyExist when handle DisputeStatusResultHandler.createAdjustment", ex);
         }
     }
 }

@@ -3,6 +3,8 @@ package dev.vality.disputes.provider.payments.admin;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
+import dev.vality.disputes.service.DisputesService;
 import dev.vality.provider.payments.ApproveParamsRequest;
 import dev.vality.provider.payments.CancelParamsRequest;
 import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
@@ -12,6 +14,7 @@ import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,26 +24,22 @@ import java.util.stream.Collectors;
 public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsAdminManagementServiceSrv.Iface {
 
     private final ProviderCallbackDao providerCallbackDao;
+    private final DisputesService disputesService;
+    private final ProviderPaymentsService providerPaymentsService;
 
     @Override
     @Transactional
     public void cancel(CancelParamsRequest cancelParamsRequest) throws TException {
         log.info("Got ProviderPayments CancelParamsRequest {}", cancelParamsRequest);
         if (cancelParamsRequest.isCancelAll()) {
-            var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().stream()
-                    .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
-                    .toList();
-            log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
-            providerCallbackDao.updateBatch(batch);
+            var batch = providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked();
+            finishCancelled(batch, cancelParamsRequest);
         } else if (cancelParamsRequest.getCancelParams().isPresent()) {
             var invoicePaymentIds = cancelParamsRequest.getCancelParams().get().stream()
                     .map(cancelParams -> cancelParams.getInvoiceId() + cancelParams.getPaymentId())
                     .collect(Collectors.toSet());
-            var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds).stream()
-                    .peek(providerCallback -> setCancelled(cancelParamsRequest, providerCallback))
-                    .toList();
-            log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
-            providerCallbackDao.updateBatch(batch);
+            var batch = providerCallbackDao.getProviderCallbacksForUpdateSkipLocked(invoicePaymentIds);
+            finishCancelled(batch, cancelParamsRequest);
         }
         log.info("Finish ProviderPayments CancelParamsRequest {}", cancelParamsRequest);
     }
@@ -54,8 +53,7 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
                     .filter(ProviderCallback::getSkipCallHgForCreateAdjustment)
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.debug("Batch by ProviderPayments approveParamsRequest {}", batch.size());
-            providerCallbackDao.updateBatch(batch);
+            setReadyToCreateAdjustment(batch);
         } else if (approveParamsRequest.getApproveParams().isPresent()) {
             var invoicePaymentIds = approveParamsRequest.getApproveParams().get().stream()
                     .map(approveParams -> approveParams.getInvoiceId() + approveParams.getPaymentId())
@@ -64,17 +62,16 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
                     .filter(ProviderCallback::getSkipCallHgForCreateAdjustment)
                     .peek(providerCallback -> setReadyToCreateAdjustment(approveParamsRequest, providerCallback))
                     .toList();
-            log.debug("Batch by ProviderPayments approveParamsRequest {}", batch.size());
-            providerCallbackDao.updateBatch(batch);
+            setReadyToCreateAdjustment(batch);
         }
         log.info("Got ProviderPayments ApproveParamsRequest {}", approveParamsRequest);
     }
 
-    private void setCancelled(CancelParamsRequest cancelParamsRequest, ProviderCallback providerCallback) {
-        if (cancelParamsRequest.getCancelReason().isPresent()) {
-            providerCallback.setErrorReason(cancelParamsRequest.getCancelReason().orElse(null));
+    private void finishCancelled(List<ProviderCallback> batch, CancelParamsRequest cancelParamsRequest) {
+        log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
+        for (var providerCallback : batch) {
+            providerPaymentsService.finishCancelled(providerCallback, cancelParamsRequest.getCancelReason().orElse(null), true);
         }
-        providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
     }
 
     private void setReadyToCreateAdjustment(ApproveParamsRequest approveParamsRequest, ProviderCallback providerCallback) {
@@ -83,5 +80,10 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
         }
         providerCallback.setStatus(ProviderPaymentsStatus.create_adjustment);
         providerCallback.setSkipCallHgForCreateAdjustment(false);
+    }
+
+    private void setReadyToCreateAdjustment(List<ProviderCallback> batch) {
+        log.debug("Batch by ProviderPayments approveParamsRequest {}", batch.size());
+        providerCallbackDao.updateBatch(batch);
     }
 }
