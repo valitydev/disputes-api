@@ -39,11 +39,12 @@ public class AccessService {
     }
 
     private AccessData buildAccessData(String invoiceId, String paymentId, boolean checkUserAccessData) {
+        var authData = checkUserAccessData ? tokenKeeperService.getAuthData() : null;
         var invoice = invoicingService.getInvoice(invoiceId);
         return AccessData.builder()
+                .authData(authData)
                 .invoice(invoice)
                 .payment(getInvoicePayment(invoice, paymentId))
-                .authData(checkUserAccessData ? tokenKeeperService.getAuthData() : null)
                 .build();
     }
 
