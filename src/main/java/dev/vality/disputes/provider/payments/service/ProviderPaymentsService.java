@@ -145,7 +145,9 @@ public class ProviderPaymentsService {
 
     private void createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
         if (!providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)
-                && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount())) {
+                && (providerCallback.getAmount() != null
+                && providerCallback.getChangedAmount() != null
+                && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount()))) {
             var cashFlowParams = providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter.convert(providerCallback);
             invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), cashFlowParams);
         } else {
