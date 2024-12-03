@@ -52,7 +52,7 @@ public class ProviderPaymentsService {
             var providerCallback = new ProviderCallback();
             providerCallback.setInvoiceId(transactionContext.getInvoiceId());
             providerCallback.setPaymentId(transactionContext.getPaymentId());
-            providerCallback.setChangedAmount(paymentStatusResult.getChangedAmount().orElse(null));
+            providerCallback.setChangedAmount(getChangedAmount(amount, paymentStatusResult));
             providerCallback.setAmount(amount);
             providerCallback.setSkipCallHgForCreateAdjustment(isSkipCallHgForCreateAdjustment);
             log.info("Save providerCallback {}", providerCallback);
@@ -134,6 +134,12 @@ public class ProviderPaymentsService {
         if (isDisputeCancelled) {
             disputeFinishCancelled(providerCallback, errorReason);
         }
+    }
+
+    private Long getChangedAmount(long amount, PaymentStatusResult paymentStatusResult) {
+        return paymentStatusResult.getChangedAmount()
+                .filter(aLong -> aLong != amount)
+                .orElse(null);
     }
 
     private void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {

@@ -1,7 +1,6 @@
 package dev.vality.disputes.provider.payments.converter;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustmentCashFlow;
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentScenario;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
@@ -16,11 +15,8 @@ public class ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter {
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
 
     public InvoicePaymentAdjustmentParams convert(ProviderCallback providerCallback) {
-        var captured = new InvoicePaymentCaptured();
-        var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
-        captured.setReason(reason);
         var params = new InvoicePaymentAdjustmentParams();
-        params.setReason(reason);
+        params.setReason(providerPaymentsAdjustmentExtractor.getReason(providerCallback));
         params.setScenario(getInvoicePaymentAdjustmentScenario(providerCallback.getChangedAmount()));
         return params;
     }
