@@ -138,7 +138,7 @@ public class ProviderPaymentsService {
 
     private Long getChangedAmount(long amount, PaymentStatusResult paymentStatusResult) {
         return paymentStatusResult.getChangedAmount()
-                .filter(aLong -> aLong != amount)
+                .filter(changedAmount -> changedAmount != amount)
                 .orElse(null);
     }
 
