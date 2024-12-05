@@ -1,6 +1,7 @@
 package dev.vality.disputes.provider.payments.handler;
 
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.InvoicePaymentAdjustmentPendingException;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,8 @@ public class ProviderPaymentHandler {
                 "." + providerCallback.getPaymentId() + "-" + oldName);
         try {
             providerPaymentsService.callHgForCreateAdjustment(providerCallback);
+            return providerCallback.getId();
+        } catch (InvoicePaymentAdjustmentPendingException ignored) {
             return providerCallback.getId();
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed ProviderPayments callHgForCreateAdjustment", ex);

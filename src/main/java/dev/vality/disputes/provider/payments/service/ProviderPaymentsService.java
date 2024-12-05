@@ -81,7 +81,10 @@ public class ProviderPaymentsService {
             var invoicePayment = invoicingService.getInvoicePayment(providerCallback.getInvoiceId(), providerCallback.getPaymentId());
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
-            createCashFlowAdjustment(providerCallback, invoicePayment);
+            if (createCashFlowAdjustment(providerCallback, invoicePayment)) {
+                // pause for waiting finish createCashFlowAdjustment
+                return;
+            }
             createCapturedAdjustment(providerCallback, invoicePayment);
             finishSucceeded(providerCallback, true);
         } catch (NotFoundException ex) {
@@ -149,15 +152,17 @@ public class ProviderPaymentsService {
         }
     }
 
-    private void createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
+    private boolean createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
         if (!providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(invoicePayment, providerCallback)
                 && (providerCallback.getAmount() != null
                 && providerCallback.getChangedAmount() != null
                 && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount()))) {
             var cashFlowParams = providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter.convert(providerCallback);
             invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), cashFlowParams);
+            return true;
         } else {
             log.info("Creating CashFlowAdjustment was skipped {}", providerCallback);
+            return false;
         }
     }
 
