@@ -2,6 +2,7 @@ package dev.vality.disputes.service.external.impl;
 
 import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.*;
+import dev.vality.disputes.exception.InvoicePaymentAdjustmentPendingException;
 import dev.vality.disputes.exception.InvoicingException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
@@ -68,6 +69,8 @@ public class InvoicingServiceImpl implements InvoicingService {
             throw new NotFoundException(String.format("Unable to find invoice with id: %s", invoiceId), ex, Type.INVOICE);
         } catch (InvoicePaymentNotFound ex) {
             throw new NotFoundException(String.format("Unable to find invoice with id: %s, paymentId: %s", invoiceId, paymentId), ex, Type.PAYMENT);
+        } catch (InvoicePaymentAdjustmentPending ex) {
+            throw new InvoicePaymentAdjustmentPendingException();
         } catch (InvalidPaymentStatus | InvalidPaymentTargetStatus ex) {
             throw new InvoicingPaymentStatusRestrictionsException(ex, null);
         } catch (TException ex) {
