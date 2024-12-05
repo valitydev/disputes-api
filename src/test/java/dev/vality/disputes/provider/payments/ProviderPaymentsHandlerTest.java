@@ -11,7 +11,6 @@ import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInter
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.provider.payments.*;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
@@ -26,6 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
@@ -107,8 +107,10 @@ public class ProviderPaymentsHandlerTest {
         var providerCallbackIds = new ArrayList<UUID>();
         for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
             providerCallbackIds.add(providerCallback.getId());
-            when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(providerCallback.getPaymentId()));
             var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
+            var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
+            invoicePayment.setAdjustments(List.of(getCashFlowInvoicePaymentAdjustment("adjustmentId", reason)));
+            when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
             when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                     .thenReturn(getCapturedInvoicePaymentAdjustment("adjustmentId", reason));
             // 3. hg.createPaymentAdjustment
