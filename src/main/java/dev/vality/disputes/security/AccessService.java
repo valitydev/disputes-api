@@ -90,13 +90,11 @@ public class AccessService {
     }
 
     private InvoicePayment getInvoicePayment(dev.vality.damsel.payment_processing.Invoice invoice, String paymentId) {
-        log.debug("Processing invoice: {}", invoice.getInvoice().getId());
         var invoicePayment = invoice.getPayments().stream()
                 .filter(p -> paymentId.equals(p.getPayment().getId()) && p.isSetRoute())
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Payment with id: %s and filled route not found!", paymentId), Type.PAYMENT));
-        log.debug("Processing payment: {}", invoicePayment);
         PaymentStatusValidator.checkStatus(invoicePayment);
         return invoicePayment;
     }
