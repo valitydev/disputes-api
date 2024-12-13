@@ -69,6 +69,8 @@ public class ProviderPaymentsService {
             var currency = providerDataService.getCurrency(invoicePayment);
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
+        } catch (InvoicingPaymentStatusRestrictionsException ex) {
+            log.info("InvoicingPaymentStatusRestrictionsException when process {}", callback);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
