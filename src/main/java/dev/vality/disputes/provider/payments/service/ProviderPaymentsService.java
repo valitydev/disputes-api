@@ -1,6 +1,7 @@
 package dev.vality.disputes.provider.payments.service;
 
 import dev.vality.damsel.domain.Currency;
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
@@ -10,23 +11,28 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
+import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.schedule.model.ProviderData;
+import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.utils.PaymentStatusValidator;
 import dev.vality.provider.payments.PaymentStatusResult;
+import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -36,15 +42,43 @@ public class ProviderPaymentsService {
 
     private final ProviderCallbackDao providerCallbackDao;
     private final InvoicingService invoicingService;
+    private final TransactionContextConverter transactionContextConverter;
     private final ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter providerPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
     private final ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
+    private final ProviderDataService providerDataService;
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
 
     @Value("${provider.payments.isSkipCallHgForCreateAdjustment}")
     private boolean isSkipCallHgForCreateAdjustment;
 
+    @Async("disputesAsyncServiceExecutor")
+    public void processCallback(ProviderPaymentsCallbackParams callback) {
+        try {
+            var invoiceId = callback.getInvoiceId().get();
+            var paymentId = callback.getPaymentId().get();
+            var invoicePayment = invoicingService.getInvoicePayment(invoiceId, paymentId);
+            log.debug("Got invoicePayment {}", callback);
+            // validate
+            PaymentStatusValidator.checkStatus(invoicePayment);
+            // validate
+            var providerTrxId = getProviderTrxId(invoicePayment);
+            var providerData = providerDataService.getProviderData(invoicePayment);
+            var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData);
+            var currency = providerDataService.getCurrency(invoicePayment);
+            var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
+            checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
+        } catch (InvoicingPaymentStatusRestrictionsException ex) {
+            log.info("InvoicingPaymentStatusRestrictionsException when process {}", callback);
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
+        } catch (Throwable ex) {
+            log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
+        }
+    }
+
+    @Transactional
     public PaymentStatusResult checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
@@ -137,6 +171,13 @@ public class ProviderPaymentsService {
         if (isDisputeCancelled) {
             disputeFinishCancelled(providerCallback, errorReason);
         }
+    }
+
+    private String getProviderTrxId(InvoicePayment payment) {
+        return Optional.ofNullable(payment.getLastTransactionInfo())
+                .map(TransactionInfo::getId)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Payment with id: %s and filled ProviderTrxId not found!", payment.getPayment().getId()), NotFoundException.Type.PROVIDERTRXID));
     }
 
     private Long getChangedAmount(long amount, PaymentStatusResult paymentStatusResult) {
