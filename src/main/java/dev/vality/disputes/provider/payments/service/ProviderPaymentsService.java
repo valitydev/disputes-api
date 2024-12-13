@@ -64,9 +64,9 @@ public class ProviderPaymentsService {
             PaymentStatusValidator.checkStatus(invoicePayment);
             // validate
             var providerTrxId = getProviderTrxId(invoicePayment);
-            var providerData = providerDataService.getProviderData(invoicePayment);
+            var providerData = providerDataService.getProviderData(invoicePayment.getRoute().getProvider(), invoicePayment.getRoute().getTerminal());
             var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData);
-            var currency = providerDataService.getCurrency(invoicePayment);
+            var currency = providerDataService.getCurrency(invoicePayment.getPayment().getCost().getCurrency());
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {

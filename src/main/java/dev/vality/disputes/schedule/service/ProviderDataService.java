@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.domain.Currency;
+import dev.vality.damsel.domain.CurrencyRef;
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.payment_processing.InvoicePayment;
@@ -31,8 +32,22 @@ public class ProviderDataService {
                 .build();
     }
 
+    public ProviderData getProviderData(ProviderRef providerRef, TerminalRef terminalRef) {
+        var provider = dominantService.getProvider(providerRef);
+        var terminal = dominantService.getTerminal(terminalRef);
+        var proxy = dominantService.getProxy(provider.getProxy().getRef());
+        return ProviderData.builder()
+                .options(OptionsExtractors.mergeOptions(provider, proxy, terminal))
+                .defaultProviderUrl(proxy.getUrl())
+                .build();
+    }
+
+    public Currency getCurrency(CurrencyRef currencyRef) {
+        return dominantService.getCurrency(currencyRef);
+    }
+
     @SneakyThrows
-    public ProviderData getProviderData(InvoicePayment payment) {
+    public ProviderData getAsyncProviderData(InvoicePayment payment) {
         var provider = dominantAsyncService.getProvider(payment.getRoute().getProvider());
         var terminal = dominantAsyncService.getTerminal(payment.getRoute().getTerminal());
         var proxy = dominantAsyncService.getProxy(provider.get().getProxy().getRef());
@@ -43,7 +58,7 @@ public class ProviderDataService {
     }
 
     @SneakyThrows
-    public Currency getCurrency(InvoicePayment payment) {
+    public Currency getAsyncCurrency(InvoicePayment payment) {
         return dominantAsyncService.getCurrency(payment.getPayment().getCost().getCurrency()).get();
     }
 }
