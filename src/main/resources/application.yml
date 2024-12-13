@@ -139,3 +139,8 @@ otel:
   resource: http://localhost:4318/v1/traces
   timeout: 60000
   enabled: false
+
+async:
+  core-pool-size: 5
+  max-pool-size: 10
+  queue-capacity: 50
