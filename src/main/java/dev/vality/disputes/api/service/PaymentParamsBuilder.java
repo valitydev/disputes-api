@@ -28,7 +28,7 @@ public class PaymentParamsBuilder {
         var invoice = accessData.getInvoice().getInvoice();
         log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
-        var currency = providerDataService.getCurrency(payment);
+        var currency = providerDataService.getAsyncCurrency(payment);
         var shop = partyManagementService.getShop(invoice.getOwnerId(), invoice.getShopId());
         var paymentParams = PaymentParams.builder()
                 .invoiceId(invoice.getId())
@@ -40,7 +40,7 @@ public class PaymentParamsBuilder {
                 .currencySymbolicCode(currency.getSymbolicCode())
                 .currencyNumericCode((int) currency.getNumericCode())
                 .currencyExponent((int) currency.getExponent())
-                .options(providerDataService.getProviderData(payment).getOptions())
+                .options(providerDataService.getAsyncProviderData(payment).getOptions())
                 .shopId(invoice.getShopId())
                 .shopDetailsName(shop.getDetails().getName())
                 .invoiceAmount(payment.getPayment().getCost().getAmount())
