@@ -19,6 +19,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
 
@@ -27,14 +28,15 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
 import static dev.vality.disputes.config.NetworkConfig.PROVIDER_PAYMENTS_ADMIN_MANAGEMENT;
 import static dev.vality.disputes.util.MockUtil.*;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @WireMockSpringBootITest
 @TestPropertySource(properties = {
@@ -60,7 +62,7 @@ public class ProviderPaymentsHandlerTest {
     private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
     private ProviderPaymentsService providerPaymentsService;
-    @Autowired
+    @SpyBean
     private ProviderCallbackDao providerCallbackDao;
     @Autowired
     private ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
@@ -70,13 +72,6 @@ public class ProviderPaymentsHandlerTest {
     @Test
     @SneakyThrows
     public void testFullFlowCreateAdjustmentWhenFailedPaymentSuccess() {
-        when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
-        when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
-        when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
-        when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
-        when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
-        when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -85,7 +80,8 @@ public class ProviderPaymentsHandlerTest {
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var approveParams = new ArrayList<ApproveParams>();
-        for (int i = 0; i < 4; i++) {
+        var minNumberOfInvocations = 4;
+        for (int i = 0; i < minNumberOfInvocations; i++) {
             var invoiceId = String.valueOf(i);
             var invoice = createInvoice(invoiceId, invoiceId);
             when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
@@ -96,6 +92,8 @@ public class ProviderPaymentsHandlerTest {
             createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
             approveParams.add(new ApproveParams(invoiceId, invoiceId));
         }
+        await().atMost(30, TimeUnit.SECONDS)
+                .untilAsserted(() -> verify(providerCallbackDao, atLeast(minNumberOfInvocations)).save(any()));
         // pendings = 4, approved = 3
         approveParams.removeFirst();
         var request = new ApproveParamsRequest()
@@ -120,7 +118,8 @@ public class ProviderPaymentsHandlerTest {
             var providerCallback = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallbackId);
             assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         }
-        assertEquals(1, providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().size());
+        assertEquals(minNumberOfInvocations - providerCallbackIds.size(),
+                providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().size());
     }
 
     private ProviderPaymentsCallbackServiceSrv.Iface createProviderPaymentsCallbackIface() throws URISyntaxException {
