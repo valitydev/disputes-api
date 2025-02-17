@@ -4,7 +4,6 @@ import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
-import dev.vality.disputes.service.DisputesService;
 import dev.vality.provider.payments.ApproveParamsRequest;
 import dev.vality.provider.payments.CancelParamsRequest;
 import dev.vality.provider.payments.ProviderPaymentsAdminManagementServiceSrv;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsAdminManagementServiceSrv.Iface {
 
     private final ProviderCallbackDao providerCallbackDao;
-    private final DisputesService disputesService;
     private final ProviderPaymentsService providerPaymentsService;
 
     @Override

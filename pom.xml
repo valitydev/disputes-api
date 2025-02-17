@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.0.6</version>
+        <version>3.0.8</version>
     </parent>
 
     <artifactId>disputes-api</artifactId>
@@ -27,7 +27,6 @@
         <exposed.ports>${server.port} ${management.port}</exposed.ports>
         <dockerfile.registry>${env.REGISTRY}</dockerfile.registry>
         <springfox-version>2.10.5</springfox-version>
-        <woody.version>2.0.1</woody.version>
         <shared-resources.version>3.0.0</shared-resources.version>
         <db.name>disputes</db.name>
         <db.port>5432</db.port>
@@ -87,16 +86,6 @@
             <groupId>dev.vality</groupId>
             <artifactId>adapter-flow-lib</artifactId>
             <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.vality.woody</groupId>
-            <artifactId>woody-thrift</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.vality.woody</groupId>
-            <artifactId>woody-api</artifactId>
-            <version>2.0.1</version>
         </dependency>
 
         <!--spring-->
@@ -232,21 +221,6 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
             <version>1.29.0-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-            <version>1.41.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.41.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.41.0</version>
         </dependency>
 
         <!--test-->
