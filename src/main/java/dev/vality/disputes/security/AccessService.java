@@ -28,9 +28,12 @@ public class AccessService {
     @Value("${service.bouncer.auth.enabled}")
     private boolean authEnabled;
 
-    public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData) {
+    public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData, boolean checkFailedPaymentStatus) {
         log.debug("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
+        if (checkFailedPaymentStatus) {
+            PaymentStatusValidator.checkStatus(accessData.getPayment());
+        }
         if (checkUserAccessData) {
             checkUserAccessData(accessData);
         }
@@ -90,12 +93,10 @@ public class AccessService {
     }
 
     private InvoicePayment getInvoicePayment(dev.vality.damsel.payment_processing.Invoice invoice, String paymentId) {
-        var invoicePayment = invoice.getPayments().stream()
+        return invoice.getPayments().stream()
                 .filter(p -> paymentId.equals(p.getPayment().getId()) && p.isSetRoute())
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Payment with id: %s and filled route not found!", paymentId), Type.PAYMENT));
-        PaymentStatusValidator.checkStatus(invoicePayment);
-        return invoicePayment;
     }
 }

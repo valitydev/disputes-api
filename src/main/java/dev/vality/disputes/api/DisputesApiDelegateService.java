@@ -31,7 +31,7 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
     @Override
     public ResponseEntity<Create200Response> create(String requestId, CreateRequest req, boolean checkUserAccessData) {
         log.info("-> Req: {}, requestId={}, invoiceId={}, paymentId={}, source={}", "/create", requestId, req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
-        var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData);
+        var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData, true);
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
         var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
         if (dispute.isPresent()) {
@@ -53,7 +53,7 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
     public ResponseEntity<Status200Response> status(String requestId, String disputeId, boolean checkUserAccessData) {
         var dispute = apiDisputesService.getDispute(disputeId);
         log.info("-> Req: {}, requestId={}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", requestId, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
-        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData);
+        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData, false);
         var body = status200ResponseConverter.convert(dispute);
         log.info("<- Res: {}, requestId={}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", requestId, dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(body);
