@@ -160,7 +160,7 @@ public class ProviderPaymentsService {
         }
     }
 
-    public void finishCancelled(ProviderCallback providerCallback, String errorReason, boolean isDisputeCancelled) {
+    public void finishCancelled(ProviderCallback providerCallback, String mapping, String errorReason, boolean isDisputeCancelled) {
         log.warn("Trying to set cancelled ProviderCallback status with '{}' errorReason, {}", errorReason, providerCallback.getInvoiceId());
         if (errorReason != null) {
             providerCallback.setErrorReason(errorReason);
@@ -169,7 +169,7 @@ public class ProviderPaymentsService {
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to cancelled {}", providerCallback.getInvoiceId());
         if (isDisputeCancelled) {
-            disputeFinishCancelled(providerCallback, errorReason);
+            disputeFinishCancelled(providerCallback, mapping, errorReason);
         }
     }
 
@@ -232,9 +232,9 @@ public class ProviderPaymentsService {
         }
     }
 
-    private void disputeFinishCancelled(ProviderCallback providerCallback, String errorMessage) {
+    private void disputeFinishCancelled(ProviderCallback providerCallback, String mapping, String errorMessage) {
         try {
-            disputesService.finishCancelled(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), errorMessage);
+            disputesService.finishCancelled(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), mapping, errorMessage);
         } catch (Throwable ex) {
             log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
         }

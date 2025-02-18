@@ -58,7 +58,10 @@ public class AdminManagementDisputesService {
         var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
         if (DISPUTE_PENDING_STATUSES.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
-            disputesService.finishCancelled(dispute, cancelParams.getMapping().orElse(null), cancelParams.getCancelReason().orElse(null));
+            disputesService.finishCancelled(
+                    dispute,
+                    cancelParams.getMapping().orElse(null),
+                    cancelParams.getCancelReason().orElse(null));
         } else {
             log.debug("Request was skipped by inappropriate status {}", dispute);
         }

@@ -68,7 +68,11 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
     private void finishCancelled(List<ProviderCallback> batch, CancelParamsRequest cancelParamsRequest) {
         log.debug("Batch by ProviderPayments cancelParamsRequest {}", batch.size());
         for (var providerCallback : batch) {
-            providerPaymentsService.finishCancelled(providerCallback, cancelParamsRequest.getCancelReason().orElse(null), true);
+            providerPaymentsService.finishCancelled(
+                    providerCallback,
+                    cancelParamsRequest.getCancelMapping().orElse(null),
+                    cancelParamsRequest.getCancelReason().orElse(null),
+                    true);
         }
     }
 

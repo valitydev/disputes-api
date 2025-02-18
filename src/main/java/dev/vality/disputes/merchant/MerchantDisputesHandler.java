@@ -39,8 +39,8 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
         log.info("Finish DisputeContext {}", disputeContext);
         return switch (response.getStatus()) {
             case PENDING -> DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
-            case FAILED -> DisputeStatusResult.statusFail(new DisputeStatusFailResult().setMapping(
-                    getMapping(response)));
+            case FAILED -> DisputeStatusResult.statusFail(
+                    new DisputeStatusFailResult().setMapping(getMapping(response)));
             case SUCCEEDED -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult());
         };
     }
