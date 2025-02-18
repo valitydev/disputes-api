@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>disputes-api</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
 
     <name>disputes-api</name>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>msgpack-proto</artifactId>
-            <version>1.14-7e44749</version>
+            <version>1.17-7481bb4</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
