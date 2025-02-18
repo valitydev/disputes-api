@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>disputes-api</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
 
     <name>disputes-api</name>
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>bouncer-proto</artifactId>
-            <version>1.55-ef7403f</version>
+            <version>1.56-07dcc7b</version>
         </dependency>
         <dependency>
             <groupId>dev.vality.geck</groupId>
