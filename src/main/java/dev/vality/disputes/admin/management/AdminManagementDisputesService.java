@@ -62,8 +62,6 @@ public class AdminManagementDisputesService {
                     dispute,
                     cancelParams.getMapping().orElse(null),
                     cancelParams.getCancelReason().orElse(null));
-        } else {
-            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 
@@ -88,8 +86,6 @@ public class AdminManagementDisputesService {
                 || dispute.getStatus() == DisputeStatus.pooling_expired
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
             disputesService.finishSucceeded(dispute, changedAmount);
-        } else {
-            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 
@@ -102,8 +98,6 @@ public class AdminManagementDisputesService {
             providerDisputeDao.save(providerDisputeId, dispute);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             disputesService.setNextStepToPending(dispute, providerData);
-        } else {
-            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 
@@ -160,8 +154,6 @@ public class AdminManagementDisputesService {
             dispute.setNextCheckAfter(getNextCheckAfter(providerData, pollingInfo));
             dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));
             disputesService.setNextStepToPending(dispute, providerData);
-        } else {
-            log.debug("Request was skipped by inappropriate status {}", dispute);
         }
     }
 

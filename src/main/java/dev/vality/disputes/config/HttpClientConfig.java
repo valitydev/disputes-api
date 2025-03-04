@@ -8,13 +8,11 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.client5.http.ssl.TrustAllStrategy;
-import org.apache.hc.core5.http.config.Registry;
-import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +23,29 @@ import org.springframework.context.annotation.Configuration;
 public class HttpClientConfig {
 
     private final HttpClientProperties httpClientProperties;
+
+    @Bean
+    public PoolingHttpClientConnectionManager poolingHttpClientConnectionManager() {
+        return PoolingHttpClientConnectionManagerBuilder.create()
+                .setTlsSocketStrategy(defaultClientTlsStrategy())
+                .setMaxConnTotal(httpClientProperties.getMaxTotalPooling())
+                .setMaxConnPerRoute(httpClientProperties.getDefaultMaxPerRoute())
+                .setDefaultConnectionConfig(connectionConfig()).build();
+    }
+
+    private ConnectionConfig connectionConfig() {
+        return ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.ofMilliseconds(httpClientProperties.getConnectionTimeout()))
+                .setSocketTimeout(Timeout.ofMilliseconds(httpClientProperties.getRequestTimeout()))
+                .build();
+    }
+
+    @Bean
+    public RequestConfig requestConfig() {
+        return RequestConfig.custom()
+                .setConnectionRequestTimeout(Timeout.ofMilliseconds(httpClientProperties.getPoolTimeout()))
+                .build();
+    }
 
     @Bean
     public CloseableHttpClient httpClient(
@@ -38,36 +59,12 @@ public class HttpClientConfig {
                 .build();
     }
 
-    @Bean
-    public PoolingHttpClientConnectionManager poolingHttpClientConnectionManager() {
-        var connectionManager = new PoolingHttpClientConnectionManager(connectionSocketFactory());
-        connectionManager.setMaxTotal(httpClientProperties.getMaxTotalPooling());
-        connectionManager.setDefaultMaxPerRoute(httpClientProperties.getDefaultMaxPerRoute());
-        connectionManager.setDefaultConnectionConfig(connectionConfig(httpClientProperties));
-        return connectionManager;
-    }
-
-    @Bean
-    public RequestConfig requestConfig() {
-        return RequestConfig.custom()
-                .setConnectionRequestTimeout(Timeout.ofMilliseconds(httpClientProperties.getPoolTimeout()))
-                .build();
-    }
-
     @SneakyThrows
-    private Registry<ConnectionSocketFactory> connectionSocketFactory() {
+    private DefaultClientTlsStrategy defaultClientTlsStrategy() {
         var sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustAllStrategy()).build();
-        var sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-        return RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", sslConnectionSocketFactory)
-                .register("http", new PlainConnectionSocketFactory())
-                .build();
-    }
-
-    private ConnectionConfig connectionConfig(HttpClientProperties httpClientProperties) {
-        return ConnectionConfig.custom()
-                .setConnectTimeout(Timeout.ofMilliseconds(httpClientProperties.getConnectionTimeout()))
-                .setSocketTimeout(Timeout.ofMilliseconds(httpClientProperties.getRequestTimeout()))
-                .build();
+        return new DefaultClientTlsStrategy(
+                sslContext,
+                HostnameVerificationPolicy.CLIENT,
+                NoopHostnameVerifier.INSTANCE);
     }
 }
