@@ -24,6 +24,7 @@ public class ProviderPaymentsTask {
 
     private final ExecutorService providerPaymentsThreadPool;
     private final ProviderPaymentsService providerPaymentsService;
+
     @Value("${provider.payments.batchSize}")
     private int batchSize;
 

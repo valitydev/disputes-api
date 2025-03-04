@@ -5,7 +5,6 @@ import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +20,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
     private boolean isProviderCallbackEnabled;
 
     @Override
-    public void createAdjustmentWhenFailedPaymentSuccess(ProviderPaymentsCallbackParams callback) throws TException {
+    public void createAdjustmentWhenFailedPaymentSuccess(ProviderPaymentsCallbackParams callback) {
         log.info("Got providerPaymentsCallbackParams {}", callback);
         if (!isProviderCallbackEnabled) {
             return;

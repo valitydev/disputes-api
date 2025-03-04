@@ -4,7 +4,6 @@ import dev.vality.disputes.admin.*;
 import dev.vality.disputes.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -73,7 +72,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
     }
 
     @Override
-    public void setPendingForPoolingExpired(SetPendingForPoolingExpiredParamsRequest setPendingForPoolingExpiredParamsRequest) throws TException {
+    public void setPendingForPoolingExpired(SetPendingForPoolingExpiredParamsRequest setPendingForPoolingExpiredParamsRequest) {
         log.info("Got setPendingForPoolingExpiredParamsRequest {}", setPendingForPoolingExpiredParamsRequest);
         for (var setPendingForPoolingExpiredParams : setPendingForPoolingExpiredParamsRequest.getSetPendingForPoolingExpiredParams()) {
             try {

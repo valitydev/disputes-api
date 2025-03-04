@@ -6,7 +6,6 @@ import dev.vality.swag.disputes.model.GeneralError;
 import dev.vality.swag.disputes.model.Status200Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -22,7 +21,7 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
     private final DisputesApiDelegate disputesApiDelegate;
 
     @Override
-    public DisputeCreatedResult createDispute(DisputeParams disputeParams) throws TException {
+    public DisputeCreatedResult createDispute(DisputeParams disputeParams) {
         log.info("Got DisputeParams {}", disputeParams);
         var createRequest = createRequestConverter.convert(disputeParams);
         var disputeId = disputesApiDelegate.create(getRequestID(), createRequest, false)
@@ -33,7 +32,7 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
     }
 
     @Override
-    public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) throws TException {
+    public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) {
         log.info("Got DisputeContext {}", disputeContext);
         var response = disputesApiDelegate.status(getRequestID(), disputeContext.getDisputeId(), false).getBody();
         log.info("Finish DisputeContext {}", disputeContext);

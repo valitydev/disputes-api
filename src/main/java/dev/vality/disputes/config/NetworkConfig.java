@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Configuration
+@SuppressWarnings({"LineLength"})
 public class NetworkConfig {
 
     @Value("${server.port}")
@@ -63,9 +64,7 @@ public class NetworkConfig {
         var filter = new OncePerRequestFilter() {
 
             @Override
-            protected void doFilterInternal(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            FilterChain filterChain) throws ServletException, IOException {
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
                 if ((request.getLocalPort() == restPort)
                         && request.getServletPath().startsWith(restEndpoint)) {
                     woodyFlow.createServiceFork(() -> doFilter(request, response, filterChain)).run();

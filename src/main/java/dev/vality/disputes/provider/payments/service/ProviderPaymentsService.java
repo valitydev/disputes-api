@@ -123,7 +123,7 @@ public class ProviderPaymentsService {
             switch (ex.getType()) {
                 case INVOICE -> finishFailed(providerCallback, ErrorMessage.INVOICE_NOT_FOUND);
                 case PAYMENT -> finishFailed(providerCallback, ErrorMessage.PAYMENT_NOT_FOUND);
-                case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallbackDao);
+                case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallback);
                 default -> throw ex;
             }
         } catch (CapturedPaymentException ex) {
@@ -221,7 +221,8 @@ public class ProviderPaymentsService {
 
     private void checkProviderCallbackExist(String invoiceId, String paymentId) {
         try {
-            providerCallbackDao.get(invoiceId, paymentId);
+            var providerCallback = providerCallbackDao.get(invoiceId, paymentId);
+            log.debug("ProviderCallback exist {}", providerCallback);
             throw new ProviderCallbackAlreadyExistException();
         } catch (NotFoundException ignored) {
             log.debug("It's new provider callback");
