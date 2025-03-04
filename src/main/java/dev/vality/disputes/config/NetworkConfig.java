@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Configuration
+@SuppressWarnings({"LineLength"})
 public class NetworkConfig {
 
     @Value("${server.port}")
@@ -26,10 +28,9 @@ public class NetworkConfig {
     public static final String MERCHANT = "/v1/merchant";
     public static final String ADMIN_MANAGEMENT = "/v1/admin-management";
     public static final String CALLBACK = "/v1/callback";
-    public static final String PROVIDER_PAYMENTS_ADMIN_MANAGEMENT = "/v1/provider-payments-admin-management";
 
     @Bean
-    public FilterRegistrationBean externalPortRestrictingFilter() {
+    public FilterRegistrationBean<OncePerRequestFilter> externalPortRestrictingFilter() {
         var filter = new OncePerRequestFilter() {
 
             @Override
@@ -41,8 +42,7 @@ public class NetworkConfig {
                         || servletPath.startsWith(HEALTH)
                         || servletPath.startsWith(MERCHANT)
                         || servletPath.startsWith(ADMIN_MANAGEMENT)
-                        || servletPath.startsWith(CALLBACK)
-                        || servletPath.startsWith(PROVIDER_PAYMENTS_ADMIN_MANAGEMENT);
+                        || servletPath.startsWith(CALLBACK);
                 if ((request.getLocalPort() == restPort) && !enabledPaths) {
                     response.sendError(404, "Unknown address");
                     return;
@@ -50,7 +50,7 @@ public class NetworkConfig {
                 filterChain.doFilter(request, response);
             }
         };
-        var filterRegistrationBean = new FilterRegistrationBean();
+        var filterRegistrationBean = new FilterRegistrationBean<OncePerRequestFilter>();
         filterRegistrationBean.setFilter(filter);
         filterRegistrationBean.setOrder(-100);
         filterRegistrationBean.setName("httpPortFilter");
@@ -59,33 +59,26 @@ public class NetworkConfig {
     }
 
     @Bean
-    public FilterRegistrationBean woodyFilter() {
+    public FilterRegistrationBean<OncePerRequestFilter> woodyFilter() {
         var woodyFlow = new WFlow();
         var filter = new OncePerRequestFilter() {
 
             @Override
-            protected void doFilterInternal(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            FilterChain filterChain) throws ServletException, IOException {
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
                 if ((request.getLocalPort() == restPort)
                         && request.getServletPath().startsWith(restEndpoint)) {
-                    woodyFlow.createServiceFork(() -> {
-                        try {
-                            filterChain.doFilter(request, response);
-                        } catch (IOException | ServletException ex) {
-                            sneakyThrow(ex);
-                        }
-                    }).run();
+                    woodyFlow.createServiceFork(() -> doFilter(request, response, filterChain)).run();
                     return;
                 }
-                filterChain.doFilter(request, response);
+                doFilter(request, response, filterChain);
             }
 
-            private <E extends Throwable, T> T sneakyThrow(Throwable t) throws E {
-                throw (E) t;
+            @SneakyThrows
+            private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+                filterChain.doFilter(request, response);
             }
         };
-        var filterRegistrationBean = new FilterRegistrationBean();
+        var filterRegistrationBean = new FilterRegistrationBean<OncePerRequestFilter>();
         filterRegistrationBean.setFilter(filter);
         filterRegistrationBean.setOrder(-50);
         filterRegistrationBean.setName("woodyFilter");

@@ -1,6 +1,5 @@
 package dev.vality.disputes.service.external.impl;
 
-import dev.vality.damsel.domain.InvoicePaymentAdjustment;
 import dev.vality.damsel.payment_processing.*;
 import dev.vality.disputes.exception.InvoicePaymentAdjustmentPendingException;
 import dev.vality.disputes.exception.InvoicingException;
@@ -56,15 +55,14 @@ public class InvoicingServiceImpl implements InvoicingService {
     }
 
     @Override
-    public InvoicePaymentAdjustment createPaymentAdjustment(
+    public void createPaymentAdjustment(
             String invoiceId,
             String paymentId,
             InvoicePaymentAdjustmentParams params) {
         try {
             log.debug("createPaymentAdjustment with id: {}", invoiceId);
-            var invoicePaymentAdjustment = invoicingClient.createPaymentAdjustment(invoiceId, paymentId, params);
+            invoicingClient.createPaymentAdjustment(invoiceId, paymentId, params);
             log.debug("Done createPaymentAdjustment with id: {}", invoiceId);
-            return invoicePaymentAdjustment;
         } catch (InvoiceNotFound ex) {
             throw new NotFoundException(String.format("Unable to find invoice with id: %s", invoiceId), ex, Type.INVOICE);
         } catch (InvoicePaymentNotFound ex) {

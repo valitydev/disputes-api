@@ -118,7 +118,6 @@ provider:
     initialDelayCreateAdjustments: 5000
     isProviderCallbackEnabled: false
     isScheduleCreateAdjustmentsEnabled: true
-    isSkipCallHgForCreateAdjustment: true
 
 time:
   config:

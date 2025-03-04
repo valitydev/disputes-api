@@ -71,13 +71,13 @@ public class CacheConfig {
         return caffeineCacheManager;
     }
 
-    private Caffeine adaptersConnectionsCacheConfig() {
+    private Caffeine<Object, Object> adaptersConnectionsCacheConfig() {
         return Caffeine.newBuilder()
                 .expireAfterAccess(adaptersConnectionProperties.getTtlMin(), TimeUnit.MINUTES)
                 .maximumSize(adaptersConnectionProperties.getPoolSize());
     }
 
-    private Caffeine getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
+    private Caffeine<Object, Object> getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
                 .maximumSize(cacheConfig.getPoolSize());

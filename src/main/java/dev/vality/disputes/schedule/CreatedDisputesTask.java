@@ -23,6 +23,7 @@ public class CreatedDisputesTask {
 
     private final ExecutorService disputesThreadPool;
     private final CreatedDisputesService createdDisputesService;
+
     @Value("${dispute.batchSize}")
     private int batchSize;
 

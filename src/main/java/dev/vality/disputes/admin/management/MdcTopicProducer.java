@@ -68,7 +68,7 @@ public class MdcTopicProducer {
         var contextMap = getContextMap();
         contextMap.put("dispute_ids", disputes.stream().map(Dispute::getId).map(String::valueOf).collect(Collectors.joining(", ")));
         MDC.setContextMap(contextMap);
-        log.warn("Ready for CreateAdjustments case");
+        log.warn("Ready for ForgottenDisputes case");
         MDC.clear();
     }
 

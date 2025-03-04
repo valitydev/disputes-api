@@ -27,7 +27,6 @@ import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,9 +50,6 @@ public class ProviderPaymentsService {
     private final ProviderDataService providerDataService;
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
-
-    @Value("${provider.payments.isSkipCallHgForCreateAdjustment}")
-    private boolean isSkipCallHgForCreateAdjustment;
 
     @Async("disputesAsyncServiceExecutor")
     public void processCallback(ProviderPaymentsCallbackParams callback) {
@@ -90,7 +86,6 @@ public class ProviderPaymentsService {
             providerCallback.setPaymentId(transactionContext.getPaymentId());
             providerCallback.setChangedAmount(getChangedAmount(amount, paymentStatusResult));
             providerCallback.setAmount(amount);
-            providerCallback.setSkipCallHgForCreateAdjustment(isSkipCallHgForCreateAdjustment);
             log.info("Save providerCallback {}", providerCallback);
             providerCallbackDao.save(providerCallback);
         } else {
@@ -128,7 +123,7 @@ public class ProviderPaymentsService {
             switch (ex.getType()) {
                 case INVOICE -> finishFailed(providerCallback, ErrorMessage.INVOICE_NOT_FOUND);
                 case PAYMENT -> finishFailed(providerCallback, ErrorMessage.PAYMENT_NOT_FOUND);
-                case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallbackDao);
+                case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallback);
                 default -> throw ex;
             }
         } catch (CapturedPaymentException ex) {
@@ -163,17 +158,6 @@ public class ProviderPaymentsService {
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to failed {}", providerCallback.getInvoiceId());
         disputeFinishFailed(providerCallback, errorReason);
-    }
-
-    public void finishCancelled(ProviderCallback providerCallback, String mapping, String errorReason) {
-        log.warn("Trying to set cancelled ProviderCallback status with '{}' errorReason, {}", errorReason, providerCallback.getInvoiceId());
-        if (errorReason != null) {
-            providerCallback.setErrorReason(errorReason);
-        }
-        providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
-        providerCallbackDao.update(providerCallback);
-        log.debug("ProviderCallback status has been set to cancelled {}", providerCallback.getInvoiceId());
-        disputeFinishCancelled(providerCallback, mapping, errorReason);
     }
 
     private String getProviderTrxId(InvoicePayment payment) {
@@ -235,17 +219,10 @@ public class ProviderPaymentsService {
         }
     }
 
-    private void disputeFinishCancelled(ProviderCallback providerCallback, String mapping, String errorMessage) {
-        try {
-            disputesService.finishCancelled(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), mapping, errorMessage);
-        } catch (Throwable ex) {
-            log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
-        }
-    }
-
     private void checkProviderCallbackExist(String invoiceId, String paymentId) {
         try {
-            providerCallbackDao.get(invoiceId, paymentId);
+            var providerCallback = providerCallbackDao.get(invoiceId, paymentId);
+            log.debug("ProviderCallback exist {}", providerCallback);
             throw new ProviderCallbackAlreadyExistException();
         } catch (NotFoundException ignored) {
             log.debug("It's new provider callback");

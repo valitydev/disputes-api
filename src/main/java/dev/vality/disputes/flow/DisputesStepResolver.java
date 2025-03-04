@@ -15,11 +15,14 @@ public class DisputesStepResolver {
             Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping, String handleFailedResultErrorMessage,
             Boolean isSuccessDisputeCheckStatusResult, Boolean isPoolingExpired, Boolean isProviderDisputeNotFound,
             Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag,
-            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired) {
+            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired, Boolean checkInvoicePaymentStatus) {
         return switch (status) {
             case created -> {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
+                }
+                if (checkInvoicePaymentStatus) {
+                    yield DisputeStatus.succeeded;
                 }
                 if (isSuccessProviderPaymentStatus) {
                     yield DisputeStatus.create_adjustment;
@@ -45,6 +48,9 @@ public class DisputesStepResolver {
             case pending -> {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
+                }
+                if (checkInvoicePaymentStatus) {
+                    yield DisputeStatus.succeeded;
                 }
                 if (isAdminApproveCall && !isSkipHgCallApproveFlag) {
                     yield DisputeStatus.create_adjustment;

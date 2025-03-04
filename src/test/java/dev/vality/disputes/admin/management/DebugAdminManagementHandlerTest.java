@@ -131,18 +131,6 @@ public class DebugAdminManagementHandlerTest {
         disputeDao.finishFailed(disputeId, null);
     }
 
-//    @Test
-//    public void testBindCreatedManualCreated() {
-//        var invoiceId = "20McecNnWoy";
-//        var paymentId = "1";
-//        var providerDisputeId = generateId();
-//        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
-//        disputeDao.setNextStepToManualCreated(disputeId, null);
-//        debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
-//        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-//        disputeDao.finishFailed(disputeId, null);
-//    }
-
     @Test
     @SneakyThrows
     public void testBindCreatedAlreadyExist() {

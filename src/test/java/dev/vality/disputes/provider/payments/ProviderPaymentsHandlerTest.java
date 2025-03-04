@@ -12,7 +12,10 @@ import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.TestUrlPaths;
-import dev.vality.provider.payments.*;
+import dev.vality.provider.payments.PaymentStatusResult;
+import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
+import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
+import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.SneakyThrows;
@@ -31,7 +34,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
-import static dev.vality.disputes.config.NetworkConfig.PROVIDER_PAYMENTS_ADMIN_MANAGEMENT;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,7 +81,6 @@ public class ProviderPaymentsHandlerTest {
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        var approveParams = new ArrayList<ApproveParams>();
         var minNumberOfInvocations = 4;
         for (int i = 0; i < minNumberOfInvocations; i++) {
             var invoiceId = String.valueOf(i);
@@ -90,18 +91,10 @@ public class ProviderPaymentsHandlerTest {
                     .setPaymentId(invoiceId);
             // 1. callback
             createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
-            approveParams.add(new ApproveParams(invoiceId, invoiceId));
         }
         await().atMost(30, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(providerCallbackDao, atLeast(minNumberOfInvocations)).save(any()));
-        // pendings = 4, approved = 3
-        approveParams.removeFirst();
-        var request = new ApproveParamsRequest()
-                .setApproveAll(false)
-                .setApproveParams(approveParams)
-                .setApproveReason("test asdj556");
         // 2. approve
-        createProviderPaymentsAdminManagementIface().approve(request);
         var providerCallbackIds = new ArrayList<UUID>();
         for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
             providerCallbackIds.add(providerCallback.getId());
@@ -127,13 +120,6 @@ public class ProviderPaymentsHandlerTest {
                 .withAddress(new URI("http://127.0.0.1:" + serverPort + CALLBACK))
                 .withNetworkTimeout(5000)
                 .build(ProviderPaymentsCallbackServiceSrv.Iface.class);
-    }
-
-    private ProviderPaymentsAdminManagementServiceSrv.Iface createProviderPaymentsAdminManagementIface() throws URISyntaxException {
-        return new THSpawnClientBuilder()
-                .withAddress(new URI("http://127.0.0.1:" + serverPort + PROVIDER_PAYMENTS_ADMIN_MANAGEMENT))
-                .withNetworkTimeout(5000)
-                .build(ProviderPaymentsAdminManagementServiceSrv.Iface.class);
     }
 
     private static PaymentStatusResult createPaymentStatusResult(long changedAmount) {

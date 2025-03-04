@@ -59,22 +59,4 @@ public abstract class DisputeDaoTest {
         assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, DisputeStatus.pending).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }
-
-//    @Test
-//    public void testGetDisputesForHgCall() {
-//        var random = random(Dispute.class);
-//        random.setId(null);
-//        random.setInvoiceId("setInvoiceId");
-//        random.setPaymentId("setPaymentId");
-//        random.setSkipCallHgForCreateAdjustment(true);
-//        random.setStatus(DisputeStatus.create_adjustment);
-//        disputeDao.save(random);
-//        disputeDao.save(random);
-//        random.setSkipCallHgForCreateAdjustment(false);
-//        disputeDao.save(random);
-//        assertEquals(1, disputeDao.getDisputesForHgCall(10).size());
-//        for (var dispute : disputeDao.get("setInvoiceId", "setPaymentId")) {
-//            disputeDao.update(dispute.getId(), DisputeStatus.failed);
-//        }
-//    }
 }

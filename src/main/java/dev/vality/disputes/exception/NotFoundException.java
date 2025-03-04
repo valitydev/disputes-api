@@ -18,7 +18,6 @@ public class NotFoundException extends RuntimeException {
     }
 
     public enum Type {
-        NONE,
         INVOICE,
         PAYMENT,
         ATTACHMENT,
