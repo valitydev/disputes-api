@@ -53,23 +53,21 @@ public class AdminManagementDisputesService {
     private final CloseableHttpClient httpClient;
 
     @Transactional
-    public void cancelPendingDispute(CancelParams cancelParams) {
-        var disputeId = cancelParams.getDisputeId();
-        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
+    public void cancelPendingDispute(CancelParams params) {
+        var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
         if (DISPUTE_PENDING_STATUSES.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
             disputesService.finishCancelled(
                     dispute,
-                    cancelParams.getMapping().orElse(null),
-                    cancelParams.getCancelReason().orElse(null));
+                    params.getMapping().orElse(null),
+                    params.getCancelReason().orElse(null));
         }
     }
 
     @Transactional
-    public void approvePendingDispute(ApproveParams approveParam) {
-        var disputeId = approveParam.getDisputeId();
-        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
-        var changedAmount = approveParam.getChangedAmount()
+    public void approvePendingDispute(ApproveParams params) {
+        var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
+        var changedAmount = params.getChangedAmount()
                 .filter(s -> dispute.getStatus() == DisputeStatus.pending
                         || dispute.getStatus() == DisputeStatus.manual_pending
                         || dispute.getStatus() == DisputeStatus.pooling_expired)
@@ -77,7 +75,7 @@ public class AdminManagementDisputesService {
         if ((dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired)
-                && !approveParam.isSkipCallHgForCreateAdjustment()) {
+                && !params.isSkipCallHgForCreateAdjustment()) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
             handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData);
@@ -90,10 +88,10 @@ public class AdminManagementDisputesService {
     }
 
     @Transactional
-    public void bindCreatedDispute(BindParams bindParam) {
-        var disputeId = bindParam.getDisputeId();
-        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
-        var providerDisputeId = bindParam.getProviderDisputeId();
+    public void bindCreatedDispute(BindParams params) {
+        var disputeId = params.getDisputeId();
+        var dispute = disputesService.getSkipLocked(disputeId);
+        var providerDisputeId = params.getProviderDisputeId();
         if (dispute.getStatus() == DisputeStatus.already_exist_created) {
             providerDisputeDao.save(providerDisputeId, dispute);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
@@ -102,11 +100,10 @@ public class AdminManagementDisputesService {
     }
 
     @SneakyThrows
-    public Dispute getDispute(DisputeParams disputeParams, boolean withAttachments) {
-        var disputeId = disputeParams.getDisputeId();
-        var dispute = disputesService.get(disputeId);
+    public Dispute getDispute(DisputeParams params, boolean withAttachments) {
+        var dispute = disputesService.getByInvoiceId(params.getInvoiceId(), params.getPaymentId());
         var disputeResult = new Dispute();
-        disputeResult.setDisputeId(disputeId);
+        disputeResult.setDisputeId(dispute.getId().toString());
         disputeResult.setProviderDisputeId(getProviderDispute(dispute)
                 .map(ProviderDispute::getProviderDisputeId)
                 .orElse(null));
@@ -145,9 +142,8 @@ public class AdminManagementDisputesService {
     }
 
     @Transactional
-    public void setPendingForPoolingExpiredDispute(SetPendingForPoolingExpiredParams setPendingForPoolingExpiredParams) {
-        var disputeId = setPendingForPoolingExpiredParams.getDisputeId();
-        var dispute = disputesService.getDisputeForUpdateSkipLocked(disputeId);
+    public void setPendingForPoolingExpiredDispute(SetPendingForPoolingExpiredParams params) {
+        var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
         if (dispute.getStatus() == DisputeStatus.pooling_expired) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var pollingInfo = pollingInfoService.initPollingInfo((dev.vality.disputes.domain.tables.pojos.Dispute) null, providerData.getOptions());

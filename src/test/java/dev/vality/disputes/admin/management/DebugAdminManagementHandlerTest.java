@@ -50,14 +50,16 @@ public class DebugAdminManagementHandlerTest {
     @Test
     public void testCancelCreateAdjustment() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testCancelPending() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
     }
 
@@ -65,14 +67,16 @@ public class DebugAdminManagementHandlerTest {
     public void testCancelFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         disputeDao.finishFailed(disputeId, null);
-        debugAdminManagementController.cancelPending(getCancelRequest(disputeId));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
     public void testApproveCreateAdjustmentWithCallHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId, false));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -80,7 +84,8 @@ public class DebugAdminManagementHandlerTest {
     @Test
     public void testApproveCreateAdjustmentWithSkipHg() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -92,7 +97,8 @@ public class DebugAdminManagementHandlerTest {
         var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId, false));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -100,7 +106,8 @@ public class DebugAdminManagementHandlerTest {
     @Test
     public void testApprovePendingWithSkipHg() {
         var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -109,7 +116,8 @@ public class DebugAdminManagementHandlerTest {
     public void testApproveFailed() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         disputeDao.finishFailed(disputeId, null);
-        debugAdminManagementController.approvePending(getApproveRequest(disputeId, true));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
@@ -151,7 +159,8 @@ public class DebugAdminManagementHandlerTest {
     public void testGetDispute() {
         WiremockUtils.mockS3AttachmentDownload();
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
-        var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(disputeId, true));
+        var dispute = disputeDao.get(disputeId);
+        var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(1, disputes.getDisputes().size());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -166,7 +175,8 @@ public class DebugAdminManagementHandlerTest {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        debugAdminManagementController.setPendingForPoolingExpired(getSetPendingForPoolingExpiredParamsRequest(disputeId));
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.setPendingForPoolingExpired(getSetPendingForPoolingExpiredParamsRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }

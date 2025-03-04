@@ -1,20 +1,18 @@
 package dev.vality.disputes.service;
 
 import dev.vality.damsel.domain.Failure;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
-import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.schedule.model.ProviderData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -29,25 +27,10 @@ public class DisputesService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
     public void finishSucceeded(String invoiceId, String paymentId, Long changedAmount) {
-        var disputes = disputeDao.get(invoiceId, paymentId).stream()
-                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
-                .sorted(Comparator.comparing(Dispute::getCreatedAt))
-                .toList();
-        for (int i = 0; i < disputes.size(); i++) {
-            try {
-                var dispute = disputes.get(i);
-                checkPendingStatuses(dispute);
-                if (i == disputes.size() - 1) {
-                    finishSucceeded(dispute, changedAmount);
-                } else {
-                    finishFailed(dispute, ErrorMessage.AUTO_FAIL_BY_CREATE_ADJUSTMENT_CALL);
-                }
-            } catch (NotFoundException ex) {
-                log.warn("NotFound when handle DisputesService.finishSucceeded, type={}", ex.getType(), ex);
-            } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishSucceeded", ex);
-            }
-        }
+        var dispute = Optional.of(disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId))
+                .filter(d -> DISPUTE_PENDING_STATUSES.contains(d.getStatus()))
+                .orElseThrow();
+        finishSucceeded(dispute, changedAmount);
     }
 
     public void finishSucceeded(Dispute dispute, Long changedAmount) {
@@ -57,20 +40,10 @@ public class DisputesService {
     }
 
     public void finishFailed(String invoiceId, String paymentId, String errorMessage) {
-        var disputes = disputeDao.get(invoiceId, paymentId).stream()
-                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
-                .sorted(Comparator.comparing(Dispute::getCreatedAt))
-                .toList();
-        for (var dispute : disputes) {
-            try {
-                checkPendingStatuses(dispute);
-                finishFailed(dispute, errorMessage);
-            } catch (NotFoundException ex) {
-                log.warn("NotFound when handle DisputesService.finishFailed, type={}", ex.getType(), ex);
-            } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishFailed", ex);
-            }
-        }
+        var dispute = Optional.of(disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId))
+                .filter(d -> DISPUTE_PENDING_STATUSES.contains(d.getStatus()))
+                .orElseThrow();
+        finishFailed(dispute, errorMessage);
     }
 
     public void finishFailed(Dispute dispute, String errorMessage) {
@@ -129,57 +102,66 @@ public class DisputesService {
         log.debug("Dispute status has been set to pooling_expired {}", dispute.getId());
     }
 
-    public List<Dispute> getForgottenDisputes() {
-        return disputeDao.getForgottenDisputes();
+    public void updateNextPollingInterval(Dispute dispute, ProviderData providerData) {
+        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+        disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
     }
 
-    public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
-        var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.created);
+    public List<Dispute> getForgottenSkipLocked(int batchSize) {
+        var locked = disputeDao.getForgottenSkipLocked(batchSize);
         if (!locked.isEmpty()) {
-            log.debug("CreatedDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+            log.debug("ForgottenSkipLocked has been found, size={}", locked.size());
         }
         return locked;
     }
 
-    public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
-        var locked = disputeDao.getDisputesForUpdateSkipLocked(batchSize, DisputeStatus.pending);
+    public List<Dispute> getCreatedSkipLocked(int batchSize) {
+        var locked = disputeDao.getSkipLocked(batchSize, DisputeStatus.created);
         if (!locked.isEmpty()) {
-            log.debug("PendingDisputesForUpdateSkipLocked has been found, size={}", locked.size());
+            log.debug("CreatedSkipLocked has been found, size={}", locked.size());
         }
         return locked;
     }
 
-    public Dispute get(String disputeId) {
-        return disputeDao.get(UUID.fromString(disputeId));
+    public List<Dispute> getPendingSkipLocked(int batchSize) {
+        var locked = disputeDao.getSkipLocked(batchSize, DisputeStatus.pending);
+        if (!locked.isEmpty()) {
+            log.debug("PendingSkipLocked has been found, size={}", locked.size());
+        }
+        return locked;
+    }
+
+    public Dispute getSkipLocked(String disputeId) {
+        return disputeDao.getSkipLocked(UUID.fromString(disputeId));
+    }
+
+    public Dispute getByInvoiceId(String invoiceId, String paymentId) {
+        return disputeDao.getByInvoiceId(invoiceId, paymentId);
+    }
+
+    public Dispute getSkipLockedByInvoiceId(String invoiceId, String paymentId) {
+        return disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId);
     }
 
     public void checkCreatedStatus(Dispute dispute) {
-        var forUpdate = getDisputeForUpdateSkipLocked(dispute);
+        var forUpdate = getSkipLocked(dispute.getId().toString());
         if (forUpdate.getStatus() != DisputeStatus.created) {
             throw new DisputeStatusWasUpdatedByAnotherThreadException();
         }
     }
 
     public void checkPendingStatus(Dispute dispute) {
-        var forUpdate = getDisputeForUpdateSkipLocked(dispute);
+        var forUpdate = getSkipLocked(dispute.getId().toString());
         if (forUpdate.getStatus() != DisputeStatus.pending) {
             throw new DisputeStatusWasUpdatedByAnotherThreadException();
         }
     }
 
-    private void checkPendingStatuses(Dispute dispute) {
-        var forUpdate = getDisputeForUpdateSkipLocked(dispute);
+    public void checkPendingStatuses(Dispute dispute) {
+        var forUpdate = getSkipLocked(dispute.getId().toString());
         if (!DISPUTE_PENDING_STATUSES.contains(forUpdate.getStatus())) {
             throw new DisputeStatusWasUpdatedByAnotherThreadException();
         }
-    }
-
-    public Dispute getDisputeForUpdateSkipLocked(Dispute dispute) {
-        return getDisputeForUpdateSkipLocked(dispute.getId().toString());
-    }
-
-    public Dispute getDisputeForUpdateSkipLocked(String disputeId) {
-        return disputeDao.getDisputeForUpdateSkipLocked(UUID.fromString(disputeId));
     }
 
     private static Set<DisputeStatus> disputePendingStatuses() {

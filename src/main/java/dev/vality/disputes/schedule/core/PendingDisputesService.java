@@ -40,8 +40,8 @@ public class PendingDisputesService {
     private final WoodyRuntimeExceptionCatcher woodyRuntimeExceptionCatcher;
 
     @Transactional
-    public List<Dispute> getPendingDisputesForUpdateSkipLocked(int batchSize) {
-        return disputesService.getPendingDisputesForUpdateSkipLocked(batchSize);
+    public List<Dispute> getPendingSkipLocked(int batchSize) {
+        return disputesService.getPendingSkipLocked(batchSize);
     }
 
     @Transactional

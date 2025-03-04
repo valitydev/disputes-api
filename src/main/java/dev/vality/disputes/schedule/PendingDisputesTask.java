@@ -30,7 +30,7 @@ public class PendingDisputesTask {
     @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}", initialDelayString = "${dispute.initialDelayPending}")
     public void processPending() {
         try {
-            var disputes = pendingDisputesService.getPendingDisputesForUpdateSkipLocked(batchSize);
+            var disputes = pendingDisputesService.getPendingSkipLocked(batchSize);
             var callables = disputes.stream()
                     .map(this::handlePending)
                     .collect(Collectors.toList());

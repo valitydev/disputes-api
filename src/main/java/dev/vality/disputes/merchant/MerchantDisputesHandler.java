@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,7 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
     public DisputeCreatedResult createDispute(DisputeParams disputeParams) {
         log.info("Got DisputeParams {}", disputeParams);
         var createRequest = createRequestConverter.convert(disputeParams);
-        var disputeId = disputesApiDelegate.create(getRequestID(), createRequest, false)
+        var disputeId = disputesApiDelegate.create(createRequest, false)
                 .getBody()
                 .getDisputeId();
         log.info("Finish DisputeParams {}", disputeParams);
@@ -34,7 +33,7 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
     @Override
     public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) {
         log.info("Got DisputeContext {}", disputeContext);
-        var response = disputesApiDelegate.status(getRequestID(), disputeContext.getDisputeId(), false).getBody();
+        var response = disputesApiDelegate.status(disputeContext.getDisputeId(), false).getBody();
         log.info("Finish DisputeContext {}", disputeContext);
         return switch (response.getStatus()) {
             case PENDING -> DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
@@ -42,10 +41,6 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
                     new DisputeStatusFailResult().setMapping(getMapping(response)));
             case SUCCEEDED -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult());
         };
-    }
-
-    private String getRequestID() {
-        return UUID.randomUUID().toString();
     }
 
     private String getMapping(Status200Response response) {
