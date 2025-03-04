@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>disputes-api</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
 
     <name>disputes-api</name>
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>swag-disputes</artifactId>
-            <version>1.18-fc22f97-server</version>
+            <version>1.19-8c4c6d9-server</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
