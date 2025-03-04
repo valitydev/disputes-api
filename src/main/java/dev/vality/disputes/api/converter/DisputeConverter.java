@@ -4,7 +4,6 @@ import dev.vality.adapter.flow.lib.model.PollingInfo;
 import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
-import dev.vality.disputes.polling.PollingInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,11 +15,9 @@ import java.time.ZoneOffset;
 @RequiredArgsConstructor
 public class DisputeConverter {
 
-    private final PollingInfoService pollingInfoService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
-    public Dispute convert(PaymentParams paymentParams, Long amount, String reason) {
-        var pollingInfo = pollingInfoService.initPollingInfo((Dispute) null, paymentParams.getOptions());
+    public Dispute convert(PaymentParams paymentParams, PollingInfo pollingInfo, Long amount, String reason) {
         var dispute = new Dispute();
         dispute.setCreatedAt(getLocalDateTime(pollingInfo.getStartDateTimePolling()));
         dispute.setNextCheckAfter(getNextCheckAfter(paymentParams, pollingInfo));

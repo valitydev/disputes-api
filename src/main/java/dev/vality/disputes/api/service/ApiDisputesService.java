@@ -6,6 +6,7 @@ import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.polling.PollingInfoService;
 import dev.vality.swag.disputes.model.CreateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,10 @@ import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUS
 public class ApiDisputesService {
 
     private final DisputeDao disputeDao;
-    private final ApiAttachmentsService apiAttachmentsService;
     private final DisputeConverter disputeConverter;
+    private final ApiAttachmentsService apiAttachmentsService;
+    private final ApiNotificationService apiNotificationService;
+    private final PollingInfoService pollingInfoService;
 
     public Optional<Dispute> checkExistBeforeCreate(String invoiceId, String paymentId) {
         log.debug("Trying to checkExistBeforeCreate() Dispute, invoiceId={}", invoiceId);
@@ -41,9 +44,11 @@ public class ApiDisputesService {
     @Transactional
     public UUID createDispute(CreateRequest req, PaymentParams paymentParams) {
         log.info("Start creating Dispute {}", paymentParams);
-        var dispute = disputeConverter.convert(paymentParams, req.getAmount(), req.getReason());
+        var pollingInfo = pollingInfoService.initPollingInfo(paymentParams.getOptions());
+        var dispute = disputeConverter.convert(paymentParams, pollingInfo, req.getAmount(), req.getReason());
         var disputeId = disputeDao.save(dispute);
         apiAttachmentsService.createAttachments(req, disputeId);
+        apiNotificationService.saveNotification(req, paymentParams, pollingInfo, disputeId);
         log.debug("Finish creating Dispute {}", dispute);
         return disputeId;
     }

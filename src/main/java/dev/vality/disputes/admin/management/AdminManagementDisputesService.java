@@ -146,7 +146,7 @@ public class AdminManagementDisputesService {
         var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
         if (dispute.getStatus() == DisputeStatus.pooling_expired) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            var pollingInfo = pollingInfoService.initPollingInfo((dev.vality.disputes.domain.tables.pojos.Dispute) null, providerData.getOptions());
+            var pollingInfo = pollingInfoService.initPollingInfo(providerData.getOptions());
             dispute.setNextCheckAfter(getNextCheckAfter(providerData, pollingInfo));
             dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));
             disputesService.setNextStepToPending(dispute, providerData);

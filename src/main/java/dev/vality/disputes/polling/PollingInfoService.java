@@ -21,8 +21,8 @@ public class PollingInfoService {
 
     private final DisputesTimerProperties timerProperties;
 
-    public PollingInfo initPollingInfo(Dispute dispute, Map<String, String> options) {
-        return initPollingInfo(convert(dispute), options);
+    public PollingInfo initPollingInfo(Map<String, String> options) {
+        return initPollingInfo(new PollingInfo(), options);
     }
 
     public PollingInfo initPollingInfo(PollingInfo pollingInfo, Map<String, String> options) {
