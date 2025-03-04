@@ -85,23 +85,6 @@ public class DisputesService {
         log.debug("Dispute status has been set to failed, '{}' mapping, {}", failure.getCode(), dispute.getId());
     }
 
-    public void finishCancelled(String invoiceId, String paymentId, String mapping, String errorMessage) {
-        var disputes = disputeDao.get(invoiceId, paymentId).stream()
-                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
-                .sorted(Comparator.comparing(Dispute::getCreatedAt))
-                .toList();
-        for (var dispute : disputes) {
-            try {
-                checkPendingStatuses(dispute);
-                finishCancelled(dispute, mapping, errorMessage);
-            } catch (NotFoundException ex) {
-                log.warn("NotFound when handle DisputesService.finishCancelled, type={}", ex.getType(), ex);
-            } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-                log.debug("DisputeStatusWasUpdatedByAnotherThread when handle DisputesService.finishCancelled", ex);
-            }
-        }
-    }
-
     public void finishCancelled(Dispute dispute, String mapping, String errorMessage) {
         log.warn("Trying to set cancelled Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage, mapping, dispute.getId());
         disputeDao.finishCancelled(dispute.getId(), errorMessage, mapping);

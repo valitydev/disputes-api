@@ -23,6 +23,7 @@ public class ForgottenDisputesNotificationsTask {
     @Scheduled(cron = "${dispute.cronForgottenDisputesNotifications:-}")
     public void processForgottenDisputes() {
         var forgottenDisputes = disputesService.getForgottenDisputes();
+
         if (!forgottenDisputes.isEmpty()) {
             callbackNotifier.sendForgottenDisputes(forgottenDisputes);
             mdcTopicProducer.sendForgottenDisputes(forgottenDisputes);
