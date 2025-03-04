@@ -71,8 +71,8 @@ public class ProviderPaymentsAdminManagementHandler implements ProviderPaymentsA
             providerPaymentsService.finishCancelled(
                     providerCallback,
                     cancelParamsRequest.getCancelMapping().orElse(null),
-                    cancelParamsRequest.getCancelReason().orElse(null),
-                    true);
+                    cancelParamsRequest.getCancelReason().orElse(null)
+            );
         }
     }
 

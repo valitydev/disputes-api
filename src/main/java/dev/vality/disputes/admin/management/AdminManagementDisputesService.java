@@ -74,19 +74,20 @@ public class AdminManagementDisputesService {
         var changedAmount = approveParam.getChangedAmount()
                 .filter(s -> dispute.getStatus() == DisputeStatus.pending
                         || dispute.getStatus() == DisputeStatus.manual_pending
-                        || dispute.getStatus() == DisputeStatus.pooling_expired);
+                        || dispute.getStatus() == DisputeStatus.pooling_expired)
+                .orElse(null);
         if ((dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired)
                 && !approveParam.isSkipCallHgForCreateAdjustment()) {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
-            handleSucceededResultWithCreateAdjustment(dispute, changedAmount.orElse(null), providerData);
+            handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData);
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
-            disputesService.finishSucceeded(dispute, changedAmount.orElse(null));
+            disputesService.finishSucceeded(dispute, changedAmount);
         } else {
             log.debug("Request was skipped by inappropriate status {}", dispute);
         }
