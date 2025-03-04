@@ -18,6 +18,6 @@ public class CreateRequestConverter {
                 disputeParams.getAttachments().stream()
                         .map(attachment -> new CreateRequestAttachmentsInner(attachment.getData(), attachment.getMimeType()))
                         .collect(Collectors.toList()))
-                .notificationUrl(disputeParams.getNotificationUrl().isPresent() ? disputeParams.getNotificationUrl().get() : null);
+                .notificationUrl(disputeParams.getNotificationUrl().orElse(null));
     }
 }

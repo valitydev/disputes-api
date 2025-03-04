@@ -33,7 +33,8 @@ public class DebugAdminManagementControllerTest {
                 {
                   "approveParams": [
                     {
-                      "disputeId": "38",
+                      "invoiceId": "asd",
+                      "paymentId": "asd",
                       "skipCallHgForCreateAdjustment": true
                     }
                   ]
@@ -43,7 +44,8 @@ public class DebugAdminManagementControllerTest {
                 {
                   "cancelParams": [
                     {
-                      "disputeId": "39",
+                      "invoiceId": "asd",
+                      "paymentId": "asd",
                       "cancelReason": "test endpoint"
                     }
                   ]
@@ -53,7 +55,8 @@ public class DebugAdminManagementControllerTest {
                 {
                   "cancelParams": [
                     {
-                      "disputeId": "39",
+                      "invoiceId": "asd",
+                      "paymentId": "asd",
                       "cancelReason": "test endpoint"
                     }
                   ]
@@ -83,7 +86,8 @@ public class DebugAdminManagementControllerTest {
                   {
                     "disputeParams": [
                       {
-                        "disputeId": "38"
+                      "invoiceId": "asd",
+                      "paymentId": "asd"
                       }
                     ],
                     "withAttachments": false
