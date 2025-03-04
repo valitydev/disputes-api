@@ -2,6 +2,7 @@ package dev.vality.disputes.schedule.core;
 
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
@@ -21,7 +22,7 @@ import dev.vality.disputes.schedule.service.AttachmentsService;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.disputes.util.PaymentStatusValidator;
 import dev.vality.provider.payments.PaymentStatusResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
+import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 
 @Slf4j
 @Service
@@ -68,14 +70,14 @@ public class CreatedDisputesService {
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            var paymentStatusResult = checkProviderPaymentStatus(dispute, providerData);
-            if (paymentStatusResult.isSuccess()) {
-                handleSucceededResultWithCreateAdjustment(dispute, paymentStatusResult, providerData);
+            var providerStatus = checkProviderPaymentStatus(dispute, providerData);
+            if (providerStatus.isSuccess()) {
+                handleSucceededResultWithCreateAdjustment(dispute, providerStatus, providerData);
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
                 switch (result.getSetField()) {
-                    case SUCCESS_RESULT -> disputeCreateResultHandler.handleSucceededResult(
-                            dispute, result, providerData);
+                    case SUCCESS_RESULT ->
+                            disputeCreateResultHandler.handleCheckStatusResult(dispute, result, providerData);
                     case FAIL_RESULT -> disputeCreateResultHandler.handleFailedResult(dispute, result);
                     case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
@@ -102,6 +104,9 @@ public class CreatedDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
+        } catch (CapturedPaymentException ex) {
+            log.info("CapturedPaymentException when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
+            disputeCreateResultHandler.handleSucceededResult(dispute, getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
             disputeCreateResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
@@ -131,8 +136,9 @@ public class CreatedDisputesService {
         return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
     }
 
-    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult paymentStatusResult, ProviderData providerData) {
-        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(paymentStatusResult.getChangedAmount().orElse(null)), providerData, true);
+    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult providerStatus, ProviderData providerData) {
+        disputeStatusResultHandler.handleSucceededResult(
+                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData, true);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {

@@ -6,6 +6,7 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
@@ -19,7 +20,8 @@ import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.disputes.util.PaymentAmountUtil;
+import dev.vality.disputes.util.PaymentStatusValidator;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.TransactionContext;
@@ -120,34 +122,39 @@ public class ProviderPaymentsService {
                 return;
             }
             createCapturedAdjustment(providerCallback, invoicePayment);
-            finishSucceeded(providerCallback, true);
+            finishSucceeded(providerCallback);
         } catch (NotFoundException ex) {
             log.error("NotFound when handle ProviderPaymentsService.callHgForCreateAdjustment, type={}", ex.getType(), ex);
             switch (ex.getType()) {
-                case INVOICE -> finishFailed(providerCallback, ErrorMessage.INVOICE_NOT_FOUND, true);
-                case PAYMENT -> finishFailed(providerCallback, ErrorMessage.PAYMENT_NOT_FOUND, true);
+                case INVOICE -> finishFailed(providerCallback, ErrorMessage.INVOICE_NOT_FOUND);
+                case PAYMENT -> finishFailed(providerCallback, ErrorMessage.PAYMENT_NOT_FOUND);
                 case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallbackDao);
                 default -> throw ex;
             }
+        } catch (CapturedPaymentException ex) {
+            log.warn("CapturedPaymentException when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
+            var changedAmount = PaymentAmountUtil.getChangedAmount(ex.getInvoicePayment().getPayment());
+            if (changedAmount != null) {
+                providerCallback.setChangedAmount(changedAmount);
+            }
+            finishSucceeded(providerCallback);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
-            finishFailed(providerCallback, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex), true);
+            finishFailed(providerCallback, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
         } catch (ProviderCallbackStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("ProviderCallbackStatusWasUpdatedByAnotherThread when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
         }
     }
 
-    public void finishSucceeded(ProviderCallback providerCallback, boolean isDisputeSucceeded) {
+    public void finishSucceeded(ProviderCallback providerCallback) {
         log.info("Trying to set succeeded ProviderCallback status {}", providerCallback);
         providerCallback.setStatus(ProviderPaymentsStatus.succeeded);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to succeeded {}", providerCallback.getInvoiceId());
-        if (isDisputeSucceeded) {
-            disputeFinishSucceeded(providerCallback);
-        }
+        disputeFinishSucceeded(providerCallback);
     }
 
-    public void finishFailed(ProviderCallback providerCallback, String errorReason, boolean isDisputeFailed) {
+    public void finishFailed(ProviderCallback providerCallback, String errorReason) {
         log.warn("Trying to set failed ProviderCallback status with '{}' errorReason, {}", errorReason, providerCallback.getInvoiceId());
         if (errorReason != null) {
             providerCallback.setErrorReason(errorReason);
@@ -155,12 +162,10 @@ public class ProviderPaymentsService {
         providerCallback.setStatus(ProviderPaymentsStatus.failed);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to failed {}", providerCallback.getInvoiceId());
-        if (isDisputeFailed) {
-            disputeFinishFailed(providerCallback, errorReason);
-        }
+        disputeFinishFailed(providerCallback, errorReason);
     }
 
-    public void finishCancelled(ProviderCallback providerCallback, String mapping, String errorReason, boolean isDisputeCancelled) {
+    public void finishCancelled(ProviderCallback providerCallback, String mapping, String errorReason) {
         log.warn("Trying to set cancelled ProviderCallback status with '{}' errorReason, {}", errorReason, providerCallback.getInvoiceId());
         if (errorReason != null) {
             providerCallback.setErrorReason(errorReason);
@@ -168,9 +173,7 @@ public class ProviderPaymentsService {
         providerCallback.setStatus(ProviderPaymentsStatus.cancelled);
         providerCallbackDao.update(providerCallback);
         log.debug("ProviderCallback status has been set to cancelled {}", providerCallback.getInvoiceId());
-        if (isDisputeCancelled) {
-            disputeFinishCancelled(providerCallback, mapping, errorReason);
-        }
+        disputeFinishCancelled(providerCallback, mapping, errorReason);
     }
 
     private String getProviderTrxId(InvoicePayment payment) {

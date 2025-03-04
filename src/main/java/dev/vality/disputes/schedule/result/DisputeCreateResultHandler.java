@@ -10,7 +10,7 @@ import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
-import dev.vality.disputes.utils.ErrorFormatter;
+import dev.vality.disputes.util.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class DisputeCreateResultHandler {
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
-    public void handleSucceededResult(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
+    public void handleCheckStatusResult(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
         providerDisputeDao.save(result.getSuccessResult().getProviderDisputeId(), dispute);
         var isDefaultRouteUrl = defaultRemoteClient.routeUrlEquals(providerData);
         if (isDefaultRouteUrl) {
@@ -38,6 +38,10 @@ public class DisputeCreateResultHandler {
         } else {
             disputesService.setNextStepToPending(dispute, providerData);
         }
+    }
+
+    public void handleSucceededResult(Dispute dispute, Long changedAmount) {
+        disputesService.finishSucceeded(dispute, changedAmount);
     }
 
     public void handleFailedResult(Dispute dispute, DisputeCreatedResult result) {

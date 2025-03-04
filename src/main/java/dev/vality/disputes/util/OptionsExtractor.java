@@ -1,4 +1,4 @@
-package dev.vality.disputes.utils;
+package dev.vality.disputes.util;
 
 import dev.vality.damsel.domain.Provider;
 import dev.vality.damsel.domain.ProxyDefinition;
@@ -12,7 +12,7 @@ import java.util.Optional;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN;
 
 @UtilityClass
-public class OptionsExtractors {
+public class OptionsExtractor {
 
     public static Integer extractMaxTimePolling(Map<String, String> options, int maxTimePolling) {
         return Integer.parseInt(

@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
-import static dev.vality.disputes.utils.OptionsExtractors.extractMaxTimePolling;
+import static dev.vality.disputes.util.OptionsExtractor.extractMaxTimePolling;
 
 @Service
 @RequiredArgsConstructor

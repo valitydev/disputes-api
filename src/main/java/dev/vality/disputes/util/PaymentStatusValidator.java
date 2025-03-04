@@ -1,7 +1,8 @@
-package dev.vality.disputes.utils;
+package dev.vality.disputes.util;
 
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.constant.ErrorMessage;
+import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import lombok.experimental.UtilityClass;
 
@@ -11,8 +12,11 @@ public class PaymentStatusValidator {
 
     public static void checkStatus(InvoicePayment invoicePayment) {
         var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
-        if (!invoicePaymentStatus.isSetCancelled() && !invoicePaymentStatus.isSetFailed()) {
-            throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
+        switch (invoicePaymentStatus.getSetField()) {
+            case CAPTURED -> throw new CapturedPaymentException(invoicePayment);
+            case FAILED, CANCELLED -> {
+            }
+            default -> throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
         }
     }
 

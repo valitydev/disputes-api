@@ -2,7 +2,7 @@ package dev.vality.disputes.flow;
 
 import dev.vality.damsel.domain.Failure;
 import dev.vality.disputes.domain.enums.DisputeStatus;
-import dev.vality.disputes.utils.ErrorFormatter;
+import dev.vality.disputes.util.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;

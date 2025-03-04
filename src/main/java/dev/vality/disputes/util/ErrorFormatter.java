@@ -1,4 +1,4 @@
-package dev.vality.disputes.utils;
+package dev.vality.disputes.util;
 
 import dev.vality.damsel.domain.Failure;
 import dev.vality.geck.serializer.kit.tbase.TErrorUtil;

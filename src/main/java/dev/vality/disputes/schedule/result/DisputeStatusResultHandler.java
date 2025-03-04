@@ -13,7 +13,7 @@ import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
-import dev.vality.disputes.utils.ErrorFormatter;
+import dev.vality.disputes.util.ErrorFormatter;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +55,10 @@ public class DisputeStatusResultHandler {
 
     public void handleFailedResult(Dispute dispute, String errorMessage) {
         disputesService.finishFailed(dispute, errorMessage);
+    }
+
+    public void handleSucceededResult(Dispute dispute, Long changedAmount) {
+        disputesService.finishSucceeded(dispute, changedAmount);
     }
 
     public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify) {

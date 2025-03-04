@@ -8,7 +8,7 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
-import dev.vality.disputes.utils.OptionsExtractors;
+import dev.vality.disputes.util.OptionsExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class ProviderDataService {
         var terminal = dominantService.getTerminal(new TerminalRef(terminalId));
         var proxy = dominantService.getProxy(provider.getProxy().getRef());
         return ProviderData.builder()
-                .options(OptionsExtractors.mergeOptions(provider, proxy, terminal))
+                .options(OptionsExtractor.mergeOptions(provider, proxy, terminal))
                 .defaultProviderUrl(proxy.getUrl())
                 .build();
     }
@@ -37,7 +37,7 @@ public class ProviderDataService {
         var terminal = dominantService.getTerminal(terminalRef);
         var proxy = dominantService.getProxy(provider.getProxy().getRef());
         return ProviderData.builder()
-                .options(OptionsExtractors.mergeOptions(provider, proxy, terminal))
+                .options(OptionsExtractor.mergeOptions(provider, proxy, terminal))
                 .defaultProviderUrl(proxy.getUrl())
                 .build();
     }
@@ -52,7 +52,7 @@ public class ProviderDataService {
         var terminal = dominantAsyncService.getTerminal(payment.getRoute().getTerminal());
         var proxy = dominantAsyncService.getProxy(provider.get().getProxy().getRef());
         return ProviderData.builder()
-                .options(OptionsExtractors.mergeOptions(provider.get(), proxy.get(), terminal.get()))
+                .options(OptionsExtractor.mergeOptions(provider.get(), proxy.get(), terminal.get()))
                 .defaultProviderUrl(proxy.get().getUrl())
                 .build();
     }

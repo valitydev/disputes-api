@@ -7,7 +7,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.security.service.BouncerService;
 import dev.vality.disputes.security.service.TokenKeeperService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.utils.PaymentStatusValidator;
+import dev.vality.disputes.util.PaymentStatusValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
