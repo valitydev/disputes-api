@@ -118,7 +118,7 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testFailedWhenInvoicePaymentStatusIsCaptured() {
+    public void testSuccessWhenInvoicePaymentStatusIsCaptured() {
         var disputeId = createdFlowHandler.handleCreate();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());

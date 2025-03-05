@@ -60,7 +60,7 @@ public abstract class DisputeDaoTest {
     }
 
     @Test
-    public void testForgottenSNextCheckAfter() {
+    public void testForgottenNextCheckAfter() {
         var random = random(Dispute.class);
         random.setStatus(DisputeStatus.already_exist_created);
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);

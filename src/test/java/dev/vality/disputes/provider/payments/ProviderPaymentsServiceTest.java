@@ -48,7 +48,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testFailedWhenInvoicePaymentStatusIsCaptured() {
+    public void testSuccessWhenInvoicePaymentStatusIsCaptured() {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());

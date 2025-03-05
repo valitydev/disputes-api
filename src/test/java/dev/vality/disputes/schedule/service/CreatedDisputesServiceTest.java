@@ -220,7 +220,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testFailedWhenInvoicePaymentStatusIsCaptured() {
+    public void testSuccessWhenInvoicePaymentStatusIsCaptured() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
@@ -234,7 +234,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    void createAdjustmentWhenSuccessStatusProviderPayment() {
+    public void createAdjustmentWhenSuccessStatusProviderPayment() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
