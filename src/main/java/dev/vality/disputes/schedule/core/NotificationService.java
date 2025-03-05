@@ -64,7 +64,7 @@ public class NotificationService {
         }
     }
 
-    public void checkPending(Notification notification) {
+    private void checkPending(Notification notification) {
         var forUpdate = notificationDao.getSkipLocked(notification.getDisputeId());
         if (forUpdate.getStatus() != NotificationStatus.pending) {
             throw new NotificationStatusWasUpdatedByAnotherThreadException();

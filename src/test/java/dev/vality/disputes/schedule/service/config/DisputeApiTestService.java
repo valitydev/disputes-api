@@ -67,7 +67,7 @@ public class DisputeApiTestService {
                         .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
+                        .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId, wiremockAddressesHolder.getNotificationUrl())))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         return new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class);

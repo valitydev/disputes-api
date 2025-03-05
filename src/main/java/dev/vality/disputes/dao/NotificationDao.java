@@ -45,6 +45,14 @@ public class NotificationDao extends AbstractGenericDao {
         executeOne(query);
     }
 
+    public Notification get(UUID disputeId) {
+        var query = getDslContext().selectFrom(NOTIFICATION)
+                .where(NOTIFICATION.DISPUTE_ID.eq(disputeId));
+        return Optional.ofNullable(fetchOne(query, notificationRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
+    }
+
     public Notification getSkipLocked(UUID disputeId) {
         var query = getDslContext().selectFrom(NOTIFICATION)
                 .where(NOTIFICATION.DISPUTE_ID.eq(disputeId))
