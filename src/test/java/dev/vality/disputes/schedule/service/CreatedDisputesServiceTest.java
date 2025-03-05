@@ -7,8 +7,10 @@ import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.util.MockUtil;
+import dev.vality.disputes.util.TestUrlPaths;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -24,7 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"VariableDeclarationUsageDistance"})
+@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
     @LocalServerPort
@@ -228,5 +230,25 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    void createAdjustmentWhenSuccessStatusProviderPayment() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
+        when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
+        var terminal = createTerminal().get();
+        terminal.getOptions().putAll(getOptions());
+        when(dominantService.getTerminal(any())).thenReturn(terminal);
+        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
+        createdFlowHandler.mockSuccessStatusProviderPayment();
+        var dispute = disputeDao.get(disputeId);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
     }
 }

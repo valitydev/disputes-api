@@ -24,10 +24,8 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testNotificationDelivered() {
-        var disputeId = pendingFlowHandler.handlePending();
+        var disputeId = providerCallbackFlowHandler.handleSuccess();
         WiremockUtils.mockNotificationSuccess();
-        // todo providercallback flow set success
-        disputeDao.finishSucceeded(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         var notification = notificationDao.get(disputeId);
         notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
@@ -37,10 +35,8 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testNotificationDeliveredAfterMerchantInternalErrors() {
-        var disputeId = pendingFlowHandler.handlePending();
+        var disputeId = providerCallbackFlowHandler.handleSuccess();
         WiremockUtils.mockNotification500();
-        // todo providercallback flow set success
-        disputeDao.finishSucceeded(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         var notification = notificationDao.get(disputeId);
         notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);

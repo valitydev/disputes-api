@@ -32,6 +32,19 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
+    public void testDisputeStatusPendingResult() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        var dispute = disputeDao.get(disputeId);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
+    @SneakyThrows
     public void testProviderDisputeNotFound() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
@@ -88,20 +101,6 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
         assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
-        disputeDao.finishFailed(disputeId, null);
-    }
-
-
-    @Test
-    @SneakyThrows
-    public void testDisputeStatusPendingResult() {
-        var disputeId = createdFlowHandler.handleCreate();
-        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
-        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        var dispute = disputeDao.get(disputeId);
-        pendingDisputesService.callPendingDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
 

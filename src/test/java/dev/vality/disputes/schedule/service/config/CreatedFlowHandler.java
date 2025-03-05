@@ -25,8 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({"LineLength"})
 @RequiredArgsConstructor
+@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class CreatedFlowHandler {
 
     private final InvoicingSrv.Iface invoicingClient;
@@ -66,6 +66,13 @@ public class CreatedFlowHandler {
     public void mockFailStatusProviderPayment() {
         var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(false));
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
+    }
+
+    @SneakyThrows
+    public void mockSuccessStatusProviderPayment() {
+        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
     }
 }
