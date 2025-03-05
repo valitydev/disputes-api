@@ -21,7 +21,7 @@ public class ForgottenDisputeHandler {
             forgottenDisputesService.process(dispute);
             return dispute.getId();
         } catch (Throwable ex) {
-            log.error("Received exception while scheduler processed forgottenDisputesService.process", ex);
+            log.error("Received exception while scheduler processed ForgottenDisputesService.process", ex);
             throw ex;
         } finally {
             currentThread.setName(oldName);

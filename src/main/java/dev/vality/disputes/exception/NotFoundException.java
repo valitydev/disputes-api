@@ -31,6 +31,7 @@ public class NotFoundException extends RuntimeException {
         PROVIDERTRXID,
         DISPUTE,
         PROVIDERDISPUTE,
-        PROVIDERCALLBACK
+        PROVIDERCALLBACK,
+        NOTIFICATION
     }
 }

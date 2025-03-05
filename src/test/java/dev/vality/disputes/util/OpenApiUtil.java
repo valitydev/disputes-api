@@ -22,7 +22,8 @@ public class OpenApiUtil {
                     }
                   ],
                   "amount": 100,
-                  "reason": "string"
+                  "reason": "string",
+                  "notificationUrl": "https://valitydev.github.io/swag-disputes/#tag/notifications/operation/notify"
                 }
                 """, invoiceId, paymentId);
     }
