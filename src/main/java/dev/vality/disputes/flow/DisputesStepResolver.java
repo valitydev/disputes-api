@@ -15,13 +15,13 @@ public class DisputesStepResolver {
             Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping, String handleFailedResultErrorMessage,
             Boolean isSuccessDisputeCheckStatusResult, Boolean isPoolingExpired, Boolean isProviderDisputeNotFound,
             Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag,
-            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired, Boolean checkInvoicePaymentStatus) {
+            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired, Boolean isInvoicePaymentStatusCaptured) {
         return switch (status) {
             case created -> {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }
-                if (checkInvoicePaymentStatus) {
+                if (isInvoicePaymentStatusCaptured) {
                     yield DisputeStatus.succeeded;
                 }
                 if (isSuccessProviderPaymentStatus) {
@@ -49,7 +49,7 @@ public class DisputesStepResolver {
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }
-                if (checkInvoicePaymentStatus) {
+                if (isInvoicePaymentStatusCaptured) {
                     yield DisputeStatus.succeeded;
                 }
                 if (isAdminApproveCall && !isSkipHgCallApproveFlag) {
@@ -83,6 +83,9 @@ public class DisputesStepResolver {
                 yield DisputeStatus.create_adjustment;
             }
             case create_adjustment -> {
+                if (isInvoicePaymentStatusCaptured) {
+                    yield DisputeStatus.succeeded;
+                }
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }
@@ -95,6 +98,9 @@ public class DisputesStepResolver {
                 yield DisputeStatus.succeeded;
             }
             case manual_pending -> {
+                if (isInvoicePaymentStatusCaptured) {
+                    yield DisputeStatus.succeeded;
+                }
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }
@@ -107,6 +113,9 @@ public class DisputesStepResolver {
                 throw new DeadEndFlowException();
             }
             case already_exist_created -> {
+                if (isInvoicePaymentStatusCaptured) {
+                    yield DisputeStatus.succeeded;
+                }
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }
@@ -116,6 +125,9 @@ public class DisputesStepResolver {
                 throw new DeadEndFlowException();
             }
             case pooling_expired -> {
+                if (isInvoicePaymentStatusCaptured) {
+                    yield DisputeStatus.succeeded;
+                }
                 if (isAdminCancelCall) {
                     yield DisputeStatus.cancelled;
                 }

@@ -2,6 +2,7 @@ package dev.vality.disputes.api.converter;
 
 import dev.vality.disputes.dao.model.EnrichedNotification;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
+import dev.vality.disputes.exception.NotificationNotFinalStatusException;
 import dev.vality.swag.disputes.model.GeneralError;
 import dev.vality.swag.disputes.model.NotifyRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -32,8 +33,8 @@ public class NotifyRequestConverter {
         return switch (dispute.getStatus()) {
             case succeeded -> NotifyRequest.StatusEnum.SUCCEEDED;
             case cancelled, failed -> NotifyRequest.StatusEnum.FAILED;
-            default -> throw new IllegalArgumentException(
-                    String.format("Fail create NotifyRequest.StatusEnum, disputeId='%s'", dispute.getId()));
+            default -> throw new NotificationNotFinalStatusException(
+                    String.format("Fail create NotifyRequest.StatusEnum, disputeId='%s', status'%s'", dispute.getId(), dispute.getStatus()));
         };
     }
 }

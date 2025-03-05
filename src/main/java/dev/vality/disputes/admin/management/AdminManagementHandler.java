@@ -2,9 +2,9 @@ package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.admin.*;
 import dev.vality.disputes.exception.NotFoundException;
+import dev.vality.disputes.schedule.core.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import java.util.ArrayList;
 public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
 
     private final AdminManagementDisputesService adminManagementDisputesService;
+    private final NotificationService notificationService;
 
     @Override
     public void cancelPending(CancelParamsRequest cancelParamsRequest) {
@@ -86,7 +87,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
     }
 
     @Override
-    public void sendMerchantsNotification(MerchantsNotificationParamsRequest merchantsNotificationParamsRequest) throws TException {
-
+    public void sendMerchantsNotification(MerchantsNotificationParamsRequest params) {
+        notificationService.sendMerchantsNotification(params);
     }
 }
