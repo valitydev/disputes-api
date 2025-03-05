@@ -56,8 +56,8 @@ public class CreatedDisputesService {
     private final WoodyRuntimeExceptionCatcher woodyRuntimeExceptionCatcher;
 
     @Transactional
-    public List<Dispute> getCreatedDisputesForUpdateSkipLocked(int batchSize) {
-        return disputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
+    public List<Dispute> getCreatedSkipLocked(int batchSize) {
+        return disputesService.getCreatedSkipLocked(batchSize);
     }
 
     @Transactional

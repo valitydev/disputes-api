@@ -13,9 +13,9 @@ import java.util.Optional;
 @SuppressWarnings({"LineLength"})
 public interface DisputesApiDelegate extends CreateApiDelegate, StatusApiDelegate {
 
-    ResponseEntity<Create200Response> create(String requestId, CreateRequest req, boolean checkUserAccessData);
+    ResponseEntity<Create200Response> create(CreateRequest req, boolean checkUserAccessData);
 
-    ResponseEntity<Status200Response> status(String requestId, String disputeId, boolean checkUserAccessData);
+    ResponseEntity<Status200Response> status(String disputeId, boolean checkUserAccessData);
 
     @Override
     default Optional<NativeWebRequest> getRequest() {

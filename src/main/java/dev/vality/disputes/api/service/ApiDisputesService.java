@@ -30,12 +30,12 @@ public class ApiDisputesService {
 
     public Optional<Dispute> checkExistBeforeCreate(String invoiceId, String paymentId) {
         log.debug("Trying to checkExistBeforeCreate() Dispute, invoiceId={}", invoiceId);
-        var disputes = disputeDao.get(invoiceId, paymentId);
-        var first = disputes.stream()
-                .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()))
-                .findFirst();
-        log.debug("Done checkExistBeforeCreate(), invoiceId={}", invoiceId);
-        return first;
+        try {
+            return Optional.of(disputeDao.getByInvoiceId(invoiceId, paymentId))
+                    .filter(dispute -> DISPUTE_PENDING_STATUSES.contains(dispute.getStatus()));
+        } catch (NotFoundException ex) {
+            return Optional.empty();
+        }
     }
 
     @Transactional

@@ -57,19 +57,19 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
     }
 
     private DisputeManualPending getManualPending(Dispute dispute) {
-        return new DisputeManualPending(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId())
+        return new DisputeManualPending(dispute.getInvoiceId(), dispute.getPaymentId())
                 .setErrorMessage(dispute.getErrorMessage());
     }
 
     private DisputeAlreadyCreated getAlreadyCreated(Dispute dispute) {
-        return new DisputeAlreadyCreated(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId());
+        return new DisputeAlreadyCreated(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
     private DisputeReadyForCreateAdjustment getCreateAdjustment(Dispute dispute) {
-        return new DisputeReadyForCreateAdjustment(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId());
+        return new DisputeReadyForCreateAdjustment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
     private DisputePoolingExpired getPoolingExpired(Dispute dispute) {
-        return new DisputePoolingExpired(dispute.getId().toString(), dispute.getInvoiceId(), dispute.getPaymentId());
+        return new DisputePoolingExpired(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 }

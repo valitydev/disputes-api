@@ -51,55 +51,59 @@ public class OpenApiUtil {
                 """, paymentId);
     }
 
-    public static String getCancelRequest(UUID disputeId) {
+    public static String getCancelRequest(String invoiceId, String paymentId) {
         return String.format("""
                 {
                   "cancelParams": [
                     {
-                      "disputeId": "%s",
+                      "invoiceId": "%s",
+                      "paymentId": "%s",
                       "cancelReason": "test endpoint"
                     }
                   ]
                 }
-                """, disputeId);
+                """, invoiceId, paymentId);
     }
 
-    public static String getApproveRequest(UUID disputeId, boolean skipHg) {
+    public static String getApproveRequest(String invoiceId, String paymentId, boolean skipHg) {
         return String.format("""
                 {
                   "approveParams": [
                     {
-                      "disputeId": "%s",
+                      "invoiceId": "%s",
+                      "paymentId": "%s",
                       "skipCallHgForCreateAdjustment": %s
                     }
                   ]
                 }
-                """, disputeId, skipHg);
+                """, invoiceId, paymentId, skipHg);
     }
 
-    public static String getSetPendingForPoolingExpiredParamsRequest(UUID disputeId) {
+    public static String getSetPendingForPoolingExpiredParamsRequest(String invoiceId, String paymentId) {
         return String.format("""
                   {
                     "setPendingForPoolingExpiredParams": [
                       {
-                        "disputeId": "%s"
+                      "invoiceId": "%s",
+                      "paymentId": "%s"
                       }
                     ]
                   }
-                """, disputeId);
+                """, invoiceId, paymentId);
     }
 
-    public static String getGetDisputeRequest(UUID disputeId, boolean withAttachments) {
+    public static String getGetDisputeRequest(String invoiceId, String paymentId, boolean withAttachments) {
         return String.format("""
                   {
                     "disputeParams": [
                       {
-                        "disputeId": "%s"
+                      "invoiceId": "%s",
+                      "paymentId": "%s"
                       }
                     ],
                     "withAttachments": %s
                   }
-                """, disputeId, withAttachments);
+                """, invoiceId, paymentId, withAttachments);
     }
 
     public static String getBindCreatedRequest(UUID disputeId, String providerDisputeId) {

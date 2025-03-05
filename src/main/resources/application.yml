@@ -104,12 +104,13 @@ dispute:
   batchSize: 1
   fixedDelayCreated: 5000
   fixedDelayPending: 5000
+  fixedDelayForgotten: 5000
   initialDelayCreated: 5000
   initialDelayPending: 5000
-  cronForgottenDisputesNotifications: 0 0 0 * * *
+  initialDelayForgotten: 5000
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
-  isScheduleForgottenDisputesNotificationsEnabled: true
+  isScheduleForgottenEnabled: true
 
 provider:
   payments:

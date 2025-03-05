@@ -32,7 +32,7 @@ public abstract class DisputeDaoTest {
     }
 
     @Test
-    public void testMultiInsertAndFind() {
+    public void testMultiInsertAndFindLast() {
         var random = random(Dispute.class);
         random.setId(null);
         random.setInvoiceId("setInvoiceId");
@@ -41,8 +41,7 @@ public abstract class DisputeDaoTest {
         disputeDao.save(random);
         disputeDao.save(random);
         disputeDao.save(random);
-        assertEquals(3,
-                disputeDao.get(random.getInvoiceId(), random.getPaymentId()).size());
+        assertNotNull(disputeDao.getByInvoiceId(random.getInvoiceId(), random.getPaymentId()));
     }
 
     @Test
@@ -54,9 +53,9 @@ public abstract class DisputeDaoTest {
         random.setPollingBefore(createdAt.plusSeconds(10));
         random.setNextCheckAfter(createdAt.plusSeconds(5));
         disputeDao.save(random);
-        assertTrue(disputeDao.getDisputesForUpdateSkipLocked(10, random.getStatus()).isEmpty());
+        assertTrue(disputeDao.getSkipLocked(10, random.getStatus()).isEmpty());
         disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0));
-        assertFalse(disputeDao.getDisputesForUpdateSkipLocked(10, DisputeStatus.pending).isEmpty());
+        assertFalse(disputeDao.getSkipLocked(10, DisputeStatus.pending).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }
 }

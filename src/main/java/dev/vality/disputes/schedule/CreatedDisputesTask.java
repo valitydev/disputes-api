@@ -30,7 +30,7 @@ public class CreatedDisputesTask {
     @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", initialDelayString = "${dispute.initialDelayCreated}")
     public void processCreated() {
         try {
-            var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
+            var disputes = createdDisputesService.getCreatedSkipLocked(batchSize);
             var callables = disputes.stream()
                     .map(this::handleCreated)
                     .collect(Collectors.toList());

@@ -17,6 +17,7 @@ public class CreateRequestConverter {
                 disputeParams.getPaymentId(),
                 disputeParams.getAttachments().stream()
                         .map(attachment -> new CreateRequestAttachmentsInner(attachment.getData(), attachment.getMimeType()))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .notificationUrl(disputeParams.getNotificationUrl().orElse(null));
     }
 }

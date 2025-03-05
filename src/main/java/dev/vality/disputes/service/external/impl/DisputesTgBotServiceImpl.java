@@ -33,37 +33,37 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
     @Override
     @SneakyThrows
     public void sendDisputeAlreadyCreated(DisputeAlreadyCreated disputeAlreadyCreated) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() {}", disputeAlreadyCreated.getId());
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() {}", disputeAlreadyCreated.getInvoiceId());
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputeAlreadyCreated(disputeAlreadyCreated))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() has been called {}", disputeAlreadyCreated.getId());
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeAlreadyCreated() has been called {}", disputeAlreadyCreated.getInvoiceId());
     }
 
     @Override
     @SneakyThrows
     public void sendDisputePoolingExpired(DisputePoolingExpired disputePoolingExpired) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() {}", disputePoolingExpired.getId());
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() {}", disputePoolingExpired.getInvoiceId());
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputePoolingExpired(disputePoolingExpired))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() has been called {}", disputePoolingExpired.getId());
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputePoolingExpired() has been called {}", disputePoolingExpired.getInvoiceId());
     }
 
     @Override
     @SneakyThrows
     public void sendDisputeReadyForCreateAdjustment(DisputeReadyForCreateAdjustment disputeReadyForCreateAdjustment) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", disputeReadyForCreateAdjustment.getId());
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", disputeReadyForCreateAdjustment.getInvoiceId());
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputeReadyForCreateAdjustment(disputeReadyForCreateAdjustment))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", disputeReadyForCreateAdjustment.getId());
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", disputeReadyForCreateAdjustment.getInvoiceId());
     }
 
     @Override
     @SneakyThrows
     public void sendDisputeManualPending(DisputeManualPending disputeManualPending) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeManualPending() {}", disputeManualPending.getId());
+        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeManualPending() {}", disputeManualPending.getInvoiceId());
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputeManualPending(disputeManualPending))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeManualPending() has been called {}", disputeManualPending.getId());
+        log.debug("adminCallbackDisputesTgBotClient.sendDisputeManualPending() has been called {}", disputeManualPending.getInvoiceId());
     }
 
     @Override
