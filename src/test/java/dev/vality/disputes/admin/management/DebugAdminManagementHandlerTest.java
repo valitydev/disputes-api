@@ -1,21 +1,15 @@
 package dev.vality.disputes.admin.management;
 
+import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorMessage;
-import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
-import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
-import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
-import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
@@ -28,28 +22,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@Import({PendingDisputesTestService.class})
 @SuppressWarnings({"LineLength"})
-public class DebugAdminManagementHandlerTest {
+public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
-    @Autowired
-    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
-    @Autowired
-    private DisputeDao disputeDao;
-    @Autowired
-    private DominantService dominantService;
-    @Autowired
-    private DisputeApiTestService disputeApiTestService;
-    @Autowired
-    private CreatedDisputesTestService createdDisputesTestService;
-    @Autowired
-    private PendingDisputesTestService pendingDisputesTestService;
     @Autowired
     private DebugAdminManagementController debugAdminManagementController;
 
     @Test
     public void testCancelCreateAdjustment() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
@@ -57,7 +38,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testCancelPending() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
@@ -65,7 +46,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testCancelFailed() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         disputeDao.finishFailed(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
@@ -74,7 +55,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testApproveCreateAdjustmentWithCallHg() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
@@ -83,7 +64,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testApproveCreateAdjustmentWithSkipHg() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
@@ -93,7 +74,7 @@ public class DebugAdminManagementHandlerTest {
     @Test
     @SneakyThrows
     public void testApprovePendingWithCallHg() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
@@ -105,7 +86,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testApprovePendingWithSkipHg() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
@@ -114,7 +95,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testApproveFailed() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         disputeDao.finishFailed(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
@@ -123,7 +104,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testBindCreatedCreateAdjustment() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         var providerDisputeId = generateId();
         debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
@@ -132,7 +113,7 @@ public class DebugAdminManagementHandlerTest {
 
     @Test
     public void testBindCreatedPending() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerDisputeId = generateId();
         debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
@@ -144,7 +125,7 @@ public class DebugAdminManagementHandlerTest {
     public void testBindCreatedAlreadyExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         disputeDao.setNextStepToAlreadyExist(disputeId);
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -158,7 +139,7 @@ public class DebugAdminManagementHandlerTest {
     @SneakyThrows
     public void testGetDispute() {
         WiremockUtils.mockS3AttachmentDownload();
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(1, disputes.getDisputes().size());
@@ -170,7 +151,7 @@ public class DebugAdminManagementHandlerTest {
     public void testSetPendingForPoolingExpiredDispute() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         disputeDao.setNextStepToPoolingExpired(disputeId, ErrorMessage.POOLING_EXPIRED);
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());

@@ -2,9 +2,9 @@ package dev.vality.disputes.schedule.service.config;
 
 import dev.vality.disputes.config.WiremockServerPort;
 import dev.vality.disputes.util.TestUrlPaths;
-import org.springframework.boot.test.context.TestComponent;
+import org.springframework.stereotype.Component;
 
-@TestComponent
+@Component
 public class WiremockAddressesHolder {
 
     @WiremockServerPort

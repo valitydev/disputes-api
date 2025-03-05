@@ -1,20 +1,12 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
-import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
-import dev.vality.disputes.schedule.core.PendingDisputesService;
-import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
-import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
-import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
@@ -27,32 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@Import({PendingDisputesTestService.class})
-public class PendingDisputesServiceTest {
-
-    @Autowired
-    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
-    @Autowired
-    private DominantService dominantService;
-    @Autowired
-    private DisputeDao disputeDao;
-    @Autowired
-    private PendingDisputesService pendingDisputesService;
-    @Autowired
-    private DisputeApiTestService disputeApiTestService;
-    @Autowired
-    private CreatedDisputesTestService createdDisputesTestService;
-    @Autowired
-    private PendingDisputesTestService pendingDisputesTestService;
+public class PendingDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
     public void testProviderDisputeNotFound() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         disputeDao.setNextStepToPending(disputeId, null);
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         var terminal = createTerminal().get();
@@ -69,14 +43,14 @@ public class PendingDisputesServiceTest {
     @Test
     @SneakyThrows
     public void testDisputeStatusSuccessResult() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         disputeDao.finishFailed(disputeId, null);
     }
 
     @Test
     @SneakyThrows
     public void testDisputeStatusFailResult() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusFailResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
@@ -88,7 +62,7 @@ public class PendingDisputesServiceTest {
     @Test
     @SneakyThrows
     public void testManualPendingWhenStatusFailResultWithDisputesUnknownMapping() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         var disputeStatusFailResult = createDisputeStatusFailResult();
         disputeStatusFailResult.getStatusFail().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
@@ -104,7 +78,7 @@ public class PendingDisputesServiceTest {
     @Test
     @SneakyThrows
     public void testManualPendingWhenUnexpectedResultMapping() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
@@ -119,7 +93,7 @@ public class PendingDisputesServiceTest {
     @Test
     @SneakyThrows
     public void testDisputeStatusPendingResult() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);

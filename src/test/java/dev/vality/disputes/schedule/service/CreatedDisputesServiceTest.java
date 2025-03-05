@@ -1,27 +1,17 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorMessage;
-import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
-import dev.vality.disputes.schedule.core.CreatedDisputesService;
-import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
-import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
-import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.MockUtil;
-import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
@@ -34,30 +24,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@Import({CreatedDisputesTestService.class})
-@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
-public class CreatedDisputesServiceTest {
+@SuppressWarnings({"VariableDeclarationUsageDistance"})
+public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
-    @Autowired
-    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
-    @Autowired
-    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
-    @Autowired
-    private DominantService dominantService;
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
-    @Autowired
-    private FileStorageSrv.Iface fileStorageClient;
-    @Autowired
-    private DisputeDao disputeDao;
-    @Autowired
-    private CreatedDisputesService createdDisputesService;
-    @Autowired
-    private DisputeApiTestService disputeApiTestService;
-    @Autowired
-    private WiremockAddressesHolder wiremockAddressesHolder;
-    @Autowired
-    private CreatedDisputesTestService createdDisputesTestService;
     @LocalServerPort
     private int serverPort;
 
@@ -66,7 +35,7 @@ public class CreatedDisputesServiceTest {
     public void testPaymentNotFound() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -78,7 +47,7 @@ public class CreatedDisputesServiceTest {
     public void testNoAttachments() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -95,7 +64,7 @@ public class CreatedDisputesServiceTest {
     public void testManualPendingWhenIsNotProviderDisputesApiExist() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
@@ -110,7 +79,7 @@ public class CreatedDisputesServiceTest {
 
     @Test
     public void testDisputeCreatedSuccessResult() {
-        var disputeId = createdDisputesTestService.callCreateDisputeRemotely();
+        var disputeId = createdFlowHandler.handleCreate();
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -119,7 +88,7 @@ public class CreatedDisputesServiceTest {
     public void testDisputeCreatedFailResult() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -141,7 +110,7 @@ public class CreatedDisputesServiceTest {
     public void testManualPendingWhenDisputeCreatedFailResultWithDisputesUnknownMapping() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -167,7 +136,7 @@ public class CreatedDisputesServiceTest {
     public void testManualPendingWhenUnexpectedResultMapping() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -192,7 +161,7 @@ public class CreatedDisputesServiceTest {
     public void testManualPendingWhenUnexpectedResult() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -215,7 +184,7 @@ public class CreatedDisputesServiceTest {
     public void testDisputeCreatedAlreadyExistResult() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();

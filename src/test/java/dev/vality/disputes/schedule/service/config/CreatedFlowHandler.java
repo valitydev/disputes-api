@@ -13,10 +13,8 @@ import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestComponent;
-import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
@@ -27,36 +25,26 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@TestComponent
-@Import({DisputeApiTestService.class, RemoteClientTestConfig.class, ProviderPaymentsRemoteClientTestConfig.class, CallbackNotifierTestConfig.class})
 @SuppressWarnings({"LineLength"})
-public class CreatedDisputesTestService {
+@RequiredArgsConstructor
+public class CreatedFlowHandler {
 
-    @Autowired
-    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
-    @Autowired
-    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
-    @Autowired
-    private DominantService dominantService;
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
-    @Autowired
-    private FileStorageSrv.Iface fileStorageClient;
-    @Autowired
-    private DisputeDao disputeDao;
-    @Autowired
-    private CreatedDisputesService createdDisputesService;
-    @Autowired
-    private DisputeApiTestService disputeApiTestService;
-    @Autowired
-    private WiremockAddressesHolder wiremockAddressesHolder;
+    private final InvoicingSrv.Iface invoicingClient;
+    private final FileStorageSrv.Iface fileStorageClient;
+    private final DisputeDao disputeDao;
+    private final DominantService dominantService;
+    private final CreatedDisputesService createdDisputesService;
+    private final ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
+    private final ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
+    private final WiremockAddressesHolder wiremockAddressesHolder;
+    private final MerchantApiMvcPerformer merchantApiMvcPerformer;
 
     @SneakyThrows
-    public UUID callCreateDisputeRemotely() {
+    public UUID handleCreate() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var providerDisputeId = generateId();
-        var disputeId = UUID.fromString(disputeApiTestService.createDisputeViaApi(invoiceId, paymentId).getDisputeId());
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();

@@ -6,7 +6,6 @@ import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.merchant.MerchantDisputesServiceSrv;
-import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.util.DamselUtil;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
@@ -15,24 +14,20 @@ import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.net.URI;
 
 import static dev.vality.disputes.config.NetworkConfig.*;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"LineLength"})
-@Import(WiremockAddressesHolder.class)
 @TestPropertySource(properties = {
-        "server.port=${local.server.port}",
-})
+        "server.port=${local.server.port}"})
 public class ServletTest {
 
-    @MockBean
+    @MockitoBean
     private InvoicingSrv.Iface invoicingClient;
     @LocalServerPort
     private int serverPort;

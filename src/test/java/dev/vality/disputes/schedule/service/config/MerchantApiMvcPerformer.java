@@ -12,10 +12,8 @@ import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestComponent;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,32 +25,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@TestComponent
-@Import({DisputeApiTestConfig.class, WiremockAddressesHolder.class})
 @SuppressWarnings({"LineLength"})
-public class DisputeApiTestService {
+@RequiredArgsConstructor
+public class MerchantApiMvcPerformer {
 
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
-    @Autowired
-    private TokenAuthenticatorSrv.Iface tokenKeeperClient;
-    @Autowired
-    private ArbiterSrv.Iface bouncerClient;
-    @Autowired
-    private DominantAsyncService dominantAsyncService;
-    @Autowired
-    private PartyManagementService partyManagementService;
-    @Autowired
-    private FileStorageSrv.Iface fileStorageClient;
-    @Autowired
-    private JwtTokenBuilder tokenBuilder;
-    @Autowired
-    private MockMvc mvc;
-    @Autowired
-    private WiremockAddressesHolder wiremockAddressesHolder;
+    private final InvoicingSrv.Iface invoicingClient;
+    private final TokenAuthenticatorSrv.Iface tokenKeeperClient;
+    private final ArbiterSrv.Iface bouncerClient;
+    private final FileStorageSrv.Iface fileStorageClient;
+    private final DominantAsyncService dominantAsyncService;
+    private final PartyManagementService partyManagementService;
+    private final JwtTokenBuilder tokenBuilder;
+    private final WiremockAddressesHolder wiremockAddressesHolder;
+    private final MockMvc mvc;
 
     @SneakyThrows
-    public Create200Response createDisputeViaApi(String invoiceId, String paymentId) {
+    public Create200Response createDispute(String invoiceId, String paymentId) {
         when(invoicingClient.get(any(), any())).thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
         when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());

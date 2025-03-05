@@ -1,54 +1,30 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
-import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.NotificationDao;
 import dev.vality.disputes.dao.model.EnrichedNotification;
 import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.schedule.core.NotificationService;
-import dev.vality.disputes.schedule.core.PendingDisputesService;
-import dev.vality.disputes.schedule.service.config.CreatedDisputesTestService;
-import dev.vality.disputes.schedule.service.config.DisputeApiTestService;
-import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
-import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.util.WiremockUtils;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 
 @WireMockSpringBootITest
-@Import({PendingDisputesTestService.class})
 @SuppressWarnings({"LineLength"})
-public class NotificationServiceTest {
+public class NotificationServiceTest extends AbstractMockitoConfig {
 
     @Autowired
-    private ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
-    @Autowired
-    private InvoicingSrv.Iface invoicingClient;
-    @Autowired
-    private DominantService dominantService;
-    @Autowired
-    private DisputeDao disputeDao;
-    @Autowired
     private NotificationDao notificationDao;
-    @Autowired
-    private PendingDisputesService pendingDisputesService;
-    @Autowired
-    private DisputeApiTestService disputeApiTestService;
-    @Autowired
-    private CreatedDisputesTestService createdDisputesTestService;
-    @Autowired
-    private PendingDisputesTestService pendingDisputesTestService;
     @Autowired
     private NotificationService notificationService;
 
     @Test
     @SneakyThrows
     public void testNotificationDelivered() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         WiremockUtils.mockNotificationSuccess();
         // todo providercallback flow set success
         disputeDao.finishSucceeded(disputeId, null);
@@ -61,7 +37,7 @@ public class NotificationServiceTest {
     @Test
     @SneakyThrows
     public void testNotificationDeliveredAfterMerchantInternalErrors() {
-        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var disputeId = pendingFlowHnadler.handlePending();
         WiremockUtils.mockNotification500();
         // todo providercallback flow set success
         disputeDao.finishSucceeded(disputeId, null);
