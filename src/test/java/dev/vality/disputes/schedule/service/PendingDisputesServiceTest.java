@@ -1,5 +1,8 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentRefunded;
+import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.domain.enums.DisputeStatus;
@@ -100,5 +103,29 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
+    @SneakyThrows
+    public void testFailedWhenInvoicePaymentStatusIsRefunded() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.refunded(new InvoicePaymentRefunded()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testFailedWhenInvoicePaymentStatusIsCaptured() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
     }
 }

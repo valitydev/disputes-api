@@ -1,15 +1,15 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentRefunded;
+import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
 import dev.vality.disputes.util.MockUtil;
-import dev.vality.provider.payments.PaymentStatusResult;
-import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.SneakyThrows;
-import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
@@ -58,7 +58,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -76,7 +76,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -99,7 +99,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -123,7 +123,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         disputeCreatedFailResult.getFailResult().getFailure().setCode(DISPUTES_UNKNOWN_MAPPING);
         when(providerMock.createDispute(any())).thenReturn(disputeCreatedFailResult);
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -148,7 +148,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -172,7 +172,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -195,16 +195,38 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        mockFailStatusProviderPayment();
+        createdFlowHandler.mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
 
-    private void mockFailStatusProviderPayment() throws TException {
-        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
-        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(false));
-        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
+    @Test
+    @SneakyThrows
+    public void testFailedWhenInvoicePaymentStatusIsRefunded() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
+        var invoicePayment = createInvoicePayment(paymentId);
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.refunded(new InvoicePaymentRefunded()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        var dispute = disputeDao.get(disputeId);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testFailedWhenInvoicePaymentStatusIsCaptured() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
+        var invoicePayment = createInvoicePayment(paymentId);
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        var dispute = disputeDao.get(disputeId);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
     }
 }

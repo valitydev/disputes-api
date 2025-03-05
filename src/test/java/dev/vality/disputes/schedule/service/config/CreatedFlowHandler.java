@@ -55,12 +55,17 @@ public class CreatedFlowHandler {
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
-        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(false));
-        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
+        mockFailStatusProviderPayment();
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         return disputeId;
+    }
+
+    @SneakyThrows
+    public void mockFailStatusProviderPayment() {
+        var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(false));
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
     }
 }
