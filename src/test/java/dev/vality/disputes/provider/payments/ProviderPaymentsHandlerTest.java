@@ -3,11 +3,14 @@ package dev.vality.disputes.provider.payments;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
+import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
+import dev.vality.disputes.schedule.service.config.PendingDisputesTestService;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
@@ -19,11 +22,12 @@ import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.SneakyThrows;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
 import java.net.URI;
@@ -45,35 +49,43 @@ import static org.mockito.Mockito.*;
         "server.port=${local.server.port}",
         "provider.payments.isProviderCallbackEnabled=true",
 })
+@Import({PendingDisputesTestService.class})
 @SuppressWarnings({"LineLength"})
 public class ProviderPaymentsHandlerTest {
 
-    @MockBean
-    private InvoicingSrv.Iface invoicingClient;
-    @MockBean
-    private TokenAuthenticatorSrv.Iface tokenKeeperClient;
-    @MockBean
-    private ArbiterSrv.Iface bouncerClient;
-    @MockBean
-    private DominantAsyncService dominantAsyncService;
-    @MockBean
-    private PartyManagementService partyManagementService;
-    @MockBean
-    private DominantService dominantService;
-    @MockBean
-    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @Autowired
-    private ProviderPaymentsService providerPaymentsService;
+    private InvoicingSrv.Iface invoicingClient;
+    @Autowired
+    private TokenAuthenticatorSrv.Iface tokenKeeperClient;
+    @Autowired
+    private ArbiterSrv.Iface bouncerClient;
+    @Autowired
+    private DominantAsyncService dominantAsyncService;
+    @Autowired
+    private PartyManagementService partyManagementService;
+    @Autowired
+    private DominantService dominantService;
+    @Autowired
+    private ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
     @SpyBean
     private ProviderCallbackDao providerCallbackDao;
     @Autowired
+    private DisputeDao disputeDao;
+    @Autowired
+    private ProviderPaymentsService providerPaymentsService;
+    @Autowired
     private ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
+    @Autowired
+    private PendingDisputesTestService pendingDisputesTestService;
     @LocalServerPort
     private int serverPort;
 
     @Test
     @SneakyThrows
     public void testFullFlowCreateAdjustmentWhenFailedPaymentSuccess() {
+        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        var dispute = disputeDao.get(disputeId);
+        createAdjustmentWhenFailedPaymentSuccessIFace(dispute.getInvoiceId(), dispute.getPaymentId());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -82,15 +94,10 @@ public class ProviderPaymentsHandlerTest {
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var minNumberOfInvocations = 4;
-        for (int i = 0; i < minNumberOfInvocations; i++) {
+        for (int i = 0; i < minNumberOfInvocations - 1; i++) {
             var invoiceId = String.valueOf(i);
-            var invoice = createInvoice(invoiceId, invoiceId);
-            when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
-            var request = new ProviderPaymentsCallbackParams()
-                    .setInvoiceId(invoiceId)
-                    .setPaymentId(invoiceId);
-            // 1. callback
-            createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
+            var paymentId = String.valueOf(i);
+            createAdjustmentWhenFailedPaymentSuccessIFace(invoiceId, paymentId);
         }
         await().atMost(30, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(providerCallbackDao, atLeast(minNumberOfInvocations)).save(any()));
@@ -113,6 +120,17 @@ public class ProviderPaymentsHandlerTest {
         }
         assertEquals(minNumberOfInvocations - providerCallbackIds.size(),
                 providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().size());
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    private void createAdjustmentWhenFailedPaymentSuccessIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
+        var invoice = createInvoice(invoiceId, paymentId);
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
+        var request = new ProviderPaymentsCallbackParams()
+                .setInvoiceId(invoiceId)
+                .setPaymentId(paymentId);
+        // 1. callback
+        createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
     }
 
     private ProviderPaymentsCallbackServiceSrv.Iface createProviderPaymentsCallbackIface() throws URISyntaxException {
