@@ -32,7 +32,6 @@ import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @WireMockSpringBootITest
@@ -63,7 +62,7 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
-        when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult(Long.MAX_VALUE));
+        when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult());
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var minNumberOfInvocations = 4;
         for (int i = 0; i < minNumberOfInvocations - 1; i++) {
@@ -97,7 +96,7 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
 
     private void createAdjustmentWhenFailedPaymentSuccessIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
         var invoice = createInvoice(invoiceId, paymentId);
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().get(0));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().getFirst());
         var request = new ProviderPaymentsCallbackParams()
                 .setInvoiceId(invoiceId)
                 .setPaymentId(paymentId);
@@ -112,7 +111,7 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
                 .build(ProviderPaymentsCallbackServiceSrv.Iface.class);
     }
 
-    private static PaymentStatusResult createPaymentStatusResult(long changedAmount) {
-        return new PaymentStatusResult(true).setChangedAmount(changedAmount);
+    private static PaymentStatusResult createPaymentStatusResult() {
+        return new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE);
     }
 }
