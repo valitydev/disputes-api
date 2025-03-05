@@ -63,9 +63,9 @@ public class NotificationDao extends AbstractGenericDao {
                         String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
     }
 
-    public List<EnrichedNotification> getSkipLocked(int limit, int maxAttempt) {
+    public List<EnrichedNotification> getNotificationsForDelivery(int limit, int maxAttempt) {
         var query = getDslContext().select().from(NOTIFICATION)
-                .leftJoin(DISPUTE).on(NOTIFICATION.DISPUTE_ID.eq(DISPUTE.ID)
+                .innerJoin(DISPUTE).on(NOTIFICATION.DISPUTE_ID.eq(DISPUTE.ID)
                         .and(DISPUTE.STATUS.eq(DisputeStatus.succeeded)
                                 .or(DISPUTE.STATUS.eq(DisputeStatus.failed))
                                 .or(DISPUTE.STATUS.eq(DisputeStatus.cancelled))))
@@ -73,9 +73,7 @@ public class NotificationDao extends AbstractGenericDao {
                         .and(NOTIFICATION.ATTEMPT.lessThan(maxAttempt))
                         .and(NOTIFICATION.STATUS.eq(NotificationStatus.pending)))
                 .orderBy(NOTIFICATION.NEXT_ATTEMPT_AFTER)
-                .limit(limit)
-                .forUpdate()
-                .skipLocked();
+                .limit(limit);
         return Optional.ofNullable(fetch(query, enrichedNotificationMapper))
                 .orElse(List.of());
     }

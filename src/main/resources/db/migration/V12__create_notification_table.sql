@@ -6,7 +6,7 @@ create type dspt.notification_status as ENUM (
 
 create table dspt.notification (
     dispute_id uuid not null,
-    notification_url bytea not null,
+    notification_url character varying not null,
     next_attempt_after timestamp without time zone not null,
     attempt int not null default 0,
     status dspt.notification_status not null default 'pending' ::dspt.notification_status,

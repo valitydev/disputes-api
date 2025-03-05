@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import;
 
 @WireMockSpringBootITest
 @Import({PendingDisputesTestService.class})
+@SuppressWarnings({"LineLength"})
 public class NotificationServiceTest {
 
     @Autowired

@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -38,8 +37,8 @@ public class NotificationService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
     @Transactional
-    public List<EnrichedNotification> getSkipLocked(int batchSize, int maxAttempt) {
-        return notificationDao.getSkipLocked(batchSize, maxAttempt);
+    public List<EnrichedNotification> getNotificationsForDelivery(int batchSize, int maxAttempt) {
+        return notificationDao.getNotificationsForDelivery(batchSize, maxAttempt);
     }
 
     @Transactional
@@ -49,29 +48,27 @@ public class NotificationService {
         var body = notifyRequestConverter.convert(enrichedNotification);
         var plainTextBody = customObjectMapper.writeValueAsString(body);
         try {
-            checkPending(notification);
-            var httpRequest = new HttpPost(getUri(notification));
+            var forUpdate = checkPending(notification);
+            var httpRequest = new HttpPost(forUpdate.getNotificationUrl());
             httpRequest.setEntity(HttpEntities.create(plainTextBody, ContentType.APPLICATION_JSON));
             httpClient.execute(httpRequest, new BasicHttpClientResponseHandler());
-            notificationDao.delivered(notification);
+            notificationDao.delivered(forUpdate);
         } catch (IOException e) {
+            var forUpdate = checkPending(notification);
             var dispute = enrichedNotification.getDispute();
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            var nextAttemptAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
-            notificationDao.updateNextAttempt(notification, nextAttemptAfter, maxAttempt);
+            var nextAttemptAfter = exponentialBackOffPollingService.prepareNextPollingInterval(forUpdate, dispute.getCreatedAt(), providerData.getOptions());
+            notificationDao.updateNextAttempt(forUpdate, nextAttemptAfter, maxAttempt);
         } catch (NotificationStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process", ex);
         }
     }
 
-    private void checkPending(Notification notification) {
+    private Notification checkPending(Notification notification) {
         var forUpdate = notificationDao.getSkipLocked(notification.getDisputeId());
         if (forUpdate.getStatus() != NotificationStatus.pending) {
             throw new NotificationStatusWasUpdatedByAnotherThreadException();
         }
-    }
-
-    private String getUri(Notification notification) {
-        return new String(notification.getNotificationUrl(), StandardCharsets.UTF_8);
+        return forUpdate;
     }
 }
