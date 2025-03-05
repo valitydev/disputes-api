@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.disputes.api.converter.NotifyRequestConverter;
 import dev.vality.disputes.dao.NotificationDao;
 import dev.vality.disputes.dao.model.EnrichedNotification;
+import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.domain.tables.pojos.Notification;
+import dev.vality.disputes.exception.NotificationStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ public class NotificationService {
         var body = notifyRequestConverter.convert(enrichedNotification);
         var plainTextBody = customObjectMapper.writeValueAsString(body);
         try {
+            checkPending(notification);
             var httpRequest = new HttpPost(getUri(notification));
             httpRequest.setEntity(HttpEntities.create(plainTextBody, ContentType.APPLICATION_JSON));
             httpClient.execute(httpRequest, new BasicHttpClientResponseHandler());
@@ -56,6 +59,15 @@ public class NotificationService {
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var nextAttemptAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
             notificationDao.updateNextAttempt(notification, nextAttemptAfter, maxAttempt);
+        } catch (NotificationStatusWasUpdatedByAnotherThreadException ex) {
+            log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process", ex);
+        }
+    }
+
+    public void checkPending(Notification notification) {
+        var forUpdate = notificationDao.getSkipLocked(notification.getDisputeId());
+        if (forUpdate.getStatus() != NotificationStatus.pending) {
+            throw new NotificationStatusWasUpdatedByAnotherThreadException();
         }
     }
 

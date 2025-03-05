@@ -102,6 +102,7 @@ auth:
 
 dispute:
   batchSize: 1
+  notificationMaxAttempt: 5
   fixedDelayCreated: 5000
   fixedDelayPending: 5000
   fixedDelayForgotten: 5000

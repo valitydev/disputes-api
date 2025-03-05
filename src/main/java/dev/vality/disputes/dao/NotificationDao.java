@@ -6,6 +6,7 @@ import dev.vality.disputes.dao.model.EnrichedNotification;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.domain.tables.pojos.Notification;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 import static dev.vality.disputes.domain.tables.Notification.NOTIFICATION;
 
 @Component
 @Slf4j
+@SuppressWarnings({"LineLength"})
 public class NotificationDao extends AbstractGenericDao {
 
     private final RowMapper<Notification> notificationRowMapper;
@@ -41,14 +44,16 @@ public class NotificationDao extends AbstractGenericDao {
                 .set(record);
         executeOne(query);
     }
-//
-//    public Notification get(UUID disputeId) {
-//        var query = getDslContext().selectFrom(NOTIFICATION)
-//                .where(NOTIFICATION.DISPUTE_ID.eq(disputeId));
-//        return Optional.ofNullable(fetchOne(query, notificationRowMapper))
-//                .orElseThrow(() -> new NotFoundException(
-//                        String.format("Notification not found, disputeId='%s'", disputeId), Type.NOTIFICATION));
-//    }
+
+    public Notification getSkipLocked(UUID disputeId) {
+        var query = getDslContext().selectFrom(NOTIFICATION)
+                .where(NOTIFICATION.DISPUTE_ID.eq(disputeId))
+                .forUpdate()
+                .skipLocked();
+        return Optional.ofNullable(fetchOne(query, notificationRowMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
+    }
 
     public List<EnrichedNotification> getSkipLocked(int limit, int maxAttempt) {
         var query = getDslContext().select().from(NOTIFICATION)
