@@ -30,7 +30,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testCancelCreateAdjustment() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.cancelled, disputeDao.get(disputeId).getStatus());
@@ -46,7 +46,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testCancelFailed() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         disputeDao.finishFailed(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.cancelPending(getCancelRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
@@ -55,7 +55,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testApproveCreateAdjustmentWithCallHg() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
@@ -64,7 +64,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testApproveCreateAdjustmentWithSkipHg() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
@@ -95,7 +95,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testApproveFailed() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         disputeDao.finishFailed(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
@@ -104,7 +104,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     public void testBindCreatedCreateAdjustment() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         var providerDisputeId = generateId();
         debugAdminManagementController.bindCreated(getBindCreatedRequest(disputeId, providerDisputeId));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
@@ -139,7 +139,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
     @SneakyThrows
     public void testGetDispute() {
         WiremockUtils.mockS3AttachmentDownload();
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(1, disputes.getDisputes().size());

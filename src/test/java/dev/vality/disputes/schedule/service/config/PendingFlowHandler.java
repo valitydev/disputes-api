@@ -2,7 +2,9 @@ package dev.vality.disputes.schedule.service.config;
 
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
+import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
+import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
 import dev.vality.disputes.schedule.service.ProviderDisputesThriftInterfaceBuilder;
@@ -21,9 +23,10 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"LineLength"})
 @RequiredArgsConstructor
-public class PendingFlowHnadler {
+public class PendingFlowHandler {
 
     private final DisputeDao disputeDao;
+    private final ProviderCallbackDao providerCallbackDao;
     private final CreatedFlowHandler createdFlowHandler;
     private final PendingDisputesService pendingDisputesService;
     private final ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
@@ -41,6 +44,7 @@ public class PendingFlowHnadler {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
         return disputeId;
     }
 }

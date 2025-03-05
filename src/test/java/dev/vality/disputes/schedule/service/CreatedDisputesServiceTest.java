@@ -31,6 +31,12 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     private int serverPort;
 
     @Test
+    public void testDisputeCreatedSuccessResult() {
+        var disputeId = createdFlowHandler.handleCreate();
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
     @SneakyThrows
     public void testPaymentNotFound() {
         var invoiceId = "20McecNnWoy";
@@ -74,12 +80,6 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        disputeDao.finishFailed(disputeId, null);
-    }
-
-    @Test
-    public void testDisputeCreatedSuccessResult() {
-        var disputeId = createdFlowHandler.handleCreate();
         disputeDao.finishFailed(disputeId, null);
     }
 

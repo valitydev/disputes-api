@@ -24,7 +24,7 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testNotificationDelivered() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         WiremockUtils.mockNotificationSuccess();
         // todo providercallback flow set success
         disputeDao.finishSucceeded(disputeId, null);
@@ -37,7 +37,7 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testNotificationDeliveredAfterMerchantInternalErrors() {
-        var disputeId = pendingFlowHnadler.handlePending();
+        var disputeId = pendingFlowHandler.handlePending();
         WiremockUtils.mockNotification500();
         // todo providercallback flow set success
         disputeDao.finishSucceeded(disputeId, null);

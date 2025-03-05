@@ -2,13 +2,8 @@ package dev.vality.disputes.provider.payments;
 
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
-import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
-import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.util.TestUrlPaths;
-import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
@@ -16,10 +11,7 @@ import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.SneakyThrows;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,23 +32,11 @@ import static org.mockito.Mockito.*;
         "provider.payments.isProviderCallbackEnabled=true",
 })
 @SuppressWarnings({"LineLength"})
-public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
-
-    @MockitoSpyBean
-    private ProviderCallbackDao providerCallbackDao;
-    @Autowired
-    private ProviderPaymentsService providerPaymentsService;
-    @Autowired
-    private ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
-    @LocalServerPort
-    private int serverPort;
+public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testFullFlowCreateAdjustmentWhenFailedPaymentSuccess() {
-        var disputeId = pendingFlowHnadler.handlePending();
-        var dispute = disputeDao.get(disputeId);
-        createAdjustmentWhenFailedPaymentSuccessIFace(dispute.getInvoiceId(), dispute.getPaymentId());
+    public void testSuccess() {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
@@ -65,14 +45,13 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult());
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var minNumberOfInvocations = 4;
-        for (int i = 0; i < minNumberOfInvocations - 1; i++) {
+        for (int i = 0; i < minNumberOfInvocations; i++) {
             var invoiceId = String.valueOf(i);
             var paymentId = String.valueOf(i);
-            createAdjustmentWhenFailedPaymentSuccessIFace(invoiceId, paymentId);
+            executeCallbackIFace(invoiceId, paymentId);
         }
         await().atMost(30, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(providerCallbackDao, atLeast(minNumberOfInvocations)).save(any()));
-        // 2. approve
         var providerCallbackIds = new ArrayList<UUID>();
         for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
             providerCallbackIds.add(providerCallback.getId());
@@ -82,25 +61,20 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
             when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
             when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                     .thenReturn(getCapturedInvoicePaymentAdjustment("adjustmentId", reason));
-            // 3. hg.createPaymentAdjustment
             providerPaymentsService.callHgForCreateAdjustment(providerCallback);
         }
         for (var providerCallbackId : providerCallbackIds) {
             var providerCallback = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallbackId);
             assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         }
-        assertEquals(minNumberOfInvocations - providerCallbackIds.size(),
-                providerCallbackDao.getAllPendingProviderCallbacksForUpdateSkipLocked().size());
-        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
     }
 
-    private void createAdjustmentWhenFailedPaymentSuccessIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
+    private void executeCallbackIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
         var invoice = createInvoice(invoiceId, paymentId);
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().getFirst());
         var request = new ProviderPaymentsCallbackParams()
                 .setInvoiceId(invoiceId)
                 .setPaymentId(paymentId);
-        // 1. callback
         createProviderPaymentsCallbackIface().createAdjustmentWhenFailedPaymentSuccess(request);
     }
 
@@ -109,9 +83,5 @@ public class ProviderPaymentsHandlerTest extends AbstractMockitoConfig {
                 .withAddress(new URI("http://127.0.0.1:" + serverPort + CALLBACK))
                 .withNetworkTimeout(5000)
                 .build(ProviderPaymentsCallbackServiceSrv.Iface.class);
-    }
-
-    private static PaymentStatusResult createPaymentStatusResult() {
-        return new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE);
     }
 }

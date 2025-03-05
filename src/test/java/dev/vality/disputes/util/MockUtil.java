@@ -12,6 +12,7 @@ import dev.vality.disputes.constant.TerminalOptionsField;
 import dev.vality.disputes.provider.*;
 import dev.vality.file.storage.NewFileResult;
 import dev.vality.geck.common.util.TypeUtil;
+import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.token.keeper.AuthData;
 import dev.vality.token.keeper.AuthDataStatus;
 import dev.vality.woody.api.flow.error.WErrorDefinition;
@@ -204,5 +205,9 @@ public class MockUtil {
         errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
         errorDefinition.setErrorSource(WErrorSource.INTERNAL);
         return new WRuntimeException(errorDefinition);
+    }
+
+    public static PaymentStatusResult createPaymentStatusResult() {
+        return new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE);
     }
 }

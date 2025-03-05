@@ -22,6 +22,12 @@ import static org.mockito.Mockito.when;
 public class PendingDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
+    public void testDisputeStatusSuccessResult() {
+        var disputeId = pendingFlowHandler.handlePending();
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
     @SneakyThrows
     public void testProviderDisputeNotFound() {
         var invoiceId = "20McecNnWoy";
@@ -37,13 +43,6 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.created, disputeDao.get(disputeId).getStatus());
-        disputeDao.finishFailed(disputeId, null);
-    }
-
-    @Test
-    @SneakyThrows
-    public void testDisputeStatusSuccessResult() {
-        var disputeId = pendingFlowHnadler.handlePending();
         disputeDao.finishFailed(disputeId, null);
     }
 

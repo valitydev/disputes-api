@@ -4,14 +4,14 @@ import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.dao.DisputeDao;
+import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
+import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInterfaceBuilder;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
 import dev.vality.disputes.schedule.service.ProviderDisputesThriftInterfaceBuilder;
-import dev.vality.disputes.schedule.service.config.CreatedFlowHandler;
-import dev.vality.disputes.schedule.service.config.MerchantApiMvcPerformer;
-import dev.vality.disputes.schedule.service.config.PendingFlowHnadler;
-import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
+import dev.vality.disputes.schedule.service.config.*;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
@@ -19,52 +19,66 @@ import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SuppressWarnings({"LineLength"})
 public abstract class AbstractMockitoConfig {
 
+    @MockitoSpyBean
+    public ProviderCallbackDao providerCallbackDao;
+
     @MockitoBean
-    protected InvoicingSrv.Iface invoicingClient;
+    public InvoicingSrv.Iface invoicingClient;
     @MockitoBean
-    protected TokenAuthenticatorSrv.Iface tokenKeeperClient;
+    public TokenAuthenticatorSrv.Iface tokenKeeperClient;
     @MockitoBean
-    protected ArbiterSrv.Iface bouncerClient;
+    public ArbiterSrv.Iface bouncerClient;
     @MockitoBean
-    protected FileStorageSrv.Iface fileStorageClient;
+    public FileStorageSrv.Iface fileStorageClient;
     @MockitoBean
-    protected DominantService dominantService;
+    public DominantService dominantService;
     @MockitoBean
-    protected DominantAsyncService dominantAsyncService;
+    public DominantAsyncService dominantAsyncService;
     @MockitoBean
-    protected PartyManagementService partyManagementService;
+    public PartyManagementService partyManagementService;
     @MockitoBean
-    protected ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
+    public ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
     @MockitoBean
-    protected ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
+    public ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
 
     @Autowired
-    protected DisputeDao disputeDao;
+    public DisputeDao disputeDao;
     @Autowired
-    protected JwtTokenBuilder tokenBuilder;
+    public JwtTokenBuilder tokenBuilder;
     @Autowired
-    protected MockMvc mvc;
+    public MockMvc mvc;
     @Autowired
-    protected WiremockAddressesHolder wiremockAddressesHolder;
+    public WiremockAddressesHolder wiremockAddressesHolder;
     @Autowired
-    protected CreatedDisputesService createdDisputesService;
+    public CreatedDisputesService createdDisputesService;
     @Autowired
-    protected PendingDisputesService pendingDisputesService;
+    public PendingDisputesService pendingDisputesService;
+    @Autowired
+    public ProviderPaymentsService providerPaymentsService;
+    @Autowired
+    public ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
 
-    protected MerchantApiMvcPerformer merchantApiMvcPerformer;
-    protected CreatedFlowHandler createdFlowHandler;
-    protected PendingFlowHnadler pendingFlowHnadler;
+    @LocalServerPort
+    public int serverPort;
+
+    public MerchantApiMvcPerformer merchantApiMvcPerformer;
+    public CreatedFlowHandler createdFlowHandler;
+    public PendingFlowHandler pendingFlowHandler;
+    public ProviderCallbackFlowHandler providerCallbackFlowHandler;
 
     @BeforeEach
     void setUp() {
         merchantApiMvcPerformer = new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient, dominantAsyncService, partyManagementService, tokenBuilder, wiremockAddressesHolder, mvc);
         createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService, createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder, wiremockAddressesHolder, merchantApiMvcPerformer);
-        pendingFlowHnadler = new PendingFlowHnadler(disputeDao, createdFlowHandler, pendingDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder);
+        pendingFlowHandler = new PendingFlowHandler(disputeDao, providerCallbackDao, createdFlowHandler, pendingDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder);
+        providerCallbackFlowHandler = new ProviderCallbackFlowHandler(invoicingClient, disputeDao, providerCallbackDao, pendingFlowHandler, providerPaymentsService, providerPaymentsAdjustmentExtractor);
     }
 }
