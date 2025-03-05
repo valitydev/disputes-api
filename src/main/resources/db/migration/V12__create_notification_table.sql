@@ -1,7 +1,14 @@
-CREATE TABLE dspt.notification (
-    dispute_id uuid NOT NULL,
-    notification_url bytea NOT NULL,
-    next_check_after timestamp WITHOUT time zone NOT NULL,
-    retry int NOT NULL DEFAULT 0,
-    CONSTRAINT notification_pkey PRIMARY KEY (dispute_id)
+create type dspt.notification_status as ENUM (
+    'pending',
+    'delivered',
+    'attempts_limit'
+);
+
+create table dspt.notification (
+    dispute_id uuid not null,
+    notification_url bytea not null,
+    next_attempt_after timestamp without time zone not null,
+    attempt int not null default 0,
+    status dspt.notification_status not null default 'pending' ::dspt.notification_status,
+    constraint notification_pkey primary key (dispute_id)
 );

@@ -29,13 +29,13 @@ public class ApiNotificationService {
             var notification = new Notification();
             notification.setDisputeId(disputeId);
             notification.setNotificationUrl(req.getNotificationUrl().getBytes(StandardCharsets.UTF_8));
-            notification.setNextCheckAfter(getNextCheckAfter(paymentParams, pollingInfo));
+            notification.setNextAttemptAfter(getNextAttemptAfter(paymentParams, pollingInfo));
             notificationDao.save(notification);
-            log.debug("Notification have been saved {}", disputeId);
+            log.debug("Notification has been saved {}", disputeId);
         }
     }
 
-    private LocalDateTime getNextCheckAfter(PaymentParams paymentParams, PollingInfo pollingInfo) {
+    private LocalDateTime getNextAttemptAfter(PaymentParams paymentParams, PollingInfo pollingInfo) {
         return exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, paymentParams.getOptions());
     }
 }
