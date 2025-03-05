@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,7 +27,7 @@ public class ApiNotificationService {
             log.debug("Trying to save Notification {}", disputeId);
             var notification = new Notification();
             notification.setDisputeId(disputeId);
-            notification.setNotificationUrl(req.getNotificationUrl().getBytes(StandardCharsets.UTF_8));
+            notification.setNotificationUrl(req.getNotificationUrl());
             notification.setNextAttemptAfter(getNextAttemptAfter(paymentParams, pollingInfo));
             notificationDao.save(notification);
             log.debug("Notification has been saved {}", disputeId);

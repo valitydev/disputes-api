@@ -31,9 +31,9 @@ public class NotificationTask {
     private int maxAttempt;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayNotification}", initialDelayString = "${dispute.initialDelayNotification}")
-    public void processCreated() {
+    public void processNotifications() {
         try {
-            var notifications = notificationService.getSkipLocked(batchSize, maxAttempt);
+            var notifications = notificationService.getNotificationsForDelivery(batchSize, maxAttempt);
             var callables = notifications.stream()
                     .map(this::handleNotification)
                     .collect(Collectors.toList());

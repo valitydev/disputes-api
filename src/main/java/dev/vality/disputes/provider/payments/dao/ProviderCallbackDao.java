@@ -68,15 +68,6 @@ public class ProviderCallbackDao extends AbstractGenericDao {
                 .orElse(List.of());
     }
 
-    public List<ProviderCallback> getAllPendingProviderCallbacksForUpdateSkipLocked() {
-        var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
-                .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment))
-                .forUpdate()
-                .skipLocked();
-        return Optional.ofNullable(fetch(query, providerCallbackRowMapper))
-                .orElse(List.of());
-    }
-
     public void update(ProviderCallback providerCallback) {
         var record = getDslContext().newRecord(PROVIDER_CALLBACK, providerCallback);
         var query = getDslContext().update(PROVIDER_CALLBACK)

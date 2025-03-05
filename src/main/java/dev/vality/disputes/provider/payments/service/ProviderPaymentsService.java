@@ -206,6 +206,8 @@ public class ProviderPaymentsService {
     private void disputeFinishSucceeded(ProviderCallback providerCallback) {
         try {
             disputesService.finishSucceeded(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), providerCallback.getChangedAmount());
+        } catch (NotFoundException ex) {
+            log.debug("NotFound when handle disputeFinishSucceeded, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
             log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
         }
@@ -214,6 +216,8 @@ public class ProviderPaymentsService {
     private void disputeFinishFailed(ProviderCallback providerCallback, String errorMessage) {
         try {
             disputesService.finishFailed(providerCallback.getInvoiceId(), providerCallback.getPaymentId(), errorMessage);
+        } catch (NotFoundException ex) {
+            log.debug("NotFound when handle disputeFinishFailed, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
             log.error("Received exception while ProviderPaymentsService.disputeFinishSucceeded", ex);
         }

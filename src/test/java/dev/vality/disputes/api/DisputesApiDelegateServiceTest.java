@@ -21,9 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -32,7 +31,6 @@ import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -41,20 +39,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WireMockSpringBootITest
 @SuppressWarnings({"LineLength"})
-@Import(WiremockAddressesHolder.class)
 public class DisputesApiDelegateServiceTest {
 
-    @MockBean
+    @MockitoBean
     private InvoicingSrv.Iface invoicingClient;
-    @MockBean
+    @MockitoBean
     private TokenAuthenticatorSrv.Iface tokenKeeperClient;
-    @MockBean
+    @MockitoBean
     private ArbiterSrv.Iface bouncerClient;
-    @MockBean
+    @MockitoBean
     private DominantAsyncService dominantAsyncService;
-    @MockBean
+    @MockitoBean
     private PartyManagementService partyManagementService;
-    @MockBean
+    @MockitoBean
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
     private MockMvc mvc;

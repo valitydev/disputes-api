@@ -1,7 +1,7 @@
 package dev.vality.disputes.config;
 
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import javax.sql.DataSource;
 import java.lang.annotation.ElementType;
@@ -14,6 +14,6 @@ import java.lang.annotation.Target;
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
 })
-@MockBean(DataSource.class)
+@MockitoBean(types = {DataSource.class})
 public @interface DisableFlyway {
 }
