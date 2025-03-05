@@ -47,13 +47,35 @@ public class NotificationServiceTest {
 
     @Test
     @SneakyThrows
-    public void testDisputeStatusSuccessResult() {
+    public void testNotificationDelivered() {
         var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
         WiremockUtils.mockNotificationSuccess();
         // todo providercallback flow set success
         disputeDao.finishSucceeded(disputeId, null);
         var dispute = disputeDao.get(disputeId);
         var notification = notificationDao.get(disputeId);
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testNotificationDeliveredAfterMerchantInternalErrors() {
+        var disputeId = pendingDisputesTestService.callPendingDisputeRemotely();
+        WiremockUtils.mockNotification500();
+        // todo providercallback flow set success
+        disputeDao.finishSucceeded(disputeId, null);
+        var dispute = disputeDao.get(disputeId);
+        var notification = notificationDao.get(disputeId);
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        notification = notificationDao.get(disputeId);
+        Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
+        Assertions.assertEquals(1, notification.getAttempt());
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        notification = notificationDao.get(disputeId);
+        Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
+        Assertions.assertEquals(2, notification.getAttempt());
+        WiremockUtils.mockNotificationSuccess();
         notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
         Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
     }
