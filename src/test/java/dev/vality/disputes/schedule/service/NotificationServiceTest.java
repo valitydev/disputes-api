@@ -28,7 +28,7 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
         WiremockUtils.mockNotificationSuccess();
         var dispute = disputeDao.get(disputeId);
         var notification = notificationDao.get(disputeId);
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
         Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
     }
 
@@ -39,16 +39,16 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
         WiremockUtils.mockNotification500();
         var dispute = disputeDao.get(disputeId);
         var notification = notificationDao.get(disputeId);
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
         notification = notificationDao.get(disputeId);
         Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
-        Assertions.assertEquals(1, notification.getAttempt());
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        Assertions.assertEquals(4, notification.getMaxAttempts());
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
         notification = notificationDao.get(disputeId);
         Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
-        Assertions.assertEquals(2, notification.getAttempt());
+        Assertions.assertEquals(3, notification.getMaxAttempts());
         WiremockUtils.mockNotificationSuccess();
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build(), 5);
+        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
         Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
     }
 }

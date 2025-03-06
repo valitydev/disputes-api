@@ -41,11 +41,7 @@ public class NotificationDaoTest {
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt.plusSeconds(10), getDispute().getId()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
-        var notification = getNotification(NotificationStatus.pending, createdAt, getDispute().getId());
-        var maxAttempt = 5;
-        notification.setAttempt(maxAttempt);
-        notificationDao.save(notification);
-        var enrichedNotifications = notificationDao.getNotificationsForDelivery(10, maxAttempt);
+        var enrichedNotifications = notificationDao.getNotificationsForDelivery(10);
         assertEquals(1, enrichedNotifications.size());
     }
 
@@ -60,17 +56,17 @@ public class NotificationDaoTest {
 
     @Test
     public void testAttemptsLimit() {
-        var maxAttempt = 5;
         var createdAt = LocalDateTime.now(ZoneOffset.UTC);
         var notification = getNotification(NotificationStatus.pending, createdAt, getDispute().getId());
+        notification.setMaxAttempts(2);
         notificationDao.save(notification);
+        notificationDao.updateNextAttempt(notification, createdAt);
         notification = notificationDao.get(notification.getDisputeId());
-        notificationDao.updateNextAttempt(notification, createdAt, maxAttempt);
-        assertEquals(1, notificationDao.get(notification.getDisputeId()).getAttempt());
-        notificationDao.updateNextAttempt(notification, createdAt, maxAttempt);
-        assertEquals(2, notificationDao.get(notification.getDisputeId()).getAttempt());
-        notificationDao.updateNextAttempt(notification, createdAt, 0);
-        assertEquals(NotificationStatus.attempts_limit, notificationDao.get(notification.getDisputeId()).getStatus());
+        assertEquals(1, notification.getMaxAttempts());
+        notificationDao.updateNextAttempt(notification, createdAt);
+        notification = notificationDao.get(notification.getDisputeId());
+        assertEquals(0, notification.getMaxAttempts());
+        assertEquals(NotificationStatus.attempts_limit, notification.getStatus());
     }
 
     private Dispute getDispute() {
@@ -85,7 +81,7 @@ public class NotificationDaoTest {
         random.setStatus(status);
         random.setNextAttemptAfter(nextAttemptAfter);
         random.setDisputeId(disputeId);
-        random.setAttempt(null);
+        random.setMaxAttempts(5);
         return random;
     }
 }

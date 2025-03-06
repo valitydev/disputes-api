@@ -41,13 +41,13 @@ public class NotificationService {
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
     @Transactional
-    public List<EnrichedNotification> getNotificationsForDelivery(int batchSize, int maxAttempt) {
-        return notificationDao.getNotificationsForDelivery(batchSize, maxAttempt);
+    public List<EnrichedNotification> getNotificationsForDelivery(int batchSize) {
+        return notificationDao.getNotificationsForDelivery(batchSize);
     }
 
     @Transactional
     @SneakyThrows
-    public void process(EnrichedNotification enrichedNotification, int maxAttempt) {
+    public void process(EnrichedNotification enrichedNotification) {
         var notification = enrichedNotification.getNotification();
         var body = notifyRequestConverter.convert(enrichedNotification);
         var plainTextBody = customObjectMapper.writeValueAsString(body);
@@ -57,12 +57,14 @@ public class NotificationService {
             httpRequest.setEntity(HttpEntities.create(plainTextBody, ContentType.APPLICATION_JSON));
             httpClient.execute(httpRequest, new BasicHttpClientResponseHandler());
             notificationDao.delivered(forUpdate);
-        } catch (IOException e) {
+        } catch (IOException ex) {
+            log.info("IOException when handle NotificationService.process {}", enrichedNotification, ex);
             var forUpdate = checkPending(notification);
             var dispute = enrichedNotification.getDispute();
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var nextAttemptAfter = exponentialBackOffPollingService.prepareNextPollingInterval(forUpdate, dispute.getCreatedAt(), providerData.getOptions());
-            notificationDao.updateNextAttempt(forUpdate, nextAttemptAfter, maxAttempt);
+            notificationDao.updateNextAttempt(forUpdate, nextAttemptAfter);
+            log.debug("Finish IOException handler {}", enrichedNotification, ex);
         } catch (NotificationStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process", ex);
         }

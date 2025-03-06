@@ -88,6 +88,8 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
 
     @Override
     public void sendMerchantsNotification(MerchantsNotificationParamsRequest params) {
+        log.info("Got sendMerchantsNotification {}", params);
         notificationService.sendMerchantsNotification(params);
+        log.info("Finish sendMerchantsNotification {}", params);
     }
 }

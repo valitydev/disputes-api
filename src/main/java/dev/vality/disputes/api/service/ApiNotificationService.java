@@ -8,6 +8,7 @@ import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.swag.disputes.model.CreateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,9 @@ public class ApiNotificationService {
     private final NotificationDao notificationDao;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
+    @Value("${dispute.notificationsMaxAttempts}")
+    private int notificationsMaxAttempts;
+
     public void saveNotification(CreateRequest req, PaymentParams paymentParams, PollingInfo pollingInfo, UUID disputeId) {
         if (req.getNotificationUrl() != null) {
             log.debug("Trying to save Notification {}", disputeId);
@@ -29,6 +33,7 @@ public class ApiNotificationService {
             notification.setDisputeId(disputeId);
             notification.setNotificationUrl(req.getNotificationUrl());
             notification.setNextAttemptAfter(getNextAttemptAfter(paymentParams, pollingInfo));
+            notification.setMaxAttempts(notificationsMaxAttempts);
             notificationDao.save(notification);
             log.debug("Notification has been saved {}", disputeId);
         }
