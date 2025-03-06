@@ -27,13 +27,13 @@ public class NotificationTask {
 
     @Value("${dispute.batchSize}")
     private int batchSize;
-    @Value("${dispute.notificationMaxAttempt}")
-    private int maxAttempt;
+    @Value("${dispute.notificationsMaxAttempt}")
+    private int notificationsMaxAttempt;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayNotification}", initialDelayString = "${dispute.initialDelayNotification}")
     public void processNotifications() {
         try {
-            var notifications = notificationService.getNotificationsForDelivery(batchSize, maxAttempt);
+            var notifications = notificationService.getNotificationsForDelivery(batchSize, notificationsMaxAttempt);
             var callables = notifications.stream()
                     .map(this::handleNotification)
                     .collect(Collectors.toList());
@@ -47,6 +47,6 @@ public class NotificationTask {
     }
 
     private Callable<UUID> handleNotification(EnrichedNotification enrichedNotification) {
-        return () -> new NotificationHandler(notificationService).handle(enrichedNotification, maxAttempt);
+        return () -> new NotificationHandler(notificationService).handle(enrichedNotification, notificationsMaxAttempt);
     }
 }
