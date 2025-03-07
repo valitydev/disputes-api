@@ -1,9 +1,7 @@
 package dev.vality.disputes.config;
 
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import javax.sql.DataSource;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -14,6 +12,6 @@ import java.lang.annotation.Target;
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
 })
-@MockitoBean(types = {DataSource.class})
+//@MockitoBean(types = {DataSource.class}) spring-test:6.2.2+ -> bump service-parent-pom
 public @interface DisableFlyway {
 }

@@ -1,4 +1,4 @@
-package dev.vality.disputes.dao.disputestartup;
+package dev.vality.disputes.dao.startup;
 
 import dev.vality.disputes.config.ZonkyEmbeddedPostgresSpringBootITest;
 import dev.vality.disputes.dao.DisputeDaoTest;

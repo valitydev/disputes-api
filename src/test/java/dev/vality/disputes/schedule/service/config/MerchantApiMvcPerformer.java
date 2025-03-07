@@ -3,7 +3,7 @@ package dev.vality.disputes.schedule.service.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
-import dev.vality.disputes.auth.utils.JwtTokenBuilder;
+import dev.vality.disputes.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.MockUtil;
@@ -35,7 +35,6 @@ public class MerchantApiMvcPerformer {
     private final FileStorageSrv.Iface fileStorageClient;
     private final DominantAsyncService dominantAsyncService;
     private final PartyManagementService partyManagementService;
-    private final JwtTokenBuilder tokenBuilder;
     private final WiremockAddressesHolder wiremockAddressesHolder;
     private final MockMvc mvc;
 
@@ -52,7 +51,7 @@ public class MerchantApiMvcPerformer {
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId, wiremockAddressesHolder.getNotificationUrl())))

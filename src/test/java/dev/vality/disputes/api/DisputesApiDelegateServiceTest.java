@@ -3,10 +3,9 @@ package dev.vality.disputes.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
-import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.config.WireMockSpringBootITest;
+import dev.vality.disputes.config.WiremockAddressesHolder;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.schedule.service.config.WiremockAddressesHolder;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.MockUtil;
@@ -56,8 +55,6 @@ public class DisputesApiDelegateServiceTest {
     @Autowired
     private MockMvc mvc;
     @Autowired
-    private JwtTokenBuilder tokenBuilder;
-    @Autowired
     private DisputeDao disputeDao;
     @Autowired
     private WiremockAddressesHolder wiremockAddressesHolder;
@@ -94,7 +91,7 @@ public class DisputesApiDelegateServiceTest {
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
@@ -111,7 +108,7 @@ public class DisputesApiDelegateServiceTest {
         verify(partyManagementService, times(1)).getShop(any(), any());
         verify(fileStorageClient, times(1)).createNewFile(any(), any());
         mvc.perform(get("/disputes/status")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .params(OpenApiUtil.getStatusRequiredParams(response.getDisputeId(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +120,7 @@ public class DisputesApiDelegateServiceTest {
         verify(bouncerClient, times(2)).judge(any(), any());
         // exist
         resultActions = mvc.perform(post("/disputes/create")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
@@ -137,7 +134,7 @@ public class DisputesApiDelegateServiceTest {
         // new after failed
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
@@ -161,7 +158,7 @@ public class DisputesApiDelegateServiceTest {
     void testBadRequestWhenInvalidCreateRequest() {
         var paymentId = "1";
         mvc.perform(post("/disputes/create")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentInvalidCreateRequest(paymentId)))
@@ -174,7 +171,7 @@ public class DisputesApiDelegateServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         mvc.perform(get("/disputes/status")
-                        .header("Authorization", "Bearer " + tokenBuilder.generateJwtWithRoles())
+                        .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .params(OpenApiUtil.getStatusRequiredParams(randomUUID().toString(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
