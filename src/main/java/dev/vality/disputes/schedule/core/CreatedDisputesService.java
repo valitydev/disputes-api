@@ -73,6 +73,7 @@ public class CreatedDisputesService {
             var providerStatus = checkProviderPaymentStatus(dispute, providerData);
             if (providerStatus.isSuccess()) {
                 handleSucceededResultWithCreateAdjustment(dispute, providerStatus, providerData);
+                return;
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
                 switch (result.getSetField()) {

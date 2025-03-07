@@ -58,4 +58,21 @@ public abstract class DisputeDaoTest {
         assertFalse(disputeDao.getSkipLocked(10, DisputeStatus.pending).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }
+
+    @Test
+    public void testForgottenNextCheckAfter() {
+        var random = random(Dispute.class);
+        random.setStatus(DisputeStatus.already_exist_created);
+        var createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        random.setCreatedAt(createdAt);
+        random.setPollingBefore(createdAt.plusSeconds(10));
+        random.setNextCheckAfter(createdAt.plusSeconds(5));
+        disputeDao.save(random);
+        assertTrue(disputeDao.getForgottenSkipLocked(10).isEmpty());
+        disputeDao.updateNextPollingInterval(random, createdAt.plusSeconds(0));
+        assertFalse(disputeDao.getForgottenSkipLocked(10).isEmpty());
+        disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0));
+        assertTrue(disputeDao.getForgottenSkipLocked(10).isEmpty());
+        disputeDao.finishFailed(random.getId(), null);
+    }
 }

@@ -13,13 +13,13 @@ public class NotificationHandler {
 
     private final NotificationService notificationService;
 
-    public UUID handle(EnrichedNotification enrichedNotification, int maxAttempt) {
+    public UUID handle(EnrichedNotification enrichedNotification) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
         currentThread.setName("notification-id-" +
                 enrichedNotification.getNotification().getDisputeId() + "-" + oldName);
         try {
-            notificationService.process(enrichedNotification, maxAttempt);
+            notificationService.process(enrichedNotification);
             return enrichedNotification.getNotification().getDisputeId();
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed NotificationService.process", ex);

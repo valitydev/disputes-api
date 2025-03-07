@@ -8,7 +8,7 @@ import dev.vality.disputes.config.SpringBootUTest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.Random;
@@ -21,7 +21,7 @@ import static org.mockito.BDDMockito.given;
 @SpringBootUTest
 public class DebugAdminManagementControllerTest {
 
-    @MockBean
+    @MockitoBean
     private AdminManagementServiceSrv.Iface adminManagementHandler;
     @Autowired
     private DebugAdminManagementController debugAdminManagementController;
