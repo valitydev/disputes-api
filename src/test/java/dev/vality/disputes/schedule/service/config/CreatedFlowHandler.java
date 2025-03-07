@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule.service.config;
 
 import dev.vality.damsel.payment_processing.InvoicingSrv;
+import dev.vality.disputes.config.WiremockAddressesHolder;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;

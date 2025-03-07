@@ -2,7 +2,6 @@ package dev.vality.disputes.config;
 
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
-import dev.vality.disputes.auth.utils.JwtTokenBuilder;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsAdjustmentExtractor;
@@ -11,7 +10,10 @@ import dev.vality.disputes.provider.payments.service.ProviderPaymentsThriftInter
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
 import dev.vality.disputes.schedule.service.ProviderDisputesThriftInterfaceBuilder;
-import dev.vality.disputes.schedule.service.config.*;
+import dev.vality.disputes.schedule.service.config.CreatedFlowHandler;
+import dev.vality.disputes.schedule.service.config.MerchantApiMvcPerformer;
+import dev.vality.disputes.schedule.service.config.PendingFlowHandler;
+import dev.vality.disputes.schedule.service.config.ProviderCallbackFlowHandler;
 import dev.vality.disputes.service.external.DominantService;
 import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
@@ -52,8 +54,6 @@ public abstract class AbstractMockitoConfig {
     @Autowired
     public DisputeDao disputeDao;
     @Autowired
-    public JwtTokenBuilder tokenBuilder;
-    @Autowired
     public MockMvc mvc;
     @Autowired
     public WiremockAddressesHolder wiremockAddressesHolder;
@@ -76,7 +76,7 @@ public abstract class AbstractMockitoConfig {
 
     @BeforeEach
     void setUp() {
-        merchantApiMvcPerformer = new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient, dominantAsyncService, partyManagementService, tokenBuilder, wiremockAddressesHolder, mvc);
+        merchantApiMvcPerformer = new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient, dominantAsyncService, partyManagementService, wiremockAddressesHolder, mvc);
         createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService, createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder, wiremockAddressesHolder, merchantApiMvcPerformer);
         pendingFlowHandler = new PendingFlowHandler(disputeDao, providerCallbackDao, createdFlowHandler, pendingDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder);
         providerCallbackFlowHandler = new ProviderCallbackFlowHandler(invoicingClient, disputeDao, providerCallbackDao, pendingFlowHandler, providerPaymentsService, providerPaymentsAdjustmentExtractor);

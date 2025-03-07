@@ -4,7 +4,8 @@ import dev.vality.disputes.DisputesApiApplication;
 import dev.vality.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
+import org.springframework.context.annotation.Import;
+import org.wiremock.spring.EnableWireMock;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -16,12 +17,11 @@ import java.lang.annotation.Target;
 @DisableScheduling
 @PostgresqlTestcontainerSingleton
 @AutoConfigureMockMvc
-@AutoConfigureWireMock(port = 0)
+@Import(WiremockAddressesHolder.class)
+@EnableWireMock
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         classes = DisputesApiApplication.class,
-        properties = {
-                "wiremock.server.baseUrl=http://localhost:${wiremock.server.port}",
-                "logging.level.WireMock=WARN"})
+        properties = {"logging.level.WireMock=WARN"})
 public @interface WireMockSpringBootITest {
 }
