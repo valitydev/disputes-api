@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>disputes-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>disputes-api</name>
@@ -26,7 +26,7 @@
         <management.port>8023</management.port>
         <exposed.ports>${server.port} ${management.port}</exposed.ports>
         <dockerfile.registry>${env.REGISTRY}</dockerfile.registry>
-        <springfox-version>2.10.5</springfox-version>
+        <springfox-version>3.0.0</springfox-version>
         <shared-resources.version>3.0.0</shared-resources.version>
         <db.name>disputes</db.name>
         <db.port>5432</db.port>
