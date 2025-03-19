@@ -28,7 +28,8 @@ public class ExternalGatewayChecker {
                 && ex.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
                 && ex.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
                 && ex.getErrorDefinition().getErrorReason() != null
-                && ex.getErrorDefinition().getErrorReason().contains("Unexpected result, code");
+                && ex.getErrorDefinition().getErrorReason().contains("code = ")
+                && ex.getErrorDefinition().getErrorReason().contains("description = ");
     }
 
     public boolean isProviderDisputesApiNotExist(ProviderData providerData, WRuntimeException ex) {
