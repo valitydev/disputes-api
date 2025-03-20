@@ -39,8 +39,17 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
             case PENDING -> DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
             case FAILED -> DisputeStatusResult.statusFail(
                     new DisputeStatusFailResult().setMapping(getMapping(response)));
-            case SUCCEEDED -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult());
+            case SUCCEEDED -> DisputeStatusResult.statusSuccess(
+                    getDisputeStatusSuccessResult(response));
         };
+    }
+
+    private DisputeStatusSuccessResult getDisputeStatusSuccessResult(Status200Response response) {
+        var disputeStatusSuccessResult = new DisputeStatusSuccessResult();
+        if (response.getChangedAmount() != null) {
+            disputeStatusSuccessResult.setChangedAmount(response.getChangedAmount());
+        }
+        return disputeStatusSuccessResult;
     }
 
     private String getMapping(Status200Response response) {

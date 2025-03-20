@@ -13,11 +13,12 @@ public class Status200ResponseConverter {
 
     public Status200Response convert(Dispute dispute) {
         var body = new Status200Response();
-        body.setStatus(getStatus(dispute));
-        if (!StringUtils.isBlank(dispute.getMapping())) {
+        var status = getStatus(dispute);
+        body.setStatus(status);
+        if (status == Status200Response.StatusEnum.FAILED && !StringUtils.isBlank(dispute.getMapping())) {
             body.setReason(new GeneralError(dispute.getMapping()));
         }
-        if (dispute.getChangedAmount() != null) {
+        if (status == Status200Response.StatusEnum.SUCCEEDED && dispute.getChangedAmount() != null) {
             body.setChangedAmount(dispute.getChangedAmount());
         }
         return body;
