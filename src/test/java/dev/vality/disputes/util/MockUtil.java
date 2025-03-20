@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @UtilityClass
+@SuppressWarnings({"LineLength"})
 public class MockUtil {
 
     public static Invoice createInvoice(String invoiceId, String paymentId) {
@@ -202,6 +203,15 @@ public class MockUtil {
         var errorDefinition = new WErrorDefinition(WErrorSource.EXTERNAL);
         errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, description = " +
                 "Tek seferde en fazla 4,000.00 işem yapılabilir.");
+        errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
+        errorDefinition.setErrorSource(WErrorSource.INTERNAL);
+        return new WRuntimeException(errorDefinition);
+    }
+
+    public static WRuntimeException getUnexpectedResultBase64WException() {
+        var errorDefinition = new WErrorDefinition(WErrorSource.EXTERNAL);
+        errorDefinition.setErrorReason("Unexpected result, code = base64:0J3QtdC00L7Qv9GD0YHRgtC40LzQsNGPINGB0YPQvNC80LAg0LTQu9GPINC00LDQvdC90L7QuSDQv9C70LDRgtC10LbQvdC+0Lkg0YHQuNGB0YLQtdC80Ysu, " +
+                "description = base64:0J3QtdC00L7Qv9GD0YHRgtC40LzQsNGPINGB0YPQvNC80LAg0LTQu9GPINC00LDQvdC90L7QuSDQv9C70LDRgtC10LbQvdC+0Lkg0YHQuNGB0YLQtdC80Ysu");
         errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
         errorDefinition.setErrorSource(WErrorSource.INTERNAL);
         return new WRuntimeException(errorDefinition);

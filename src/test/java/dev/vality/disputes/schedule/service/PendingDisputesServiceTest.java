@@ -106,6 +106,20 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
+    public void testManualPendingWhenUnexpectedResultBase64Mapping() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        when(providerMock.checkDisputeStatus(any())).thenThrow(getUnexpectedResultBase64WException());
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        var dispute = disputeDao.get(disputeId);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
+        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
+    @SneakyThrows
     public void testFailedWhenInvoicePaymentStatusIsRefunded() {
         var disputeId = createdFlowHandler.handleCreate();
         var dispute = disputeDao.get(disputeId);
