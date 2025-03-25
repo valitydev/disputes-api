@@ -32,6 +32,9 @@ public class ForgottenDisputesTask {
     @Value("${dispute.batchSize}")
     private int batchSize;
 
+    @Value("${dispute.isCronForgottenDisputesNotificationsEnabled}")
+    private boolean isCronForgottenDisputesNotificationsEnabled;
+
     @Scheduled(fixedDelayString = "${dispute.fixedDelayForgotten}", initialDelayString = "${dispute.initialDelayForgotten}")
     public void processForgottenDisputes() {
         var disputes = forgottenDisputesService.getForgottenSkipLocked(batchSize);
@@ -46,13 +49,16 @@ public class ForgottenDisputesTask {
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed Forgotten disputes", ex);
         }
-        try {
+    }
+
+    @Scheduled(cron = "${dispute.cronForgottenDisputesNotifications:-}")
+    public void cronForgottenDisputes() {
+        if (isCronForgottenDisputesNotificationsEnabled) {
+            var disputes = forgottenDisputesService.getForgottenSkipLocked(Integer.MAX_VALUE);
             if (!disputes.isEmpty()) {
                 callbackNotifier.sendForgottenDisputes(disputes);
                 mdcTopicProducer.sendForgottenDisputes(disputes);
             }
-        } catch (Throwable ex) {
-            log.error("Received exception while callbackNotifier processed Forgotten disputes", ex);
         }
     }
 
