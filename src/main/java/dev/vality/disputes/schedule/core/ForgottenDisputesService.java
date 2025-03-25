@@ -1,7 +1,5 @@
 package dev.vality.disputes.schedule.core;
 
-import dev.vality.disputes.admin.callback.CallbackNotifier;
-import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.CapturedPaymentException;
@@ -30,8 +28,6 @@ public class ForgottenDisputesService {
     private final DisputesService disputesService;
     private final InvoicingService invoicingService;
     private final ProviderDataService providerDataService;
-    private final CallbackNotifier callbackNotifier;
-    private final MdcTopicProducer mdcTopicProducer;
 
     @Transactional
     public List<Dispute> getForgottenSkipLocked(int batchSize) {
@@ -49,8 +45,6 @@ public class ForgottenDisputesService {
             PaymentStatusValidator.checkStatus(invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             disputesService.updateNextPollingInterval(dispute, providerData);
-            callbackNotifier.sendForgottenDisputes(List.of(dispute));
-            mdcTopicProducer.sendForgottenDisputes(List.of(dispute));
         } catch (NotFoundException ex) {
             log.error("NotFound when handle ForgottenDisputesService.process, type={}", ex.getType(), ex);
             switch (ex.getType()) {

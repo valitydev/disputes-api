@@ -1,5 +1,7 @@
 package dev.vality.disputes.schedule;
 
+import dev.vality.disputes.admin.callback.CallbackNotifier;
+import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.ForgottenDisputesService;
 import dev.vality.disputes.schedule.handler.ForgottenDisputeHandler;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 public class ForgottenDisputesTask {
 
     private final ForgottenDisputesService forgottenDisputesService;
+    private final CallbackNotifier callbackNotifier;
+    private final MdcTopicProducer mdcTopicProducer;
     private final ExecutorService disputesThreadPool;
 
     @Value("${dispute.batchSize}")
@@ -41,6 +45,14 @@ public class ForgottenDisputesTask {
             Thread.currentThread().interrupt();
         } catch (Throwable ex) {
             log.error("Received exception while scheduler processed Forgotten disputes", ex);
+        }
+        try {
+            if (!disputes.isEmpty()) {
+                callbackNotifier.sendForgottenDisputes(disputes);
+                mdcTopicProducer.sendForgottenDisputes(disputes);
+            }
+        } catch (Throwable ex) {
+            log.error("Received exception while callbackNotifier processed Forgotten disputes", ex);
         }
     }
 
