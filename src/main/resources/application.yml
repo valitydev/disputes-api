@@ -111,12 +111,10 @@ dispute:
   initialDelayPending: 5000
   initialDelayForgotten: 5000
   initialDelayNotification: 5000
-  cronForgottenDisputesNotifications: 0 0 0 * * *
   isScheduleCreatedEnabled: true
   isSchedulePendingEnabled: true
   isScheduleForgottenEnabled: true
   isScheduleNotificationEnabled: true
-  isCronForgottenDisputesNotificationsEnabled: true
 
 provider:
   payments:
