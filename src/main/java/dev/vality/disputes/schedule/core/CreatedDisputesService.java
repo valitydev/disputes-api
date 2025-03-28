@@ -81,6 +81,7 @@ public class CreatedDisputesService {
                             disputeCreateResultHandler.handleCheckStatusResult(dispute, result, providerData);
                     case FAIL_RESULT -> disputeCreateResultHandler.handleFailedResult(dispute, result);
                     case ALREADY_EXIST_RESULT -> disputeCreateResultHandler.handleAlreadyExistResult(dispute);
+                    case RETRY_LATER -> disputeCreateResultHandler.handleRetryLaterResult(dispute, providerData);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
                 }
             };

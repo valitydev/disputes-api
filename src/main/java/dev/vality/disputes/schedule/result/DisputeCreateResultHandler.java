@@ -30,6 +30,13 @@ public class DisputeCreateResultHandler {
     private final CallbackNotifier callbackNotifier;
     private final MdcTopicProducer mdcTopicProducer;
 
+    public void handleRetryLaterResult(Dispute dispute, ProviderData providerData) {
+        // дергаем update() чтоб обновить время вызова next_check_after,
+        // чтобы шедулатор далее доставал пачку самых древних диспутов и смещал
+        // и этим вызовом мы финализируем состояние диспута, что он был обновлен недавно
+        disputesService.setNextStepToCreated(dispute, providerData);
+    }
+
     public void handleCheckStatusResult(Dispute dispute, DisputeCreatedResult result, ProviderData providerData) {
         providerDisputeDao.save(result.getSuccessResult().getProviderDisputeId(), dispute);
         var isDefaultRouteUrl = defaultRemoteClient.routeUrlEquals(providerData);
