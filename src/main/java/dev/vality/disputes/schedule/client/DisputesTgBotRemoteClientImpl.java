@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.client;
 
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.DisputeCreatedResult;
@@ -34,9 +35,9 @@ public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {
     }
 
     @Override
-    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
+    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData, TransactionInfo transactionInfo) {
         log.info("Trying to call disputesTgBotService.createDispute() {}", dispute.getId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions());
+        var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions(), transactionInfo);
         providerData.setRouteUrl(routeUrl);
         log.debug("Trying to disputesTgBotService.createDispute() call {}", dispute.getId());
         var result = disputesTgBotService.createDispute(disputeParams);

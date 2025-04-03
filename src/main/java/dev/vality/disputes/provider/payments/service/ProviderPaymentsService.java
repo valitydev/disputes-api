@@ -63,7 +63,7 @@ public class ProviderPaymentsService {
             // validate
             var providerTrxId = getProviderTrxId(invoicePayment);
             var providerData = providerDataService.getProviderData(invoicePayment.getRoute().getProvider(), invoicePayment.getRoute().getTerminal());
-            var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData);
+            var transactionContext = transactionContextConverter.convert(invoiceId, paymentId, providerTrxId, providerData, invoicePayment.getLastTransactionInfo());
             var currency = providerDataService.getCurrency(invoicePayment.getPayment().getCost().getCurrency());
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);

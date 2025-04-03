@@ -59,7 +59,7 @@ public class PendingDisputesService {
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
                     case STATUS_SUCCESS -> disputeStatusResultHandler.handleSucceededResult(
-                            dispute, result, providerData, true);
+                            dispute, result, providerData, true, invoicePayment.getLastTransactionInfo());
                     case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
                     case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
@@ -67,7 +67,7 @@ public class PendingDisputesService {
             };
             var providerDispute = providerDisputeDao.get(dispute.getId());
             var checkDisputeStatusByRemoteClient = (Runnable) () -> finishCheckDisputeStatusResult.accept(
-                    remoteClient.checkDisputeStatus(dispute, providerDispute, providerData));
+                    remoteClient.checkDisputeStatus(dispute, providerDispute, providerData, invoicePayment.getLastTransactionInfo()));
             checkDisputeStatusByRemoteClient(dispute, checkDisputeStatusByRemoteClient);
         } catch (NotFoundException ex) {
             log.error("NotFound when handle PendingDisputesService.callPendingDisputeRemotely, type={}", ex.getType(), ex);

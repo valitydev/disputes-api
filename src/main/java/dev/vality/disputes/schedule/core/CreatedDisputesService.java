@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.core;
 
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.CapturedPaymentException;
@@ -70,9 +71,9 @@ public class CreatedDisputesService {
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            var providerStatus = checkProviderPaymentStatus(dispute, providerData);
+            var providerStatus = checkProviderPaymentStatus(dispute, providerData, invoicePayment.getLastTransactionInfo());
             if (providerStatus.isSuccess()) {
-                handleSucceededResultWithCreateAdjustment(dispute, providerStatus, providerData);
+                handleSucceededResultWithCreateAdjustment(dispute, providerStatus, providerData, invoicePayment.getLastTransactionInfo());
                 return;
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
@@ -87,9 +88,9 @@ public class CreatedDisputesService {
             };
             var attachments = attachmentsService.getAttachments(dispute);
             var createDisputeByRemoteClient = (Runnable) () -> finishCreateDisputeResult.accept(
-                    remoteClient.createDispute(dispute, attachments, providerData));
+                    remoteClient.createDispute(dispute, attachments, providerData, invoicePayment.getLastTransactionInfo()));
             var createDisputeByDefaultClient = (Runnable) () -> finishCreateDisputeResult.accept(
-                    defaultRemoteClient.createDispute(dispute, attachments, providerData));
+                    defaultRemoteClient.createDispute(dispute, attachments, providerData, invoicePayment.getLastTransactionInfo()));
             if (providerData.getOptions().containsKey(DISPUTE_FLOW_PROVIDERS_API_EXIST)) {
                 createDisputeByRemoteClient(dispute, providerData, createDisputeByRemoteClient, createDisputeByDefaultClient);
             } else {
@@ -132,15 +133,15 @@ public class CreatedDisputesService {
                 ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex));
     }
 
-    private PaymentStatusResult checkProviderPaymentStatus(Dispute dispute, ProviderData providerData) {
-        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+    private PaymentStatusResult checkProviderPaymentStatus(Dispute dispute, ProviderData providerData, TransactionInfo transactionInfo) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
     }
 
-    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult providerStatus, ProviderData providerData) {
+    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult providerStatus, ProviderData providerData, TransactionInfo transactionInfo) {
         disputeStatusResultHandler.handleSucceededResult(
-                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData, true);
+                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData, true, transactionInfo);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {

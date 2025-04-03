@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.result;
 
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorMessage;
@@ -61,10 +62,10 @@ public class DisputeStatusResultHandler {
         disputesService.finishSucceeded(dispute, changedAmount);
     }
 
-    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify) {
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify, TransactionInfo transactionInfo) {
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
-        createAdjustment(dispute, providerData);
+        createAdjustment(dispute, providerData, transactionInfo);
         if (notify) {
             callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
             mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
@@ -94,8 +95,8 @@ public class DisputeStatusResultHandler {
         mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
     }
 
-    private void createAdjustment(Dispute dispute, ProviderData providerData) {
-        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData);
+    private void createAdjustment(Dispute dispute, ProviderData providerData, TransactionInfo transactionInfo) {
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         try {
             var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());

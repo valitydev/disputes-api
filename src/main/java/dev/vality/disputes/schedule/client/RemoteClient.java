@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.client;
 
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.provider.Attachment;
@@ -29,12 +30,12 @@ public class RemoteClient {
     private final DisputeContextConverter disputeContextConverter;
 
     @SneakyThrows
-    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData) {
+    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData, TransactionInfo transactionInfo) {
         providerDisputesRouting.initRouteUrl(providerData);
         log.info("Trying to call ProviderDisputesThriftInterfaceBuilder.createDispute() {}", dispute.getId());
         var remoteClient = providerDisputesThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
         log.debug("Trying to build disputeParams {}", dispute.getId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions());
+        var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions(), transactionInfo);
         log.debug("Trying to routed remote provider's createDispute() call {}", dispute.getId());
         var result = remoteClient.createDispute(disputeParams);
         log.debug("Routed remote provider's createDispute() has been called {} {}", dispute.getId(), result);
@@ -42,12 +43,12 @@ public class RemoteClient {
     }
 
     @SneakyThrows
-    public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute, ProviderData providerData) {
+    public DisputeStatusResult checkDisputeStatus(Dispute dispute, ProviderDispute providerDispute, ProviderData providerData, TransactionInfo transactionInfo) {
         providerDisputesRouting.initRouteUrl(providerData);
         log.info("Trying to call ProviderDisputesThriftInterfaceBuilder.checkDisputeStatus() {}", dispute.getId());
         var remoteClient = providerDisputesThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());
         log.debug("Trying to build disputeContext {}", dispute.getId());
-        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, providerData.getOptions());
+        var disputeContext = disputeContextConverter.convert(dispute, providerDispute, providerData.getOptions(), transactionInfo);
         log.debug("Trying to routed remote provider's checkDisputeStatus() call {}", dispute.getId());
         var result = remoteClient.checkDisputeStatus(disputeContext);
         log.debug("Routed remote provider's checkDisputeStatus() has been called {} {}", dispute.getId(), result);

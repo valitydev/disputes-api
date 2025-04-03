@@ -1,6 +1,7 @@
 package dev.vality.disputes.admin.management;
 
 import dev.vality.adapter.flow.lib.model.PollingInfo;
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.admin.*;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
@@ -16,6 +17,7 @@ import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.FileStorageService;
+import dev.vality.disputes.service.external.InvoicingService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class AdminManagementDisputesService {
     private final DisputesService disputesService;
     private final ProviderDataService providerDataService;
     private final PollingInfoService pollingInfoService;
+    private final InvoicingService invoicingService;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final CloseableHttpClient httpClient;
@@ -76,9 +79,10 @@ public class AdminManagementDisputesService {
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired)
                 && !params.isSkipCallHgForCreateAdjustment()) {
+            var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
-            handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData);
+            handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData, invoicePayment.getLastTransactionInfo());
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired
@@ -162,8 +166,9 @@ public class AdminManagementDisputesService {
         }
     }
 
-    private void handleSucceededResultWithCreateAdjustment(dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData) {
-        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, false);
+    private void handleSucceededResultWithCreateAdjustment(
+            dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData, TransactionInfo transactionInfo) {
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, false, transactionInfo);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {

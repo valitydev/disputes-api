@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.converter;
 
+import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.Attachment;
 import dev.vality.disputes.provider.Cash;
@@ -13,11 +14,12 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings({"LineLength"})
 public class DisputeParamsConverter {
 
     private final DisputeCurrencyConverter disputeCurrencyConverter;
 
-    public DisputeParams convert(Dispute dispute, List<Attachment> attachments, Map<String, String> terminalOptions) {
+    public DisputeParams convert(Dispute dispute, List<Attachment> attachments, Map<String, String> terminalOptions, TransactionInfo transactionInfo) {
         var disputeParams = new DisputeParams();
         disputeParams.setAttachments(attachments);
         var transactionContext = new TransactionContext();
@@ -25,6 +27,7 @@ public class DisputeParamsConverter {
         transactionContext.setInvoiceId(dispute.getInvoiceId());
         transactionContext.setPaymentId(dispute.getPaymentId());
         transactionContext.setTerminalOptions(terminalOptions);
+        transactionContext.setTransactionInfo(transactionInfo);
         disputeParams.setTransactionContext(transactionContext);
         if (dispute.getAmount() != null) {
             var cash = new Cash();
