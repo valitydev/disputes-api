@@ -129,7 +129,7 @@ time:
 testcontainers:
   postgresql:
     tag: '14.12'
-  `
+
 http-client:
   requestTimeout: 60000
   poolTimeout: 10000
