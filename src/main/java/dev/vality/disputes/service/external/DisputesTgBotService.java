@@ -1,10 +1,10 @@
 package dev.vality.disputes.service.external;
 
-import dev.vality.disputes.admin.*;
+import dev.vality.disputes.admin.DisputeAlreadyCreated;
+import dev.vality.disputes.admin.DisputeManualPending;
+import dev.vality.disputes.admin.DisputePoolingExpired;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.provider.DisputeParams;
-
-import java.util.List;
 
 public interface DisputesTgBotService {
 
@@ -14,10 +14,6 @@ public interface DisputesTgBotService {
 
     void sendDisputePoolingExpired(DisputePoolingExpired disputePoolingExpired);
 
-    void sendDisputeReadyForCreateAdjustment(DisputeReadyForCreateAdjustment disputeReadyForCreateAdjustment);
-
     void sendDisputeManualPending(DisputeManualPending disputeManualPending);
-
-    void sendForgottenDisputes(List<Notification> notifications);
 
 }

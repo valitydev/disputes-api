@@ -59,7 +59,7 @@ public class PendingDisputesService {
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
                     case STATUS_SUCCESS -> disputeStatusResultHandler.handleSucceededResult(
-                            dispute, result, providerData, true, invoicePayment.getLastTransactionInfo());
+                            dispute, result, providerData, invoicePayment.getLastTransactionInfo());
                     case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
                     case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());

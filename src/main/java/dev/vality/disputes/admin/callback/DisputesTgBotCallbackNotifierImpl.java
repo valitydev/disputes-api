@@ -1,15 +1,14 @@
 package dev.vality.disputes.admin.callback;
 
-import dev.vality.disputes.admin.*;
+import dev.vality.disputes.admin.DisputeAlreadyCreated;
+import dev.vality.disputes.admin.DisputeManualPending;
+import dev.vality.disputes.admin.DisputePoolingExpired;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.service.external.DisputesTgBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Objects;
 
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.admin.enabled", havingValue = "true", matchIfMissing = true)
@@ -31,29 +30,8 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
     }
 
     @Override
-    public void sendDisputeReadyForCreateAdjustment(Dispute dispute) {
-        disputesTgBotService.sendDisputeReadyForCreateAdjustment(getCreateAdjustment(dispute));
-    }
-
-    @Override
     public void sendDisputeManualPending(Dispute dispute, String errorMessage) {
         disputesTgBotService.sendDisputeManualPending(getManualPending(dispute).setErrorMessage(errorMessage));
-    }
-
-    @Override
-    public void sendForgottenDisputes(List<Dispute> disputes) {
-        var notifications = disputes.stream()
-                .map(dispute -> switch (dispute.getStatus()) {
-                    case manual_pending -> Notification.disputeManualPending(getManualPending(dispute));
-                    case already_exist_created -> Notification.disputeAlreadyCreated(getAlreadyCreated(dispute));
-                    case create_adjustment -> Notification.disputeReadyForCreateAdjustment(
-                            getCreateAdjustment(dispute));
-                    case pooling_expired -> Notification.disputePoolingExpired(getPoolingExpired(dispute));
-                    default -> null;
-                })
-                .filter(Objects::nonNull)
-                .toList();
-        disputesTgBotService.sendForgottenDisputes(notifications);
     }
 
     private DisputeManualPending getManualPending(Dispute dispute) {
@@ -63,10 +41,6 @@ public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
 
     private DisputeAlreadyCreated getAlreadyCreated(Dispute dispute) {
         return new DisputeAlreadyCreated(dispute.getInvoiceId(), dispute.getPaymentId());
-    }
-
-    private DisputeReadyForCreateAdjustment getCreateAdjustment(Dispute dispute) {
-        return new DisputeReadyForCreateAdjustment(dispute.getInvoiceId(), dispute.getPaymentId());
     }
 
     private DisputePoolingExpired getPoolingExpired(Dispute dispute) {

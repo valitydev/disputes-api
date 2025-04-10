@@ -141,7 +141,7 @@ public class CreatedDisputesService {
 
     private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult providerStatus, ProviderData providerData, TransactionInfo transactionInfo) {
         disputeStatusResultHandler.handleSucceededResult(
-                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData, true, transactionInfo);
+                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData, transactionInfo);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {

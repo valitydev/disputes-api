@@ -2,14 +2,11 @@ package dev.vality.disputes.schedule.result;
 
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.disputes.admin.callback.CallbackNotifier;
-import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorMessage;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeStatusResult;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
-import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
@@ -19,8 +16,6 @@ import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
 
@@ -35,7 +30,6 @@ public class DisputeStatusResultHandler {
     private final TransactionContextConverter transactionContextConverter;
     private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final CallbackNotifier callbackNotifier;
-    private final MdcTopicProducer mdcTopicProducer;
 
     public void handlePendingResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
@@ -62,20 +56,15 @@ public class DisputeStatusResultHandler {
         disputesService.finishSucceeded(dispute, changedAmount);
     }
 
-    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, boolean notify, TransactionInfo transactionInfo) {
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, TransactionInfo transactionInfo) {
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
         createAdjustment(dispute, providerData, transactionInfo);
-        if (notify) {
-            callbackNotifier.sendDisputeReadyForCreateAdjustment(dispute);
-            mdcTopicProducer.sendReadyForCreateAdjustments(List.of(dispute));
-        }
     }
 
     public void handlePoolingExpired(Dispute dispute) {
         disputesService.setNextStepToPoolingExpired(dispute, ErrorMessage.POOLING_EXPIRED);
         callbackNotifier.sendDisputePoolingExpired(dispute);
-        mdcTopicProducer.sendPoolingExpired(dispute);
     }
 
     public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
@@ -92,19 +81,15 @@ public class DisputeStatusResultHandler {
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
         disputesService.setNextStepToManualPending(dispute, errorMessage);
         callbackNotifier.sendDisputeManualPending(dispute, errorMessage);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
     }
 
     private void createAdjustment(Dispute dispute, ProviderData providerData, TransactionInfo transactionInfo) {
         var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         try {
-            var paymentStatusResult = providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
-            if (!paymentStatusResult.isSuccess()) {
-                throw new ProviderPaymentsUnexpectedPaymentStatus("Cant do createAdjustment");
-            }
+            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
         } catch (ProviderCallbackAlreadyExistException ex) {
-            log.warn("ProviderCallbackAlreadyExist when handle DisputeStatusResultHandler.createAdjustment", ex);
+            log.warn("ProviderCallbackAlreadyExist when handle providerPaymentsService.checkPaymentStatusAndSave", ex);
         }
     }
 }

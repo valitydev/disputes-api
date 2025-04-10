@@ -1,10 +1,8 @@
 package dev.vality.disputes.schedule.result;
 
 import dev.vality.disputes.admin.callback.CallbackNotifier;
-import dev.vality.disputes.admin.management.MdcTopicProducer;
 import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.ProviderDisputeDao;
-import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
@@ -28,7 +26,6 @@ public class DisputeCreateResultHandler {
     private final DefaultRemoteClient defaultRemoteClient;
     private final ProviderDisputeDao providerDisputeDao;
     private final CallbackNotifier callbackNotifier;
-    private final MdcTopicProducer mdcTopicProducer;
 
     public void handleRetryLaterResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
@@ -68,7 +65,6 @@ public class DisputeCreateResultHandler {
     public void handleAlreadyExistResult(Dispute dispute) {
         disputesService.setNextStepToAlreadyExist(dispute);
         callbackNotifier.sendDisputeAlreadyCreated(dispute);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.already_exist_created, "dispute already exist");
     }
 
     public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
@@ -80,6 +76,5 @@ public class DisputeCreateResultHandler {
         var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
         disputesService.setNextStepToManualPending(dispute, errorMessage);
         callbackNotifier.sendDisputeManualPending(dispute, errorMessage);
-        mdcTopicProducer.sendCreated(dispute, DisputeStatus.manual_pending, errorMessage);
     }
 }

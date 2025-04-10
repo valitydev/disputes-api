@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.admin.enabled", havingValue = "false")
 @RequiredArgsConstructor
@@ -26,17 +24,8 @@ public class DummyCallbackNotifierImpl implements CallbackNotifier {
     }
 
     @Override
-    public void sendDisputeReadyForCreateAdjustment(Dispute dispute) {
-        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeReadyForCreateAdjustment() {}", dispute.getId());
-    }
-
-    @Override
     public void sendDisputeManualPending(Dispute dispute, String errorMessage) {
         log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeManualPending() {} {}", dispute.getId(), errorMessage);
     }
 
-    @Override
-    public void sendForgottenDisputes(List<Dispute> disputes) {
-        log.debug("Trying to call DummyCallbackNotifierImpl.sendForgottenDisputes() {}", disputes.size());
-    }
 }

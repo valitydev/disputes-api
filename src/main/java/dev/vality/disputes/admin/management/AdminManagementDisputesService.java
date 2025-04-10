@@ -168,7 +168,7 @@ public class AdminManagementDisputesService {
 
     private void handleSucceededResultWithCreateAdjustment(
             dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData, TransactionInfo transactionInfo) {
-        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, false, transactionInfo);
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, transactionInfo);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {

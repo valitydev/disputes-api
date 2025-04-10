@@ -16,6 +16,7 @@ import dev.vality.disputes.provider.payments.converter.TransactionContextConvert
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
+import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
@@ -68,7 +69,7 @@ public class ProviderPaymentsService {
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             checkPaymentStatusAndSave(transactionContext, currency, providerData, invoiceAmount);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException when process {}", callback);
+            log.info("InvoicingPaymentStatusRestrictionsException when process ProviderPaymentsCallbackParams {}", callback);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
@@ -77,7 +78,7 @@ public class ProviderPaymentsService {
     }
 
     @Transactional
-    public PaymentStatusResult checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
+    public void checkPaymentStatusAndSave(TransactionContext transactionContext, Currency currency, ProviderData providerData, long amount) {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult = providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
         if (paymentStatusResult.isSuccess()) {
@@ -89,9 +90,9 @@ public class ProviderPaymentsService {
             log.info("Save providerCallback {}", providerCallback);
             providerCallbackDao.save(providerCallback);
         } else {
-            log.info("providerPaymentsRemoteClient.checkPaymentStatus result was skipped by failed status");
+            throw new ProviderPaymentsUnexpectedPaymentStatus(
+                    "providerPaymentsService.checkPaymentStatusAndSave unsuccessful: Cant do createAdjustment");
         }
-        return paymentStatusResult;
     }
 
     @Transactional

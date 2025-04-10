@@ -50,27 +50,10 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
 
     @Override
     @SneakyThrows
-    public void sendDisputeReadyForCreateAdjustment(DisputeReadyForCreateAdjustment disputeReadyForCreateAdjustment) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() {}", disputeReadyForCreateAdjustment.getInvoiceId());
-        adminCallbackDisputesTgBotClient.notify(
-                new NotificationParamsRequest(List.of(Notification.disputeReadyForCreateAdjustment(disputeReadyForCreateAdjustment))));
-        log.debug("adminCallbackDisputesTgBotClient.sendDisputeReadyForCreateAdjustment() has been called {}", disputeReadyForCreateAdjustment.getInvoiceId());
-    }
-
-    @Override
-    @SneakyThrows
     public void sendDisputeManualPending(DisputeManualPending disputeManualPending) {
         log.debug("Trying to call adminCallbackDisputesTgBotClient.sendDisputeManualPending() {}", disputeManualPending.getInvoiceId());
         adminCallbackDisputesTgBotClient.notify(
                 new NotificationParamsRequest(List.of(Notification.disputeManualPending(disputeManualPending))));
         log.debug("adminCallbackDisputesTgBotClient.sendDisputeManualPending() has been called {}", disputeManualPending.getInvoiceId());
-    }
-
-    @Override
-    @SneakyThrows
-    public void sendForgottenDisputes(List<Notification> notifications) {
-        log.debug("Trying to call adminCallbackDisputesTgBotClient.sendForgottenDisputes() {}", notifications.size());
-        adminCallbackDisputesTgBotClient.notify(new NotificationParamsRequest(notifications));
-        log.debug("adminCallbackDisputesTgBotClient.sendForgottenDisputes() has been called {}", notifications.size());
     }
 }

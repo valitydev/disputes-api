@@ -69,8 +69,6 @@ service:
       url: http://localhost:8022/change_it
       networkTimeout: 5000
       enabled: false
-  mdc-topic-producer:
-    enabled: true
   adapters:
     connection:
       timeoutSec: 30
@@ -131,7 +129,7 @@ time:
 testcontainers:
   postgresql:
     tag: '14.12'
-
+  `
 http-client:
   requestTimeout: 60000
   poolTimeout: 10000
