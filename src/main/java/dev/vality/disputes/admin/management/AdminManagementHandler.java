@@ -28,7 +28,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
                 log.warn("NotFound when handle CancelParamsRequest, type={}", ex.getType(), ex);
             }
         }
-        log.info("Finish cancelParamsRequest {}", cancelParamsRequest);
+        log.debug("Finish cancelParamsRequest {}", cancelParamsRequest);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
                 log.warn("NotFound when handle ApproveParamsRequest, type={}", ex.getType(), ex);
             }
         }
-        log.info("Finish approveParamsRequest {}", approveParamsRequest);
+        log.debug("Finish approveParamsRequest {}", approveParamsRequest);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
                 log.warn("NotFound when handle BindParamsRequest, type={}", ex.getType(), ex);
             }
         }
-        log.info("Finish bindParamsRequest {}", bindParamsRequest);
+        log.debug("Finish bindParamsRequest {}", bindParamsRequest);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
                 log.warn("NotFound when handle DisputeParamsRequest, type={}", ex.getType(), ex);
             }
         }
-        log.info("Finish disputeParamsRequest {}", disputeParamsRequest);
+        log.debug("Finish disputeParamsRequest {}", disputeParamsRequest);
         return disputeResult;
     }
 
@@ -83,13 +83,13 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
                 log.warn("NotFound when handle SetPendingForPoolingExpiredParamsRequest, type={}", ex.getType(), ex);
             }
         }
-        log.info("Finish setPendingForPoolingExpiredParamsRequest {}", setPendingForPoolingExpiredParamsRequest);
+        log.debug("Finish setPendingForPoolingExpiredParamsRequest {}", setPendingForPoolingExpiredParamsRequest);
     }
 
     @Override
     public void sendMerchantsNotification(MerchantsNotificationParamsRequest params) {
         log.info("Got sendMerchantsNotification {}", params);
         notificationService.sendMerchantsNotification(params);
-        log.info("Finish sendMerchantsNotification {}", params);
+        log.debug("Finish sendMerchantsNotification {}", params);
     }
 }

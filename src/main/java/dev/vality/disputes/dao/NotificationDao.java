@@ -1,13 +1,13 @@
 package dev.vality.disputes.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.dao.mapper.EnrichedNotificationMapper;
-import dev.vality.disputes.dao.model.EnrichedNotification;
+import dev.vality.disputes.dao.mapper.NotifyRequestMapper;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.domain.tables.pojos.Notification;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
+import dev.vality.swag.disputes.model.NotifyRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
@@ -29,13 +29,13 @@ import static dev.vality.disputes.domain.tables.Notification.NOTIFICATION;
 public class NotificationDao extends AbstractGenericDao {
 
     private final RowMapper<Notification> notificationRowMapper;
-    private final EnrichedNotificationMapper enrichedNotificationMapper;
+    private final NotifyRequestMapper notifyRequestMapper;
 
     @Autowired
     public NotificationDao(DataSource dataSource) {
         super(dataSource);
         notificationRowMapper = new RecordRowMapper<>(NOTIFICATION, Notification.class);
-        enrichedNotificationMapper = new EnrichedNotificationMapper();
+        notifyRequestMapper = new NotifyRequestMapper();
     }
 
     public void save(Notification notification) {
@@ -63,18 +63,40 @@ public class NotificationDao extends AbstractGenericDao {
                         String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
     }
 
-    public List<EnrichedNotification> getNotificationsForDelivery(int limit) {
-        var query = getDslContext().select().from(NOTIFICATION)
+    public List<NotifyRequest> getNotifyRequests(int limit) {
+        var query = getDslContext().select(
+                        NOTIFICATION.DISPUTE_ID.as("dispute_id"),
+                        DISPUTE.INVOICE_ID.as("invoice_id"),
+                        DISPUTE.PAYMENT_ID.as("payment_id"),
+                        DISPUTE.STATUS.as("dispute_status"),
+                        DISPUTE.MAPPING.as("mapping"),
+                        DISPUTE.CHANGED_AMOUNT.as("changed_amount")
+                ).from(NOTIFICATION)
                 .innerJoin(DISPUTE).on(NOTIFICATION.DISPUTE_ID.eq(DISPUTE.ID)
-                        .and(DISPUTE.STATUS.eq(DisputeStatus.succeeded)
-                                .or(DISPUTE.STATUS.eq(DisputeStatus.failed))
-                                .or(DISPUTE.STATUS.eq(DisputeStatus.cancelled))))
+                        .and(DISPUTE.STATUS.in(DisputeStatus.succeeded, DisputeStatus.failed, DisputeStatus.cancelled)))
                 .where(NOTIFICATION.NEXT_ATTEMPT_AFTER.le(LocalDateTime.now(ZoneOffset.UTC))
                         .and(NOTIFICATION.STATUS.eq(NotificationStatus.pending)))
                 .orderBy(NOTIFICATION.NEXT_ATTEMPT_AFTER)
                 .limit(limit);
-        return Optional.ofNullable(fetch(query, enrichedNotificationMapper))
+        return Optional.ofNullable(fetch(query, notifyRequestMapper))
                 .orElse(List.of());
+    }
+
+    public NotifyRequest getNotifyRequest(UUID disputeId) {
+        var query = getDslContext().select(
+                        NOTIFICATION.DISPUTE_ID.as("dispute_id"),
+                        DISPUTE.INVOICE_ID.as("invoice_id"),
+                        DISPUTE.PAYMENT_ID.as("payment_id"),
+                        DISPUTE.STATUS.as("dispute_status"),
+                        DISPUTE.MAPPING.as("mapping"),
+                        DISPUTE.CHANGED_AMOUNT.as("changed_amount")
+                ).from(NOTIFICATION)
+                .innerJoin(DISPUTE).on(NOTIFICATION.DISPUTE_ID.eq(DISPUTE.ID)
+                        .and(DISPUTE.STATUS.in(DisputeStatus.succeeded, DisputeStatus.failed, DisputeStatus.cancelled))
+                        .and(DISPUTE.ID.eq(disputeId)));
+        return Optional.ofNullable(fetchOne(query, notifyRequestMapper))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
     }
 
     public void delivered(Notification notification) {

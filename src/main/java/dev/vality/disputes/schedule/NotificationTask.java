@@ -1,8 +1,8 @@
 package dev.vality.disputes.schedule;
 
-import dev.vality.disputes.dao.model.EnrichedNotification;
 import dev.vality.disputes.schedule.core.NotificationService;
 import dev.vality.disputes.schedule.handler.NotificationHandler;
+import dev.vality.swag.disputes.model.NotifyRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -31,7 +30,7 @@ public class NotificationTask {
     @Scheduled(fixedDelayString = "${dispute.fixedDelayNotification}", initialDelayString = "${dispute.initialDelayNotification}")
     public void processNotifications() {
         try {
-            var notifications = notificationService.getNotificationsForDelivery(batchSize);
+            var notifications = notificationService.getNotifyRequests(batchSize);
             var callables = notifications.stream()
                     .map(this::handleNotification)
                     .collect(Collectors.toList());
@@ -44,7 +43,7 @@ public class NotificationTask {
         }
     }
 
-    private Callable<UUID> handleNotification(EnrichedNotification enrichedNotification) {
-        return () -> new NotificationHandler(notificationService).handle(enrichedNotification);
+    private Callable<String> handleNotification(NotifyRequest notifyRequest) {
+        return () -> new NotificationHandler(notificationService).handle(notifyRequest);
     }
 }

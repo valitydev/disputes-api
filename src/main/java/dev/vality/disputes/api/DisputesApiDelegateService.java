@@ -35,12 +35,12 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
         var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
         if (dispute.isPresent()) {
-            log.info("<- Res existing: {}, invoiceId={}, paymentId={}", "/create", req.getInvoiceId(), req.getPaymentId());
+            log.debug("<- Res existing: {}, invoiceId={}, paymentId={}", "/create", req.getInvoiceId(), req.getPaymentId());
             return ResponseEntity.ok(new Create200Response(String.valueOf(dispute.get().getId())));
         }
         var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var disputeId = apiDisputesService.createDispute(req, paymentParams);
-        log.info("<- Res: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
+        log.debug("<- Res: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(new Create200Response(String.valueOf(disputeId)));
     }
 
@@ -55,7 +55,7 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         log.info("-> Req: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData, false);
         var body = status200ResponseConverter.convert(dispute);
-        log.info("<- Res: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
+        log.debug("<- Res: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(body);
     }
 }

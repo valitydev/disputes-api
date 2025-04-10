@@ -41,8 +41,8 @@ public class NotificationDaoTest {
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt.plusSeconds(10), getDispute().getId()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
-        var enrichedNotifications = notificationDao.getNotificationsForDelivery(10);
-        assertEquals(1, enrichedNotifications.size());
+        var notifyRequests = notificationDao.getNotifyRequests(10);
+        assertEquals(1, notifyRequests.size());
     }
 
     @Test

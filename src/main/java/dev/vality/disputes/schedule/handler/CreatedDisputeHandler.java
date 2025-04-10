@@ -3,12 +3,10 @@ package dev.vality.disputes.schedule.handler;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
 @RequiredArgsConstructor
-@Slf4j
 public class CreatedDisputeHandler {
 
     private final CreatedDisputesService createdDisputesService;
@@ -20,9 +18,6 @@ public class CreatedDisputeHandler {
         try {
             createdDisputesService.callCreateDisputeRemotely(dispute);
             return dispute.getId();
-        } catch (Throwable ex) {
-            log.error("Received exception while scheduler processed callCreateDisputeRemotely", ex);
-            throw ex;
         } finally {
             currentThread.setName(oldName);
         }

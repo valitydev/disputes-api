@@ -26,7 +26,7 @@ public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallback
             return;
         }
         if (callback.getInvoiceId().isEmpty() && callback.getPaymentId().isEmpty()) {
-            log.info("InvoiceId should be set, finish");
+            log.debug("InvoiceId should be set, finish");
             return;
         }
         providerPaymentsService.processCallback(callback);

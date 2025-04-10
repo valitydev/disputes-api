@@ -3,7 +3,6 @@ package dev.vality.disputes.schedule.service;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.dao.NotificationDao;
-import dev.vality.disputes.dao.model.EnrichedNotification;
 import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.schedule.core.NotificationService;
 import dev.vality.disputes.util.WiremockUtils;
@@ -26,9 +25,8 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     public void testNotificationDelivered() {
         var disputeId = providerCallbackFlowHandler.handleSuccess();
         WiremockUtils.mockNotificationSuccess();
-        var dispute = disputeDao.get(disputeId);
-        var notification = notificationDao.get(disputeId);
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
+        var notifyRequest = notificationDao.getNotifyRequest(disputeId);
+        notificationService.process(notifyRequest);
         Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
     }
 
@@ -37,18 +35,15 @@ public class NotificationServiceTest extends AbstractMockitoConfig {
     public void testNotificationDeliveredAfterMerchantInternalErrors() {
         var disputeId = providerCallbackFlowHandler.handleSuccess();
         WiremockUtils.mockNotification500();
-        var dispute = disputeDao.get(disputeId);
-        var notification = notificationDao.get(disputeId);
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
-        notification = notificationDao.get(disputeId);
-        Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
-        Assertions.assertEquals(4, notification.getMaxAttempts());
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
-        notification = notificationDao.get(disputeId);
-        Assertions.assertEquals(NotificationStatus.pending, notification.getStatus());
-        Assertions.assertEquals(3, notification.getMaxAttempts());
+        var notifyRequest = notificationDao.getNotifyRequest(disputeId);
+        notificationService.process(notifyRequest);
+        Assertions.assertEquals(NotificationStatus.pending, notificationDao.get(disputeId).getStatus());
+        Assertions.assertEquals(4, notificationDao.get(disputeId).getMaxAttempts());
+        notificationService.process(notifyRequest);
+        Assertions.assertEquals(NotificationStatus.pending, notificationDao.get(disputeId).getStatus());
+        Assertions.assertEquals(3, notificationDao.get(disputeId).getMaxAttempts());
         WiremockUtils.mockNotificationSuccess();
-        notificationService.process(EnrichedNotification.builder().dispute(dispute).notification(notification).build());
+        notificationService.process(notifyRequest);
         Assertions.assertEquals(NotificationStatus.delivered, notificationDao.get(disputeId).getStatus());
     }
 }

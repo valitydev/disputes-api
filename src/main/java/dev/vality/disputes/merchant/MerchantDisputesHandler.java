@@ -21,20 +21,20 @@ public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface
 
     @Override
     public DisputeCreatedResult createDispute(DisputeParams disputeParams) {
-        log.info("Got DisputeParams {}", disputeParams);
+        log.debug("Got DisputeParams {}", disputeParams);
         var createRequest = createRequestConverter.convert(disputeParams);
         var disputeId = disputesApiDelegate.create(createRequest, false)
                 .getBody()
                 .getDisputeId();
-        log.info("Finish DisputeParams {}", disputeParams);
+        log.debug("Finish DisputeParams {}", disputeParams);
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(disputeId));
     }
 
     @Override
     public DisputeStatusResult checkDisputeStatus(DisputeContext disputeContext) {
-        log.info("Got DisputeContext {}", disputeContext);
+        log.debug("Got DisputeContext {}", disputeContext);
         var response = disputesApiDelegate.status(disputeContext.getDisputeId(), false).getBody();
-        log.info("Finish DisputeContext {}", disputeContext);
+        log.debug("Finish DisputeContext {}", disputeContext);
         return switch (response.getStatus()) {
             case PENDING -> DisputeStatusResult.statusPending(new DisputeStatusPendingResult());
             case FAILED -> DisputeStatusResult.statusFail(
