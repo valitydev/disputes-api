@@ -34,6 +34,14 @@ public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
 
+    @ExceptionHandler({PaymentExpiredException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handlePaymentExpiredException(PaymentExpiredException ex) {
+        log.warn("<- Res [400]: Payment expired", ex);
+        return new GeneralError()
+                .message("Blocked: Payment expired");
+    }
+
     @ExceptionHandler({CapturedPaymentException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleCapturedPaymentException(CapturedPaymentException ex) {
