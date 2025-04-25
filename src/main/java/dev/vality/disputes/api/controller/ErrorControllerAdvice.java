@@ -34,6 +34,14 @@ public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
 
+    @ExceptionHandler({UnexpectedMimeTypeException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleUnexpectedMimeTypeException(UnexpectedMimeTypeException ex) {
+        log.warn("<- Res [400]: Unexpected MimeType", ex);
+        return new GeneralError()
+                .message("Blocked: Unexpected MimeType");
+    }
+
     @ExceptionHandler({PaymentExpiredException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handlePaymentExpiredException(PaymentExpiredException ex) {
