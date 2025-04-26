@@ -99,6 +99,7 @@ auth:
   enabled: true
 
 dispute:
+  maxRequestSize: 7
   batchSize: 1
   notificationsMaxAttempts: 5
   fixedDelayCreated: 5000
