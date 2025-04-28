@@ -1,9 +1,6 @@
 package dev.vality.disputes.api.controller;
 
-import dev.vality.disputes.exception.AuthorizationException;
-import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
-import dev.vality.disputes.exception.NotFoundException;
-import dev.vality.disputes.exception.TokenKeeperException;
+import dev.vality.disputes.exception.*;
 import dev.vality.swag.disputes.model.GeneralError;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +34,38 @@ public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
 
+    @ExceptionHandler({UnexpectedMimeTypeException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleUnexpectedMimeTypeException(UnexpectedMimeTypeException ex) {
+        log.warn("<- Res [400]: Unexpected MimeType", ex);
+        return new GeneralError()
+                .message("Blocked: Unexpected MimeType");
+    }
+
+    @ExceptionHandler({PaymentExpiredException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handlePaymentExpiredException(PaymentExpiredException ex) {
+        log.warn("<- Res [400]: Payment expired", ex);
+        return new GeneralError()
+                .message("Blocked: Payment expired");
+    }
+
+    @ExceptionHandler({CapturedPaymentException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleCapturedPaymentException(CapturedPaymentException ex) {
+        log.warn("<- Res [400]: Payment already successful", ex);
+        return new GeneralError()
+                .message("Blocked: Payment already successful");
+    }
+
     @ExceptionHandler({InvoicingPaymentStatusRestrictionsException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleInvoicingPaymentStatusRestrictionsException(InvoicingPaymentStatusRestrictionsException ex) {
         log.warn("<- Res [400]: Payment should be failed", ex);
+        if (ex.getStatus() != null) {
+            return new GeneralError()
+                    .message("Blocked: Payment should be failed, but status=" + ex.getStatus().getSetField().getFieldName());
+        }
         return new GeneralError()
                 .message("Blocked: Payment should be failed");
     }
@@ -102,8 +127,10 @@ public class ErrorControllerAdvice {
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public void handleNotFoundException(NotFoundException ex) {
+    public Object handleNotFoundException(NotFoundException ex) {
         log.warn("<- Res [404]: Not found, type={}", ex.getType(), ex);
+        return new GeneralError()
+                .message(ex.getType().name() + " not found");
     }
 
     @ExceptionHandler({HttpMediaTypeNotAcceptableException.class})

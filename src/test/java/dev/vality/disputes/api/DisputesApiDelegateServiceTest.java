@@ -12,6 +12,7 @@ import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
 import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.file.storage.FileStorageSrv;
+import dev.vality.geck.common.util.TypeUtil;
 import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import lombok.SneakyThrows;
@@ -24,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static dev.vality.disputes.util.MockUtil.*;
@@ -176,6 +178,71 @@ public class DisputesApiDelegateServiceTest {
                         .params(OpenApiUtil.getStatusRequiredParams(randomUUID().toString(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @SneakyThrows
+    void testBadRequestWhenInvalidMimeType() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        when(invoicingClient.get(any(), any()))
+                .thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
+        when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
+        when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
+        when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
+        when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
+        when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
+        when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
+        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
+        mvc.perform(post("/disputes/create")
+                        .header("Authorization", "Bearer token")
+                        .header("X-Request-ID", randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(OpenApiUtil.getContentInvalidMimeTypeCreateRequest(invoiceId, paymentId)))
+                .andExpect(status().is4xxClientError());
+        verify(invoicingClient, times(1)).get(any(), any());
+        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
+        verify(bouncerClient, times(1)).judge(any(), any());
+        verify(dominantAsyncService, times(1)).getTerminal(any());
+        verify(dominantAsyncService, times(1)).getCurrency(any());
+        verify(dominantAsyncService, times(1)).getProvider(any());
+        verify(dominantAsyncService, times(1)).getProxy(any());
+        verify(partyManagementService, times(1)).getShop(any(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void testBadRequestWhenPaymentExpired() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        var invoice = createInvoice(invoiceId, paymentId);
+        invoice.getPayments().getFirst().getPayment().setCreatedAt(TypeUtil.temporalToString(LocalDateTime.now().minusDays(40)));
+        when(invoicingClient.get(any(), any()))
+                .thenReturn(invoice);
+        when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
+        when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
+        mvc.perform(post("/disputes/create")
+                        .header("Authorization", "Bearer token")
+                        .header("X-Request-ID", randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(OpenApiUtil.getContentInvalidMimeTypeCreateRequest(invoiceId, paymentId)))
+                .andExpect(status().is4xxClientError());
+        verify(invoicingClient, times(1)).get(any(), any());
+        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
+        verify(bouncerClient, times(1)).judge(any(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void testBadRequestWhenRequestSizeBellowLimit() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        mvc.perform(post("/disputes/create")
+                        .header("Authorization", "Bearer token")
+                        .header("X-Request-ID", randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(OpenApiUtil.getContentInvalidSizeCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is4xxClientError());
     }
 }
