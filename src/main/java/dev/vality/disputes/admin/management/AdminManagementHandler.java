@@ -12,7 +12,6 @@ import java.util.ArrayList;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
 
     private final AdminManagementDisputesService adminManagementDisputesService;
@@ -63,7 +62,8 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
         var disputeResult = new DisputeResult(new ArrayList<>());
         for (var disputeParams : disputeParamsRequest.getDisputeParams()) {
             try {
-                var dispute = adminManagementDisputesService.getDispute(disputeParams, disputeParamsRequest.isWithAttachments());
+                var dispute = adminManagementDisputesService.getDispute(disputeParams,
+                        disputeParamsRequest.isWithAttachments());
                 disputeResult.getDisputes().add(dispute);
             } catch (NotFoundException ex) {
                 log.warn("NotFound when handle DisputeParamsRequest, type={}", ex.getType(), ex);
@@ -74,11 +74,12 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
     }
 
     @Override
-    public void setPendingForPoolingExpired(SetPendingForPoolingExpiredParamsRequest setPendingForPoolingExpiredParamsRequest) {
+    public void setPendingForPoolingExpired(
+            SetPendingForPoolingExpiredParamsRequest setPendingForPoolingExpiredParamsRequest) {
         log.info("Got setPendingForPoolingExpiredParamsRequest {}", setPendingForPoolingExpiredParamsRequest);
-        for (var setPendingForPoolingExpiredParams : setPendingForPoolingExpiredParamsRequest.getSetPendingForPoolingExpiredParams()) {
+        for (var params : setPendingForPoolingExpiredParamsRequest.getSetPendingForPoolingExpiredParams()) {
             try {
-                adminManagementDisputesService.setPendingForPoolingExpiredDispute(setPendingForPoolingExpiredParams);
+                adminManagementDisputesService.setPendingForPoolingExpiredDispute(params);
             } catch (NotFoundException ex) {
                 log.warn("NotFound when handle SetPendingForPoolingExpiredParamsRequest, type={}", ex.getType(), ex);
             }

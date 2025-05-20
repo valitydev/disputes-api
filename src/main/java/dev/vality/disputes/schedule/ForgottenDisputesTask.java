@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "dispute.isScheduleForgottenEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ForgottenDisputesTask {
 
     private final ForgottenDisputesService forgottenDisputesService;
@@ -28,7 +27,9 @@ public class ForgottenDisputesTask {
     @Value("${dispute.batchSize}")
     private int batchSize;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayForgotten}", initialDelayString = "${dispute.initialDelayForgotten}")
+    @Scheduled(
+            fixedDelayString = "${dispute.fixedDelayForgotten}",
+            initialDelayString = "${dispute.initialDelayForgotten}")
     public void processForgottenDisputes() {
         try {
             var disputes = forgottenDisputesService.getForgottenSkipLocked(batchSize);

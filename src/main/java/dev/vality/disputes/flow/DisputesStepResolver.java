@@ -7,15 +7,17 @@ import dev.vality.woody.api.flow.error.WRuntimeException;
 
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
 
-@SuppressWarnings({"LineLength"})
 public class DisputesStepResolver {
 
     public DisputeStatus resolveNextStep(
             DisputeStatus status, Boolean isDefaultRouteUrl, Failure failure,
-            Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping, String handleFailedResultErrorMessage,
+            Boolean isAlreadyExistResult, WRuntimeException unexpectedResultMapping,
+            String handleFailedResultErrorMessage,
             Boolean isSuccessDisputeCheckStatusResult, Boolean isPoolingExpired, Boolean isProviderDisputeNotFound,
-            Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall, Boolean isSkipHgCallApproveFlag,
-            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired, Boolean isInvoicePaymentStatusCaptured) {
+            Boolean isAdminApproveCall, Boolean isAdminCancelCall, Boolean isAdminBindCall,
+            Boolean isSkipHgCallApproveFlag,
+            Boolean isSuccessProviderPaymentStatus, Boolean isSetPendingForPoolingExpired,
+            Boolean isInvoicePaymentStatusCaptured) {
         return switch (status) {
             case created -> {
                 if (isAdminCancelCall) {

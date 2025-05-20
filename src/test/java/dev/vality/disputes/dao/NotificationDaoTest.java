@@ -16,7 +16,7 @@ import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @PostgresqlSpringBootITest
-@SuppressWarnings({"LineLength"})
+
 public class NotificationDaoTest {
 
     @Autowired
@@ -38,7 +38,8 @@ public class NotificationDaoTest {
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, getDispute().getId()));
         notificationDao.save(getNotification(NotificationStatus.delivered, createdAt, getDispute().getId()));
         notificationDao.save(getNotification(NotificationStatus.attempts_limit, createdAt, getDispute().getId()));
-        notificationDao.save(getNotification(NotificationStatus.pending, createdAt.plusSeconds(10), getDispute().getId()));
+        notificationDao.save(
+                getNotification(NotificationStatus.pending, createdAt.plusSeconds(10), getDispute().getId()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
         notificationDao.save(getNotification(NotificationStatus.pending, createdAt, UUID.randomUUID()));
         var notifyRequests = notificationDao.getNotifyRequests(10);

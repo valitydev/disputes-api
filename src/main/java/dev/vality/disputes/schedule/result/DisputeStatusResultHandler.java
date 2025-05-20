@@ -22,7 +22,6 @@ import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAP
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputeStatusResultHandler {
 
     private final DisputesService disputesService;
@@ -56,7 +55,8 @@ public class DisputeStatusResultHandler {
         disputesService.finishSucceeded(dispute, changedAmount);
     }
 
-    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData, TransactionInfo transactionInfo) {
+    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData,
+                                      TransactionInfo transactionInfo) {
         var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
         createAdjustment(dispute, providerData, transactionInfo);
@@ -84,10 +84,12 @@ public class DisputeStatusResultHandler {
     }
 
     private void createAdjustment(Dispute dispute, ProviderData providerData, TransactionInfo transactionInfo) {
-        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(), dispute.getProviderTrxId(), providerData, transactionInfo);
+        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(),
+                dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         try {
-            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData, dispute.getAmount());
+            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData,
+                    dispute.getAmount());
         } catch (ProviderCallbackAlreadyExistException ex) {
             log.warn("ProviderCallbackAlreadyExist when handle providerPaymentsService.checkPaymentStatusAndSave", ex);
         }

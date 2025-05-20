@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "dispute.isScheduleNotificationEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class NotificationTask {
 
     private final ExecutorService disputesThreadPool;
@@ -27,7 +26,9 @@ public class NotificationTask {
     @Value("${dispute.batchSize}")
     private int batchSize;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayNotification}", initialDelayString = "${dispute.initialDelayNotification}")
+    @Scheduled(
+            fixedDelayString = "${dispute.fixedDelayNotification}",
+            initialDelayString = "${dispute.initialDelayNotification}")
     public void processNotifications() {
         try {
             var notifications = notificationService.getNotifyRequests(batchSize);

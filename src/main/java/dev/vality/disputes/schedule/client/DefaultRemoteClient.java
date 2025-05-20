@@ -8,11 +8,11 @@ import dev.vality.disputes.schedule.model.ProviderData;
 
 import java.util.List;
 
-@SuppressWarnings({"LineLength"})
 public interface DefaultRemoteClient {
 
     Boolean routeUrlEquals(ProviderData providerData);
 
-    DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData, TransactionInfo transactionInfo);
+    DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData,
+                                       TransactionInfo transactionInfo);
 
 }

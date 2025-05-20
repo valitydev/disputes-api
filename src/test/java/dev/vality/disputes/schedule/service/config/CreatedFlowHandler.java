@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class CreatedFlowHandler {
 
     private final InvoicingSrv.Iface invoicingClient;
@@ -42,21 +41,22 @@ public class CreatedFlowHandler {
 
     @SneakyThrows
     public UUID handleCreate() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var providerDisputeId = generateId();
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
+        when(dominantService.getProxy(any())).thenReturn(
+                createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        var providerDisputeId = generateId();
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
@@ -73,7 +73,8 @@ public class CreatedFlowHandler {
     @SneakyThrows
     public void mockSuccessStatusProviderPayment() {
         var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
-        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE));
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(
+                new PaymentStatusResult(true).setChangedAmount(Long.MAX_VALUE));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
     }
 }

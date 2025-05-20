@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "service.disputes-tg-bot.admin.enabled", havingValue = "false")
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class DummyCallbackNotifierImpl implements CallbackNotifier {
 
     @Override
@@ -25,7 +24,8 @@ public class DummyCallbackNotifierImpl implements CallbackNotifier {
 
     @Override
     public void sendDisputeManualPending(Dispute dispute, String errorMessage) {
-        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeManualPending() {} {}", dispute.getId(), errorMessage);
+        log.debug("Trying to call DummyCallbackNotifierImpl.sendDisputeManualPending() {} {}", dispute.getId(),
+                errorMessage);
     }
 
 }

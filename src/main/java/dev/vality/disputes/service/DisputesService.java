@@ -19,7 +19,6 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputesService {
 
     public static final Set<DisputeStatus> DISPUTE_PENDING_STATUSES = disputePendingStatuses();
@@ -53,26 +52,30 @@ public class DisputesService {
     }
 
     public void finishFailedWithMapping(Dispute dispute, String errorMessage, Failure failure) {
-        log.warn("Trying to set failed Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage, failure.getCode(), dispute.getId());
+        log.warn("Trying to set failed Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage,
+                failure.getCode(), dispute.getId());
         disputeDao.finishFailedWithMapping(dispute.getId(), errorMessage, failure.getCode());
         log.debug("Dispute status has been set to failed, '{}' mapping, {}", failure.getCode(), dispute.getId());
     }
 
     public void finishCancelled(Dispute dispute, String mapping, String errorMessage) {
-        log.warn("Trying to set cancelled Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage, mapping, dispute.getId());
+        log.warn("Trying to set cancelled Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage,
+                mapping, dispute.getId());
         disputeDao.finishCancelled(dispute.getId(), errorMessage, mapping);
         log.debug("Dispute status has been set to cancelled {}", dispute);
     }
 
     public void setNextStepToCreated(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         log.info("Trying to set created Dispute status {}", dispute.getId());
         disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to created {}", dispute.getId());
     }
 
     public void setNextStepToPending(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         log.info("Trying to set pending Dispute status {}", dispute);
         disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to pending {}", dispute.getId());
@@ -85,7 +88,8 @@ public class DisputesService {
     }
 
     public void setNextStepToManualPending(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set manual_pending Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
+        log.warn("Trying to set manual_pending Dispute status with '{}' errorMessage, {}", errorMessage,
+                dispute.getId());
         disputeDao.setNextStepToManualPending(dispute.getId(), errorMessage);
         log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
     }
@@ -97,13 +101,15 @@ public class DisputesService {
     }
 
     public void setNextStepToPoolingExpired(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set pooling_expired Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
+        log.warn("Trying to set pooling_expired Dispute status with '{}' errorMessage, {}", errorMessage,
+                dispute.getId());
         disputeDao.setNextStepToPoolingExpired(dispute.getId(), errorMessage);
         log.debug("Dispute status has been set to pooling_expired {}", dispute.getId());
     }
 
     public void updateNextPollingInterval(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
     }
 

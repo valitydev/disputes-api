@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
-@SuppressWarnings({"LineLength"})
 public class Status200ResponseConverter {
 
     public Status200Response convert(Dispute dispute) {
@@ -31,7 +30,8 @@ public class Status200ResponseConverter {
             case succeeded -> Status200Response.StatusEnum.SUCCEEDED;
             case cancelled, failed -> Status200Response.StatusEnum.FAILED;
             default -> throw new NotFoundException(
-                    String.format("Dispute not found, disputeId='%s'", dispute.getId()), NotFoundException.Type.DISPUTE);
+                    String.format("Dispute not found, disputeId='%s'", dispute.getId()),
+                    NotFoundException.Type.DISPUTE);
         };
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import java.util.stream.Collectors;
 
 @Component
-@SuppressWarnings({"LineLength"})
 public class CreateRequestConverter {
 
     public CreateRequest convert(DisputeParams disputeParams) {
@@ -16,7 +15,8 @@ public class CreateRequestConverter {
                 disputeParams.getInvoiceId(),
                 disputeParams.getPaymentId(),
                 disputeParams.getAttachments().stream()
-                        .map(attachment -> new CreateRequestAttachmentsInner(attachment.getData(), attachment.getMimeType()))
+                        .map(attachment -> new CreateRequestAttachmentsInner(attachment.getData(),
+                                attachment.getMimeType()))
                         .collect(Collectors.toList()))
                 .notificationUrl(disputeParams.getNotificationUrl().orElse(null));
     }

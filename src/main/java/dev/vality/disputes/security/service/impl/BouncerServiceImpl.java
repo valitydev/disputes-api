@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class BouncerServiceImpl implements BouncerService {
 
     private final BouncerProperties bouncerProperties;
@@ -24,9 +23,11 @@ public class BouncerServiceImpl implements BouncerService {
 
     @Override
     public Resolution getResolution(AccessData accessData) {
-        log.debug("Check access with bouncer context: {}{}", accessData.getInvoice().getInvoice().getId(), accessData.getPayment().getPayment().getId());
+        log.debug("Check access with bouncer context: {}{}", accessData.getInvoice().getInvoice().getId(),
+                accessData.getPayment().getPayment().getId());
         var context = bouncerContextFactory.buildContext(accessData);
-        log.debug("Built thrift context: {}{}", accessData.getInvoice().getInvoice().getId(), accessData.getPayment().getPayment().getId());
+        log.debug("Built thrift context: {}{}", accessData.getInvoice().getInvoice().getId(),
+                accessData.getPayment().getPayment().getId());
         try {
             var judge = bouncerClient.judge(bouncerProperties.getRuleSetId(), context);
             log.debug("Have judge: {}", judge);

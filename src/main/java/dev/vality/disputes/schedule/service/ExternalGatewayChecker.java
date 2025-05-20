@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ExternalGatewayChecker {
 
     private final CloseableHttpClient httpClient;

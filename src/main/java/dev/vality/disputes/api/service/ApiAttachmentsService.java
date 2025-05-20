@@ -14,7 +14,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class ApiAttachmentsService {
 
     private final FileMetaDao fileMetaDao;

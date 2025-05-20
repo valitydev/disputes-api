@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"LineLength"})
+
 public class DisputesApiDelegateServiceTest {
 
     @MockitoBean
@@ -63,7 +63,7 @@ public class DisputesApiDelegateServiceTest {
 
     @BeforeEach
     public void init() {
-        preparedMocks = new Object[]{invoicingClient, tokenKeeperClient, bouncerClient,
+        preparedMocks = new Object[] {invoicingClient, tokenKeeperClient, bouncerClient,
                 fileStorageClient, dominantAsyncService, partyManagementService};
     }
 
@@ -86,7 +86,8 @@ public class DisputesApiDelegateServiceTest {
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
         when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(
+                createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer token")
@@ -95,7 +96,8 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        var response = new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class);
+        var response = new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                Create200Response.class);
         verify(invoicingClient, times(1)).get(any(), any());
         verify(tokenKeeperClient, times(1)).authenticate(any(), any());
         verify(bouncerClient, times(1)).judge(any(), any());
@@ -124,13 +126,16 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        assertEquals(response.getDisputeId(), new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class).getDisputeId());
+        assertEquals(response.getDisputeId(),
+                new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                        Create200Response.class).getDisputeId());
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
         verify(bouncerClient, times(3)).judge(any(), any());
         disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
         // new after failed
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(
+                createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
@@ -138,7 +143,9 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        assertNotEquals(response.getDisputeId(), new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class).getDisputeId());
+        assertNotEquals(response.getDisputeId(),
+                new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                        Create200Response.class).getDisputeId());
         verify(invoicingClient, times(4)).get(any(), any());
         verify(tokenKeeperClient, times(4)).authenticate(any(), any());
         verify(bouncerClient, times(4)).judge(any(), any());
@@ -213,7 +220,8 @@ public class DisputesApiDelegateServiceTest {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var invoice = createInvoice(invoiceId, paymentId);
-        invoice.getPayments().getFirst().getPayment().setCreatedAt(TypeUtil.temporalToString(LocalDateTime.now().minusDays(40)));
+        invoice.getPayments().getFirst().getPayment()
+                .setCreatedAt(TypeUtil.temporalToString(LocalDateTime.now().minusDays(40)));
         when(invoicingClient.get(any(), any()))
                 .thenReturn(invoice);
         when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());

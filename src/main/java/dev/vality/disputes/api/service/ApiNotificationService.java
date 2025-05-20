@@ -17,7 +17,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class ApiNotificationService {
 
     private final NotificationDao notificationDao;
@@ -26,7 +25,8 @@ public class ApiNotificationService {
     @Value("${dispute.notificationsMaxAttempts}")
     private int notificationsMaxAttempts;
 
-    public void saveNotification(CreateRequest req, PaymentParams paymentParams, PollingInfo pollingInfo, UUID disputeId) {
+    public void saveNotification(CreateRequest req, PaymentParams paymentParams, PollingInfo pollingInfo,
+                                 UUID disputeId) {
         if (req.getNotificationUrl() != null) {
             log.debug("Trying to save Notification {}", disputeId);
             var notification = new Notification();

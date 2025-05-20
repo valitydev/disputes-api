@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"LineLength"})
+
 public class NotificationServiceTest extends AbstractMockitoConfig {
 
     @Autowired

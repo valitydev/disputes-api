@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
         "server.port=${local.server.port}",
         "provider.payments.isProviderCallbackEnabled=true",
 })
-@SuppressWarnings({"LineLength"})
+
 public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
 
     @Test
@@ -40,7 +40,8 @@ public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
+        when(dominantService.getProxy(any())).thenReturn(
+                createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult());
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);

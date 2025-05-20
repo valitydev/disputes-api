@@ -26,7 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SuppressWarnings({"LineLength"})
+
 public abstract class AbstractMockitoConfig {
 
     @MockitoSpyBean
@@ -76,9 +76,17 @@ public abstract class AbstractMockitoConfig {
 
     @BeforeEach
     void setUp() {
-        merchantApiMvcPerformer = new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient, dominantAsyncService, partyManagementService, wiremockAddressesHolder, mvc);
-        createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService, createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder, wiremockAddressesHolder, merchantApiMvcPerformer);
-        pendingFlowHandler = new PendingFlowHandler(disputeDao, providerCallbackDao, createdFlowHandler, pendingDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder);
-        providerCallbackFlowHandler = new ProviderCallbackFlowHandler(invoicingClient, disputeDao, providerCallbackDao, pendingFlowHandler, providerPaymentsService, providerPaymentsAdjustmentExtractor);
+        merchantApiMvcPerformer =
+                new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient,
+                        dominantAsyncService, partyManagementService, wiremockAddressesHolder, mvc);
+        createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService,
+                createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder,
+                wiremockAddressesHolder, merchantApiMvcPerformer);
+        pendingFlowHandler =
+                new PendingFlowHandler(disputeDao, providerCallbackDao, createdFlowHandler, pendingDisputesService,
+                        providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder);
+        providerCallbackFlowHandler =
+                new ProviderCallbackFlowHandler(invoicingClient, disputeDao, providerCallbackDao, pendingFlowHandler,
+                        providerPaymentsService, providerPaymentsAdjustmentExtractor);
     }
 }

@@ -25,7 +25,6 @@ import static dev.vality.disputes.domain.tables.Notification.NOTIFICATION;
 
 @Component
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class NotificationDao extends AbstractGenericDao {
 
     private final RowMapper<Notification> notificationRowMapper;
@@ -50,7 +49,8 @@ public class NotificationDao extends AbstractGenericDao {
                 .where(NOTIFICATION.DISPUTE_ID.eq(disputeId));
         return Optional.ofNullable(fetchOne(query, notificationRowMapper))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
+                        String.format("Notification not found, disputeId='%s'", disputeId),
+                        NotFoundException.Type.NOTIFICATION));
     }
 
     public Notification getSkipLocked(UUID disputeId) {
@@ -60,7 +60,8 @@ public class NotificationDao extends AbstractGenericDao {
                 .skipLocked();
         return Optional.ofNullable(fetchOne(query, notificationRowMapper))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
+                        String.format("Notification not found, disputeId='%s'", disputeId),
+                        NotFoundException.Type.NOTIFICATION));
     }
 
     public List<NotifyRequest> getNotifyRequests(int limit) {
@@ -96,7 +97,8 @@ public class NotificationDao extends AbstractGenericDao {
                         .and(DISPUTE.ID.eq(disputeId)));
         return Optional.ofNullable(fetchOne(query, notifyRequestMapper))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Notification not found, disputeId='%s'", disputeId), NotFoundException.Type.NOTIFICATION));
+                        String.format("Notification not found, disputeId='%s'", disputeId),
+                        NotFoundException.Type.NOTIFICATION));
     }
 
     public void delivered(Notification notification) {

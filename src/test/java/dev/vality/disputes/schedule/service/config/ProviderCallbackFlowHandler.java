@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class ProviderCallbackFlowHandler {
 
     private final InvoicingSrv.Iface invoicingClient;

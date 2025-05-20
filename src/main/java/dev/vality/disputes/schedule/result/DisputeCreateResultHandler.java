@@ -19,7 +19,6 @@ import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAP
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputeCreateResultHandler {
 
     private final DisputesService disputesService;
@@ -38,7 +37,8 @@ public class DisputeCreateResultHandler {
         providerDisputeDao.save(result.getSuccessResult().getProviderDisputeId(), dispute);
         var isDefaultRouteUrl = defaultRemoteClient.routeUrlEquals(providerData);
         if (isDefaultRouteUrl) {
-            disputesService.setNextStepToManualPending(dispute, ErrorMessage.NEXT_STEP_AFTER_DEFAULT_REMOTE_CLIENT_CALL);
+            disputesService.setNextStepToManualPending(dispute,
+                    ErrorMessage.NEXT_STEP_AFTER_DEFAULT_REMOTE_CLIENT_CALL);
         } else {
             disputesService.setNextStepToPending(dispute, providerData);
         }

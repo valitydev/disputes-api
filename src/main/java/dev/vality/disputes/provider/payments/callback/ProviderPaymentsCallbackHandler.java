@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsCallbackHandler implements ProviderPaymentsCallbackServiceSrv.Iface {
 
     private final ProviderPaymentsService providerPaymentsService;

@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsAdjustmentExtractor {
 
     public static final String PROVIDER_PAYMENT_MASK = "providerCallbackId=%s";
@@ -25,18 +24,21 @@ public class ProviderPaymentsAdjustmentExtractor {
                 .orElse(String.format(PROVIDER_PAYMENT_MASK, providerCallback.getId()));
     }
 
-    public boolean isCashFlowAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment, ProviderCallback providerCallback) {
+    public boolean isCashFlowAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment,
+                                                               ProviderCallback providerCallback) {
         return getInvoicePaymentAdjustmentStream(invoicePayment)
                 .filter(adj -> isProviderPaymentsAdjustment(adj.getReason(), providerCallback))
                 .anyMatch(adj -> adj.getState() != null && adj.getState().isSetCashFlow());
     }
 
-    public boolean isCapturedAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment, ProviderCallback providerCallback) {
+    public boolean isCapturedAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment,
+                                                               ProviderCallback providerCallback) {
         return getInvoicePaymentAdjustmentStream(invoicePayment)
                 .filter(adj -> isProviderPaymentsAdjustment(adj.getReason(), providerCallback))
                 .filter(adj -> adj.getState() != null && adj.getState().isSetStatusChange())
                 .filter(adj -> getTargetStatus(adj).isSetCaptured())
-                .anyMatch(adj -> isProviderPaymentsAdjustment(getTargetStatus(adj).getCaptured().getReason(), providerCallback));
+                .anyMatch(adj -> isProviderPaymentsAdjustment(getTargetStatus(adj).getCaptured().getReason(),
+                        providerCallback));
     }
 
     private Stream<InvoicePaymentAdjustment> getInvoicePaymentAdjustmentStream(InvoicePayment invoicePayment) {

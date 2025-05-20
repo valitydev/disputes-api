@@ -19,7 +19,6 @@ import java.util.UUID;
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.provider.enabled", havingValue = "false")
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DummyRemoteClientImpl implements DefaultRemoteClient {
 
     private final String routeUrl = "tg-bot";
@@ -30,7 +29,8 @@ public class DummyRemoteClientImpl implements DefaultRemoteClient {
     }
 
     @Override
-    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData, TransactionInfo transactionInfo) {
+    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData,
+                                              TransactionInfo transactionInfo) {
         log.debug("Trying to call DummyRemoteClientImpl.createDispute() {}", dispute.getId());
         providerData.setRouteUrl(routeUrl);
         return DisputeCreatedResult.successResult(new DisputeCreatedSuccessResult(UUID.randomUUID().toString()));

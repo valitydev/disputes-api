@@ -6,10 +6,10 @@ import dev.vality.provider.payments.TransactionContext;
 import org.springframework.stereotype.Component;
 
 @Component
-@SuppressWarnings({"LineLength"})
 public class TransactionContextConverter {
 
-    public TransactionContext convert(String invoiceId, String paymentId, String providerTrxId, ProviderData providerData, TransactionInfo transactionInfo) {
+    public TransactionContext convert(String invoiceId, String paymentId, String providerTrxId,
+                                      ProviderData providerData, TransactionInfo transactionInfo) {
         var transactionContext = new TransactionContext();
         transactionContext.setProviderTrxId(providerTrxId);
         transactionContext.setInvoiceId(invoiceId);

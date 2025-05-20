@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "service.disputes-tg-bot.admin.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class DisputesTgBotCallbackNotifierImpl implements CallbackNotifier {
 
     private final DisputesTgBotService disputesTgBotService;

@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "provider.payments.isScheduleCreateAdjustmentsEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsTask {
 
     private final ExecutorService providerPaymentsThreadPool;
@@ -28,7 +27,9 @@ public class ProviderPaymentsTask {
     @Value("${provider.payments.batchSize}")
     private int batchSize;
 
-    @Scheduled(fixedDelayString = "${provider.payments.fixedDelayCreateAdjustments}", initialDelayString = "${provider.payments.initialDelayCreateAdjustments}")
+    @Scheduled(
+            fixedDelayString = "${provider.payments.fixedDelayCreateAdjustments}",
+            initialDelayString = "${provider.payments.initialDelayCreateAdjustments}")
     public void processPending() {
         try {
             var paymentsForHgCall = providerPaymentsService.getPaymentsForHgCall(batchSize);

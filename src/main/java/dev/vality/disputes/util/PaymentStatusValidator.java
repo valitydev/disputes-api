@@ -7,7 +7,7 @@ import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-@SuppressWarnings({"LineLength"})
+
 public class PaymentStatusValidator {
 
     public static void checkStatus(InvoicePayment invoicePayment) {
@@ -20,7 +20,8 @@ public class PaymentStatusValidator {
         }
     }
 
-    public static String getInvoicingPaymentStatusRestrictionsErrorReason(InvoicingPaymentStatusRestrictionsException ex) {
+    public static String getInvoicingPaymentStatusRestrictionsErrorReason(
+            InvoicingPaymentStatusRestrictionsException ex) {
         if (ex.getStatus() != null) {
             return ErrorMessage.PAYMENT_STATUS_RESTRICTIONS + ": " + ex.getStatus().getSetField().getFieldName();
         }

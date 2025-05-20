@@ -14,12 +14,12 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputeParamsConverter {
 
     private final DisputeCurrencyConverter disputeCurrencyConverter;
 
-    public DisputeParams convert(Dispute dispute, List<Attachment> attachments, Map<String, String> terminalOptions, TransactionInfo transactionInfo) {
+    public DisputeParams convert(Dispute dispute, List<Attachment> attachments, Map<String, String> terminalOptions,
+                                 TransactionInfo transactionInfo) {
         var disputeParams = new DisputeParams();
         disputeParams.setAttachments(attachments);
         var transactionContext = new TransactionContext();

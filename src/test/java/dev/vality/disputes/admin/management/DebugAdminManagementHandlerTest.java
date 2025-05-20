@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"LineLength"})
+
 public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Autowired
@@ -57,7 +57,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
     public void testApproveCreateAdjustmentWithCallHg() {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -66,7 +67,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
     public void testApproveCreateAdjustmentWithSkipHg() {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -79,7 +81,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), false));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -88,7 +91,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
     public void testApprovePendingWithSkipHg() {
         var disputeId = createdFlowHandler.handleCreate();
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -98,7 +102,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         var disputeId = pendingFlowHandler.handlePending();
         disputeDao.finishFailed(disputeId, null);
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.approvePending(getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
     }
 
@@ -141,7 +146,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         WiremockUtils.mockS3AttachmentDownload();
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
-        var disputes = debugAdminManagementController.getDisputes(getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
+        var disputes = debugAdminManagementController.getDisputes(
+                getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
         assertEquals(1, disputes.getDisputes().size());
         disputeDao.finishFailed(disputeId, null);
     }
@@ -157,7 +163,8 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         var dispute = disputeDao.get(disputeId);
-        debugAdminManagementController.setPendingForPoolingExpired(getSetPendingForPoolingExpiredParamsRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
+        debugAdminManagementController.setPendingForPoolingExpired(
+                getSetPendingForPoolingExpiredParamsRequest(dispute.getInvoiceId(), dispute.getPaymentId()));
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }

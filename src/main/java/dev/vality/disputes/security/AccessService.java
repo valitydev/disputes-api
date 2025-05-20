@@ -19,7 +19,6 @@ import static dev.vality.disputes.exception.NotFoundException.Type;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-@SuppressWarnings({"LineLength"})
 public class AccessService {
 
     private final InvoicingService invoicingService;
@@ -29,7 +28,8 @@ public class AccessService {
     @Value("${service.bouncer.auth.enabled}")
     private boolean authEnabled;
 
-    public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData, boolean checkFailedPaymentStatus, boolean checkPaymentAge) {
+    public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData,
+                                        boolean checkFailedPaymentStatus, boolean checkPaymentAge) {
         log.debug("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
         if (checkFailedPaymentStatus) {

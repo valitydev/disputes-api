@@ -29,10 +29,17 @@ import static org.springframework.http.ResponseEntity.status;
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ErrorControllerAdvice {
 
     // ----------------- 4xx -----------------------------------------------------
+
+    @ExceptionHandler({ProviderTrxIdNotFoundException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Object handleProviderTrxIdNotFoundException(ProviderTrxIdNotFoundException ex) {
+        log.warn("<- Res [400]: Payment was not initiated", ex);
+        return new GeneralError()
+                .message("Blocked: Payment was not initiated");
+    }
 
     @ExceptionHandler({UnexpectedMimeTypeException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -64,7 +71,8 @@ public class ErrorControllerAdvice {
         log.warn("<- Res [400]: Payment should be failed", ex);
         if (ex.getStatus() != null) {
             return new GeneralError()
-                    .message("Blocked: Payment should be failed, but status=" + ex.getStatus().getSetField().getFieldName());
+                    .message("Blocked: Payment should be failed, but status=" +
+                            ex.getStatus().getSetField().getFieldName());
         }
         return new GeneralError()
                 .message("Blocked: Payment should be failed");
@@ -140,7 +148,8 @@ public class ErrorControllerAdvice {
     }
 
     @ExceptionHandler({HttpMediaTypeNotSupportedException.class})
-    public ResponseEntity<?> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, WebRequest request) {
+    public ResponseEntity<?> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+                                                             WebRequest request) {
         log.warn("<- Res [415]: MediaType not supported", ex);
         return status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .headers(httpHeaders(ex))

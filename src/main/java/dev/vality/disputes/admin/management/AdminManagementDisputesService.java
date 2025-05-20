@@ -41,7 +41,6 @@ import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUS
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class AdminManagementDisputesService {
 
     private final ProviderDisputeDao providerDisputeDao;
@@ -82,7 +81,8 @@ public class AdminManagementDisputesService {
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
-            handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData, invoicePayment.getLastTransactionInfo());
+            handleSucceededResultWithCreateAdjustment(dispute, changedAmount, providerData,
+                    invoicePayment.getLastTransactionInfo());
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired
@@ -167,13 +167,16 @@ public class AdminManagementDisputesService {
     }
 
     private void handleSucceededResultWithCreateAdjustment(
-            dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData, TransactionInfo transactionInfo) {
-        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData, transactionInfo);
+            dev.vality.disputes.domain.tables.pojos.Dispute dispute, Long changedAmount, ProviderData providerData,
+            TransactionInfo transactionInfo) {
+        disputeStatusResultHandler.handleSucceededResult(dispute, getDisputeStatusResult(changedAmount), providerData,
+                transactionInfo);
     }
 
     private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
         return Optional.ofNullable(changedAmount)
-                .map(amount -> DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult().setChangedAmount(amount)))
+                .map(amount -> DisputeStatusResult.statusSuccess(
+                        new DisputeStatusSuccessResult().setChangedAmount(amount)))
                 .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 

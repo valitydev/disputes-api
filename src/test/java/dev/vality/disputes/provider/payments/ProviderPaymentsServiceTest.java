@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
         "server.port=${local.server.port}",
         "provider.payments.isProviderCallbackEnabled=true",
 })
-@SuppressWarnings({"VariableDeclarationUsageDistance", "LineLength"})
 public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
     @Test

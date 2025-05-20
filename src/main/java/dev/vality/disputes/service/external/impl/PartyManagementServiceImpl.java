@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class PartyManagementServiceImpl implements PartyManagementService {
 
     private final PartyManagementSrv.Iface partyManagementClient;
@@ -27,7 +26,8 @@ public class PartyManagementServiceImpl implements PartyManagementService {
         var shop = party.getShops().get(shopId);
         if (shop == null) {
             throw new NotFoundException(
-                    String.format("Shop not found, partyId='%s', shopId='%s'", partyId, shopId), NotFoundException.Type.SHOP);
+                    String.format("Shop not found, partyId='%s', shopId='%s'", partyId, shopId),
+                    NotFoundException.Type.SHOP);
         }
         log.debug("Shop has been found, partyId='{}', shopId='{}'", partyId, shopId);
         return shop;
@@ -49,10 +49,12 @@ public class PartyManagementServiceImpl implements PartyManagementService {
             return party;
         } catch (PartyNotFound ex) {
             throw new NotFoundException(
-                    String.format("Party not found, partyId='%s', partyRevisionParam='%s'", partyId, partyRevisionParam), ex, NotFoundException.Type.PARTY);
+                    String.format("Party not found, partyId='%s', partyRevisionParam='%s'", partyId,
+                            partyRevisionParam), ex, NotFoundException.Type.PARTY);
         } catch (TException ex) {
             throw new PartyException(
-                    String.format("Failed to get party, partyId='%s', partyRevisionParam='%s'", partyId, partyRevisionParam), ex);
+                    String.format("Failed to get party, partyId='%s', partyRevisionParam='%s'", partyId,
+                            partyRevisionParam), ex);
         }
     }
 
@@ -63,7 +65,8 @@ public class PartyManagementServiceImpl implements PartyManagementService {
             log.debug("Revision has been found, partyId='{}', revision='{}'", partyId, revision);
             return revision;
         } catch (PartyNotFound ex) {
-            throw new NotFoundException(String.format("Party not found, partyId='%s'", partyId), ex, NotFoundException.Type.PARTY);
+            throw new NotFoundException(String.format("Party not found, partyId='%s'", partyId), ex,
+                    NotFoundException.Type.PARTY);
         } catch (TException ex) {
             throw new PartyException(String.format("Failed to get party revision, partyId='%s'", partyId), ex);
         }

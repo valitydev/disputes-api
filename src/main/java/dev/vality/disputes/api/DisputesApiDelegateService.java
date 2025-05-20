@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputesApiDelegateService implements DisputesApiDelegate {
 
     private final PaymentParamsBuilder paymentParamsBuilder;
@@ -30,17 +29,22 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
 
     @Override
     public ResponseEntity<Create200Response> create(CreateRequest req, boolean checkUserAccessData) {
-        log.info("-> Req: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
-        var accessData = accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData, true, true);
+        log.info("-> Req: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(),
+                checkUserAccessData ? "api" : "merchThrift");
+        var accessData =
+                accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData, true,
+                        true);
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
         var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());
         if (dispute.isPresent()) {
-            log.debug("<- Res existing: {}, invoiceId={}, paymentId={}", "/create", req.getInvoiceId(), req.getPaymentId());
+            log.debug("<- Res existing: {}, invoiceId={}, paymentId={}", "/create", req.getInvoiceId(),
+                    req.getPaymentId());
             return ResponseEntity.ok(new Create200Response(String.valueOf(dispute.get().getId())));
         }
         var paymentParams = paymentParamsBuilder.buildGeneralPaymentContext(accessData);
         var disputeId = apiDisputesService.createDispute(req, paymentParams);
-        log.debug("<- Res: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
+        log.debug("<- Res: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(),
+                req.getPaymentId(), checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(new Create200Response(String.valueOf(disputeId)));
     }
 
@@ -52,10 +56,13 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
     @Override
     public ResponseEntity<Status200Response> status(String disputeId, boolean checkUserAccessData) {
         var dispute = apiDisputesService.getDispute(disputeId);
-        log.info("-> Req: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
-        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData, false, false);
+        log.info("-> Req: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(),
+                dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
+        accessService.approveUserAccess(dispute.getInvoiceId(), dispute.getPaymentId(), checkUserAccessData, false,
+                false);
         var body = status200ResponseConverter.convert(dispute);
-        log.debug("<- Res: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(), dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
+        log.debug("<- Res: {}, invoiceId={}, paymentId={}, disputeId={}, source={}", "/status", dispute.getInvoiceId(),
+                dispute.getPaymentId(), disputeId, checkUserAccessData ? "api" : "merchThrift");
         return ResponseEntity.ok(body);
     }
 }

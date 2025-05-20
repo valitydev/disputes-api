@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SuppressWarnings({"LineLength"})
+
 @RequiredArgsConstructor
 public class MerchantApiMvcPerformer {
 
@@ -48,15 +48,18 @@ public class MerchantApiMvcPerformer {
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
         when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
-        when(fileStorageClient.createNewFile(any(), any())).thenReturn(createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
+        when(fileStorageClient.createNewFile(any(), any())).thenReturn(
+                createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
         var resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId, wiremockAddressesHolder.getNotificationUrl())))
+                        .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId,
+                                wiremockAddressesHolder.getNotificationUrl())))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        return new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(), Create200Response.class);
+        return new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                Create200Response.class);
     }
 }

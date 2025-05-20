@@ -22,7 +22,6 @@ import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUS
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ApiDisputesService {
 
     private final DisputeDao disputeDao;

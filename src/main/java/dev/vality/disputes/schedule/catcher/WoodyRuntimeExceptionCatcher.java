@@ -12,17 +12,18 @@ import java.util.function.Consumer;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class WoodyRuntimeExceptionCatcher {
 
     private final ExternalGatewayChecker externalGatewayChecker;
 
-    public void catchProviderDisputesApiNotExist(ProviderData providerData, Runnable runnable, Runnable defaultRemoteClientRunnable) {
+    public void catchProviderDisputesApiNotExist(ProviderData providerData, Runnable runnable,
+                                                 Runnable defaultRemoteClientRunnable) {
         try {
             runnable.run();
         } catch (WRuntimeException ex) {
             if (externalGatewayChecker.isProviderDisputesApiNotExist(providerData, ex)) {
-                log.info("Trying to call defaultRemoteClient.createDispute() by case remoteClient.createDispute()==404", ex);
+                log.info("Trying to call defaultRemoteClient.createDispute() by case remoteClient.createDispute()==404",
+                        ex);
                 defaultRemoteClientRunnable.run();
                 return;
             }
@@ -30,7 +31,8 @@ public class WoodyRuntimeExceptionCatcher {
         }
     }
 
-    public void catchUnexpectedResultMapping(Runnable runnable, Consumer<WRuntimeException> unexpectedResultMappingHandler) {
+    public void catchUnexpectedResultMapping(Runnable runnable,
+                                             Consumer<WRuntimeException> unexpectedResultMappingHandler) {
         try {
             runnable.run();
         } catch (WRuntimeException ex) {

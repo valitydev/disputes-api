@@ -11,12 +11,12 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputeContextConverter {
 
     private final DisputeCurrencyConverter disputeCurrencyConverter;
 
-    public DisputeContext convert(Dispute dispute, ProviderDispute providerDispute, Map<String, String> options, TransactionInfo transactionInfo) {
+    public DisputeContext convert(Dispute dispute, ProviderDispute providerDispute, Map<String, String> options,
+                                  TransactionInfo transactionInfo) {
         var disputeContext = new DisputeContext();
         disputeContext.setProviderDisputeId(providerDispute.getProviderDisputeId());
         var currency = disputeCurrencyConverter.convert(dispute);

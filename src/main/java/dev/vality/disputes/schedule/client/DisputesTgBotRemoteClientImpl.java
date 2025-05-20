@@ -20,7 +20,6 @@ import java.util.List;
 @Service
 @ConditionalOnProperty(value = "service.disputes-tg-bot.provider.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {
 
     private final DisputesTgBotService disputesTgBotService;
@@ -35,9 +34,11 @@ public class DisputesTgBotRemoteClientImpl implements DefaultRemoteClient {
     }
 
     @Override
-    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData, TransactionInfo transactionInfo) {
+    public DisputeCreatedResult createDispute(Dispute dispute, List<Attachment> attachments, ProviderData providerData,
+                                              TransactionInfo transactionInfo) {
         log.info("Trying to call disputesTgBotService.createDispute() {}", dispute.getId());
-        var disputeParams = disputeParamsConverter.convert(dispute, attachments, providerData.getOptions(), transactionInfo);
+        var disputeParams =
+                disputeParamsConverter.convert(dispute, attachments, providerData.getOptions(), transactionInfo);
         providerData.setRouteUrl(routeUrl);
         log.debug("Trying to disputesTgBotService.createDispute() call {}", dispute.getId());
         var result = disputesTgBotService.createDispute(disputeParams);

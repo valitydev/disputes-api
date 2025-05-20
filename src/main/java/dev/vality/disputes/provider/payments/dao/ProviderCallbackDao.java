@@ -18,7 +18,6 @@ import java.util.UUID;
 import static dev.vality.disputes.domain.tables.ProviderCallback.PROVIDER_CALLBACK;
 
 @Component
-@SuppressWarnings({"LineLength"})
 public class ProviderCallbackDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderCallback> providerCallbackRowMapper;
@@ -46,7 +45,8 @@ public class ProviderCallbackDao extends AbstractGenericDao {
                 .skipLocked();
         return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("ProviderCallback not found, id='%s'", id), NotFoundException.Type.PROVIDERCALLBACK));
+                        String.format("ProviderCallback not found, id='%s'", id),
+                        NotFoundException.Type.PROVIDERCALLBACK));
     }
 
     public ProviderCallback get(String invoiceId, String paymentId) {
@@ -54,7 +54,8 @@ public class ProviderCallbackDao extends AbstractGenericDao {
                 .where(PROVIDER_CALLBACK.INVOICE_ID.concat(PROVIDER_CALLBACK.PAYMENT_ID).eq(invoiceId + paymentId));
         return Optional.ofNullable(fetchOne(query, providerCallbackRowMapper))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("ProviderCallback not found, id='%s%s'", invoiceId, paymentId), NotFoundException.Type.PROVIDERCALLBACK));
+                        String.format("ProviderCallback not found, id='%s%s'", invoiceId, paymentId),
+                        NotFoundException.Type.PROVIDERCALLBACK));
 
     }
 

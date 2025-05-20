@@ -27,7 +27,6 @@ import static dev.vality.disputes.exception.NotFoundException.Type;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class FileStorageServiceImpl implements FileStorageService {
 
     private final FileStorageProperties fileStorageProperties;
@@ -55,7 +54,8 @@ public class FileStorageServiceImpl implements FileStorageService {
             log.debug("Trying to generate presigned url from file-storage with id: {}", fileId);
             var url = fileStorageClient.generateDownloadUrl(fileId, getTime().toString());
             if (StringUtils.isBlank(url)) {
-                throw new NotFoundException(String.format("Presigned s3 url not found, fileId='%s'", fileId), Type.ATTACHMENT);
+                throw new NotFoundException(String.format("Presigned s3 url not found, fileId='%s'", fileId),
+                        Type.ATTACHMENT);
             }
             log.debug("Presigned url has been generated with id: {}", fileId);
             return url;

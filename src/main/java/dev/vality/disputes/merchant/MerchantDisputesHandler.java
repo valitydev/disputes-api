@@ -13,7 +13,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings({"LineLength"})
 public class MerchantDisputesHandler implements MerchantDisputesServiceSrv.Iface {
 
     private final CreateRequestConverter createRequestConverter;

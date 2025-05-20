@@ -11,7 +11,6 @@ import java.time.ZoneOffset;
 import java.util.Map;
 
 @Service
-@SuppressWarnings({"LineLength"})
 public class ExponentialBackOffPollingServiceWrapper {
 
     private final ExponentialBackOffPollingService exponentialBackOffPollingService;
@@ -33,7 +32,8 @@ public class ExponentialBackOffPollingServiceWrapper {
         return getLocalDateTime(dispute.getNextCheckAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
     }
 
-    public LocalDateTime prepareNextPollingInterval(Notification notification, LocalDateTime createdAt, Map<String, String> options) {
+    public LocalDateTime prepareNextPollingInterval(Notification notification, LocalDateTime createdAt,
+                                                    Map<String, String> options) {
         var pollingInfo = new PollingInfo();
         pollingInfo.setStartDateTimePolling(createdAt.toInstant(ZoneOffset.UTC));
         var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, options);

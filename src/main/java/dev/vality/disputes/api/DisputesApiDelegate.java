@@ -10,7 +10,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 import java.util.Optional;
 
-@SuppressWarnings({"LineLength"})
 public interface DisputesApiDelegate extends CreateApiDelegate, StatusApiDelegate {
 
     ResponseEntity<Create200Response> create(CreateRequest req, boolean checkUserAccessData);

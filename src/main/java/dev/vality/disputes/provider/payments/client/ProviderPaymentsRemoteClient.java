@@ -14,14 +14,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ProviderPaymentsRemoteClient {
 
     private final ProviderPaymentsRouting providerPaymentsRouting;
     private final ProviderPaymentsThriftInterfaceBuilder providerPaymentsThriftInterfaceBuilder;
 
     @SneakyThrows
-    public PaymentStatusResult checkPaymentStatus(TransactionContext transactionContext, Currency currency, ProviderData providerData) {
+    public PaymentStatusResult checkPaymentStatus(TransactionContext transactionContext, Currency currency,
+                                                  ProviderData providerData) {
         log.info("Trying to call ProviderPaymentsThriftInterfaceBuilder.checkPaymentStatus() {}", transactionContext);
         providerPaymentsRouting.initRouteUrl(providerData);
         var remoteClient = providerPaymentsThriftInterfaceBuilder.buildWoodyClient(providerData.getRouteUrl());

@@ -50,7 +50,8 @@ public class OpenApiUtil {
                 """, invoiceId, paymentId, notificationUrl);
     }
 
-    public static MultiValueMap<String, String> getStatusRequiredParams(String disputeId, String invoiceId, String paymentId) {
+    public static MultiValueMap<String, String> getStatusRequiredParams(String disputeId, String invoiceId,
+                                                                        String paymentId) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("invoiceId", invoiceId);
         params.add("paymentId", paymentId);

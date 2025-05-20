@@ -26,7 +26,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
-@SuppressWarnings({"LineLength", "VariableDeclarationUsageDistance"})
 public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
     @LocalServerPort
@@ -53,14 +52,14 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testNoAttachments() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -70,15 +69,15 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testManualPendingWhenIsNotProviderDisputesApiExist() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -88,9 +87,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testDisputeCreatedFailResult() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -102,6 +99,8 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedFailResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
@@ -110,9 +109,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testManualPendingWhenDisputeCreatedFailResultWithDisputesUnknownMapping() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -126,6 +123,8 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(providerMock.createDispute(any())).thenReturn(disputeCreatedFailResult);
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -136,9 +135,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testManualPendingWhenUnexpectedResultMapping() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -151,6 +148,8 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -161,9 +160,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testManualPendingWhenUnexpectedResult() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -175,6 +172,8 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(providerMock.createDispute(any())).thenThrow(getUnexpectedResultWException());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
@@ -184,9 +183,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testDisputeCreatedAlreadyExistResult() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
@@ -198,6 +195,8 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         when(providerMock.createDispute(any())).thenReturn(createDisputeAlreadyExistResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         createdFlowHandler.mockFailStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.already_exist_created, disputeDao.get(disputeId).getStatus());
@@ -235,20 +234,22 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void createAdjustmentWhenSuccessStatusProviderPayment() {
-        var invoiceId = "20McecNnWoy";
         var paymentId = "1";
-        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
         when(dominantService.getTerminal(any())).thenReturn(terminal);
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
+        when(dominantService.getProxy(any())).thenReturn(
+                createProxy(String.format("http://127.0.0.1:%s%s", 8023, TestUrlPaths.ADAPTER)).get());
         createdFlowHandler.mockSuccessStatusProviderPayment();
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
-        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
+        assertEquals(ProviderPaymentsStatus.create_adjustment,
+                providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
     }
 }

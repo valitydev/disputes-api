@@ -20,7 +20,6 @@ import java.util.UUID;
 import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 
 @Component
-@SuppressWarnings({"LineLength"})
 public class DisputeDao extends AbstractGenericDao {
 
     private final RowMapper<Dispute> disputeRowMapper;
@@ -155,7 +154,8 @@ public class DisputeDao extends AbstractGenericDao {
         update(disputeId, DisputeStatus.cancelled, null, errorMessage, null, mapping);
     }
 
-    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage, Long changedAmount, String mapping) {
+    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage,
+                        Long changedAmount, String mapping) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {

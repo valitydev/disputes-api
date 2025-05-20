@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({"LineLength"})
+
 @RequiredArgsConstructor
 public class PendingFlowHandler {
 
@@ -44,7 +44,8 @@ public class PendingFlowHandler {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
-        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
+        assertEquals(ProviderPaymentsStatus.create_adjustment,
+                providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId()).getStatus());
         return disputeId;
     }
 }

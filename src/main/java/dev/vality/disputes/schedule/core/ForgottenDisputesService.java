@@ -22,7 +22,6 @@ import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class ForgottenDisputesService {
 
     private final DisputesService disputesService;
@@ -58,7 +57,8 @@ public class ForgottenDisputesService {
             disputesService.finishSucceeded(dispute, getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle ForgottenDisputesService.process", ex);
-            disputesService.finishFailed(dispute, PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+            disputesService.finishFailed(dispute,
+                    PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("DisputeStatusWasUpdatedByAnotherThread when handle ForgottenDisputesService.process", ex);
         }

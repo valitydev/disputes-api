@@ -28,7 +28,6 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"LineLength"})
 public class NotificationService {
 
     private final DisputeDao disputeDao;
@@ -59,11 +58,14 @@ public class NotificationService {
             var forUpdate = checkPending(notifyRequest);
             var dispute = disputeDao.get(UUID.fromString(notifyRequest.getDisputeId()));
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
-            var nextAttemptAfter = exponentialBackOffPollingService.prepareNextPollingInterval(forUpdate, dispute.getCreatedAt(), providerData.getOptions());
+            var nextAttemptAfter =
+                    exponentialBackOffPollingService.prepareNextPollingInterval(forUpdate, dispute.getCreatedAt(),
+                            providerData.getOptions());
             notificationDao.updateNextAttempt(forUpdate, nextAttemptAfter);
             log.debug("Finish IOException handler {}", notifyRequest, ex);
         } catch (NotificationStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process", ex);
+            log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process",
+                    ex);
         }
     }
 
