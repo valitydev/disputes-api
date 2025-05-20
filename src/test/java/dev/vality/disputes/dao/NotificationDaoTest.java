@@ -16,7 +16,6 @@ import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @PostgresqlSpringBootITest
-
 public class NotificationDaoTest {
 
     @Autowired
@@ -72,6 +71,7 @@ public class NotificationDaoTest {
 
     private Dispute getDispute() {
         var dispute = random(Dispute.class);
+        dispute.setId(UUID.randomUUID());
         dispute.setStatus(DisputeStatus.failed);
         disputeDao.save(dispute);
         return dispute;

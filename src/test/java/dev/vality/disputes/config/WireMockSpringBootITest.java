@@ -5,6 +5,7 @@ import dev.vality.testcontainers.annotations.postgresql.PostgresqlTestcontainerS
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.wiremock.spring.EnableWireMock;
 
 import java.lang.annotation.ElementType;
@@ -23,5 +24,6 @@ import java.lang.annotation.Target;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         classes = DisputesApiApplication.class,
         properties = {"logging.level.WireMock=WARN"})
+@DirtiesContext
 public @interface WireMockSpringBootITest {
 }

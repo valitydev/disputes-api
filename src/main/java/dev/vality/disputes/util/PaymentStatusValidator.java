@@ -7,7 +7,6 @@ import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-
 public class PaymentStatusValidator {
 
     public static void checkStatus(InvoicePayment invoicePayment) {

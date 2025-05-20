@@ -31,7 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @UtilityClass
-
 public class MockUtil {
 
     public static Invoice createInvoice(String invoiceId, String paymentId) {

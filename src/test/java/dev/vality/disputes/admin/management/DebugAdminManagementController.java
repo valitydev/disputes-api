@@ -28,7 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping({"/debug/v1/admin-management"})
 @Slf4j
-
 public class DebugAdminManagementController {
 
     private final AdminManagementServiceSrv.Iface adminManagementHandler;

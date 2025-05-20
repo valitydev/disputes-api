@@ -1,6 +1,6 @@
 package dev.vality.disputes.config;
 
-import dev.vality.testcontainers.annotations.DefaultSpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @DisableScheduling
 @DisableFlyway
-@DefaultSpringBootTest
+@SpringBootTest
 public @interface SpringBootUTest {
 }

@@ -90,6 +90,14 @@ spring:
     url: jdbc:postgresql://localhost:5432/disputes
     username: postgres
     password: postgres
+    hikari:
+      idle-timeout: 30000
+      leak-detection-threshold: 5300
+      data-source-properties:
+        prepareThreshold: 0
+      maximum-pool-size: 20
+      max-lifetime: 300000
+      minimum-idle: 2
 
 info:
   version: ${project.version}

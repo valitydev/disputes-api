@@ -31,7 +31,6 @@ import static org.mockito.Mockito.*;
         "server.port=${local.server.port}",
         "provider.payments.isProviderCallbackEnabled=true",
 })
-
 public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
 
     @Test
