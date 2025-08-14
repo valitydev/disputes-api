@@ -86,7 +86,8 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getProviderMsg().contains(DISPUTES_UNKNOWN_MAPPING));
+        assertTrue(disputeDao.get(disputeId).getProviderMsg().contains("code ="));
+        assertTrue(disputeDao.get(disputeId).getProviderMsg().contains("description ="));
         disputeDao.finishFailed(disputeId, null);
     }
 
