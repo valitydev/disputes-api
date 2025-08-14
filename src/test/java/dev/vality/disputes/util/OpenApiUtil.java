@@ -118,7 +118,7 @@ public class OpenApiUtil {
                     {
                       "invoiceId": "%s",
                       "paymentId": "%s",
-                      "cancelReason": "test endpoint"
+                      "mapping": "mapping"
                     }
                   ]
                 }

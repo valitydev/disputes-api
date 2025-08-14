@@ -193,15 +193,15 @@ public class MockUtil {
     }
 
     public static Failure createFailure() {
-        Failure failure = new Failure("some_error");
-        failure.setSub(new SubFailure("some_suberror"));
+        Failure failure = new Failure("no_transfer");
+        failure.setReason("code = resp_status_error, description = Tek seferde en fazla 4,000.00 işem yapılabilir.");
         return failure;
     }
 
     public static WRuntimeException getUnexpectedResultWException() {
         var errorDefinition = new WErrorDefinition(WErrorSource.EXTERNAL);
-        errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, description = " +
-                "Tek seferde en fazla 4,000.00 işem yapılabilir.");
+        errorDefinition.setErrorReason("Unexpected result, code = resp_status_error, " +
+                "description = Tek seferde en fazla 4,000.00 işem yapılabilir.");
         errorDefinition.setErrorType(WErrorType.UNEXPECTED_ERROR);
         errorDefinition.setErrorSource(WErrorSource.INTERNAL);
         return new WRuntimeException(errorDefinition);

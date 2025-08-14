@@ -1,14 +1,9 @@
 package dev.vality.disputes.schedule.result;
 
 import dev.vality.damsel.domain.TransactionInfo;
-import dev.vality.disputes.admin.callback.CallbackNotifier;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.provider.DisputeStatusResult;
-import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
-import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
-import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.util.ErrorFormatter;
@@ -26,9 +21,6 @@ public class DisputeStatusResultHandler {
 
     private final DisputesService disputesService;
     private final ProviderPaymentsService providerPaymentsService;
-    private final TransactionContextConverter transactionContextConverter;
-    private final DisputeCurrencyConverter disputeCurrencyConverter;
-    private final CallbackNotifier callbackNotifier;
 
     public void handlePendingResult(Dispute dispute, ProviderData providerData) {
         // дергаем update() чтоб обновить время вызова next_check_after,
@@ -39,32 +31,35 @@ public class DisputeStatusResultHandler {
 
     public void handleFailedResult(Dispute dispute, DisputeStatusResult result) {
         var failure = result.getStatusFail().getFailure();
-        var errorMessage = ErrorFormatter.getErrorMessage(failure);
-        if (errorMessage.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
-            handleUnexpectedResultMapping(dispute, failure.getCode(), failure.getReason());
+        var mapping = failure.getCode();
+        var providerMessage = ErrorFormatter.getProviderMessage(failure);
+        if (mapping.startsWith(DISPUTES_UNKNOWN_MAPPING)) {
+            disputesService.setNextStepToManualPending(dispute, providerMessage, null);
         } else {
-            disputesService.finishFailedWithMapping(dispute, errorMessage, failure);
+            disputesService.finishFailedWithMapping(dispute, mapping, providerMessage);
         }
     }
 
-    public void handleFailedResult(Dispute dispute, String errorMessage) {
-        disputesService.finishFailed(dispute, errorMessage);
+    public void handleFailedResult(Dispute dispute, String technicalErrorMessage) {
+        disputesService.finishFailed(dispute, technicalErrorMessage);
     }
 
     public void handleSucceededResult(Dispute dispute, Long changedAmount) {
         disputesService.finishSucceeded(dispute, changedAmount);
     }
 
-    public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData,
-                                      TransactionInfo transactionInfo) {
+    public void handleCreateAdjustmentResult(
+            Dispute dispute,
+            DisputeStatusResult result,
+            ProviderData providerData,
+            TransactionInfo transactionInfo) {
         var changedAmount = getChangedAmount(dispute.getAmount(), result);
+        providerPaymentsService.createAdjustment(dispute, providerData, transactionInfo);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
-        createAdjustment(dispute, providerData, transactionInfo);
     }
 
     public void handlePoolingExpired(Dispute dispute) {
-        disputesService.setNextStepToPoolingExpired(dispute, ErrorMessage.POOLING_EXPIRED);
-        callbackNotifier.sendDisputePoolingExpired(dispute);
+        disputesService.setNextStepToPoolingExpired(dispute);
     }
 
     public void handleProviderDisputeNotFound(Dispute dispute, ProviderData providerData) {
@@ -73,26 +68,9 @@ public class DisputeStatusResultHandler {
     }
 
     public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
-        var errorMessage = ex.getErrorDefinition().getErrorReason();
-        handleUnexpectedResultMapping(dispute, errorMessage, null);
-    }
-
-    private void handleUnexpectedResultMapping(Dispute dispute, String errorCode, String errorDescription) {
-        var errorMessage = ErrorFormatter.getErrorMessage(errorCode, errorDescription);
-        disputesService.setNextStepToManualPending(dispute, errorMessage);
-        callbackNotifier.sendDisputeManualPending(dispute, errorMessage);
-    }
-
-    private void createAdjustment(Dispute dispute, ProviderData providerData, TransactionInfo transactionInfo) {
-        var transactionContext = transactionContextConverter.convert(dispute.getInvoiceId(), dispute.getPaymentId(),
-                dispute.getProviderTrxId(), providerData, transactionInfo);
-        var currency = disputeCurrencyConverter.convert(dispute);
-        try {
-            providerPaymentsService.checkPaymentStatusAndSave(transactionContext, currency, providerData,
-                    dispute.getAmount());
-        } catch (ProviderCallbackAlreadyExistException ex) {
-            log.warn("ProviderCallbackAlreadyExist when handle providerPaymentsService.checkPaymentStatusAndSave", ex);
-        }
+        var errorReason = ex.getErrorDefinition().getErrorReason();
+        var technicalErrorMessage = ErrorFormatter.getErrorMessage(errorReason);
+        disputesService.setNextStepToManualPending(dispute, null, technicalErrorMessage);
     }
 
     private Long getChangedAmount(long amount, DisputeStatusResult paymentStatusResult) {

@@ -46,7 +46,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
-        assertEquals(ErrorMessage.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).getErrorMessage());
+        assertEquals(ErrorMessage.PAYMENT_NOT_FOUND, disputeDao.get(disputeId).getTechErrorMsg());
     }
 
     @Test
@@ -63,7 +63,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.failed, disputeDao.get(disputeId).getStatus());
-        assertEquals(ErrorMessage.NO_ATTACHMENTS, disputeDao.get(disputeId).getErrorMessage());
+        assertEquals(ErrorMessage.NO_ATTACHMENTS, disputeDao.get(disputeId).getTechErrorMsg());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
+        assertTrue(disputeDao.get(disputeId).getProviderMsg().contains(DISPUTES_UNKNOWN_MAPPING));
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -153,7 +153,7 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
+        assertTrue(disputeDao.get(disputeId).getTechErrorMsg().contains("Unexpected result"));
         disputeDao.finishFailed(disputeId, null);
     }
 

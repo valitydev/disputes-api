@@ -1,6 +1,6 @@
 package dev.vality.disputes.service;
 
-import dev.vality.damsel.domain.Failure;
+import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
@@ -24,6 +24,7 @@ public class DisputesService {
     public static final Set<DisputeStatus> DISPUTE_PENDING_STATUSES = disputePendingStatuses();
     private final DisputeDao disputeDao;
     private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
+    private final CallbackNotifier callbackNotifier;
 
     public void finishSucceeded(String invoiceId, String paymentId, Long changedAmount) {
         var dispute = Optional.of(disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId))
@@ -36,33 +37,37 @@ public class DisputesService {
         log.info("Trying to set succeeded Dispute status {}", dispute);
         disputeDao.finishSucceeded(dispute.getId(), changedAmount);
         log.debug("Dispute status has been set to succeeded {}", dispute);
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void finishFailed(String invoiceId, String paymentId, String errorMessage) {
+    public void finishFailed(String invoiceId, String paymentId, String technicalErrorMessage) {
         var dispute = Optional.of(disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId))
                 .filter(d -> DISPUTE_PENDING_STATUSES.contains(d.getStatus()))
                 .orElseThrow();
-        finishFailed(dispute, errorMessage);
+        finishFailed(dispute, technicalErrorMessage);
     }
 
-    public void finishFailed(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set failed Dispute status with '{}' errorMessage, {}", errorMessage, dispute.getId());
-        disputeDao.finishFailed(dispute.getId(), errorMessage);
+    public void finishFailed(Dispute dispute, String technicalErrorMessage) {
+        log.warn("Trying to set failed Dispute status with {}, technicalErrorMessage {}",
+                dispute.getId(), technicalErrorMessage);
+        disputeDao.finishFailed(dispute.getId(), technicalErrorMessage);
         log.debug("Dispute status has been set to failed {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void finishFailedWithMapping(Dispute dispute, String errorMessage, Failure failure) {
-        log.warn("Trying to set failed Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage,
-                failure.getCode(), dispute.getId());
-        disputeDao.finishFailedWithMapping(dispute.getId(), errorMessage, failure.getCode());
-        log.debug("Dispute status has been set to failed, '{}' mapping, {}", failure.getCode(), dispute.getId());
+    public void finishFailedWithMapping(Dispute dispute, String mapping, String providerMessage) {
+        log.warn("Trying to set failed Dispute status with '{}' providerMessage, '{}' mapping, {}",
+                providerMessage, mapping, dispute.getId());
+        disputeDao.finishFailedWithMapping(dispute.getId(), mapping, providerMessage);
+        log.debug("Dispute status has been set to failed, '{}' mapping, {}", mapping, dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void finishCancelled(Dispute dispute, String mapping, String errorMessage) {
-        log.warn("Trying to set cancelled Dispute status with '{}' errorMessage, '{}' mapping, {}", errorMessage,
-                mapping, dispute.getId());
-        disputeDao.finishCancelled(dispute.getId(), errorMessage, mapping);
+    public void finishCancelled(Dispute dispute, String mapping) {
+        log.warn("Trying to set cancelled Dispute status with '{}' mapping, {}", mapping, dispute.getId());
+        disputeDao.finishCancelled(dispute.getId(), mapping);
         log.debug("Dispute status has been set to cancelled {}", dispute);
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
     public void setNextStepToCreated(Dispute dispute, ProviderData providerData) {
@@ -71,6 +76,7 @@ public class DisputesService {
         log.info("Trying to set created Dispute status {}", dispute.getId());
         disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to created {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
     public void setNextStepToPending(Dispute dispute, ProviderData providerData) {
@@ -79,32 +85,36 @@ public class DisputesService {
         log.info("Trying to set pending Dispute status {}", dispute);
         disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to pending {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
     public void setNextStepToCreateAdjustment(Dispute dispute, Long changedAmount) {
         log.info("Trying to set create_adjustment Dispute status {}", dispute);
         disputeDao.setNextStepToCreateAdjustment(dispute.getId(), changedAmount);
         log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void setNextStepToManualPending(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set manual_pending Dispute status with '{}' errorMessage, {}", errorMessage,
-                dispute.getId());
-        disputeDao.setNextStepToManualPending(dispute.getId(), errorMessage);
+    public void setNextStepToManualPending(Dispute dispute, String providerMessage, String technicalErrorMessage) {
+        log.warn("Trying to set manual_pending Dispute status with '{}' providerMessage '{}' technicalErrorMessage, {}",
+                providerMessage, technicalErrorMessage, dispute.getId());
+        disputeDao.setNextStepToManualPending(dispute.getId(), providerMessage, technicalErrorMessage);
         log.debug("Dispute status has been set to manual_pending {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
     public void setNextStepToAlreadyExist(Dispute dispute) {
         log.info("Trying to set already_exist_created Dispute status {}", dispute);
         disputeDao.setNextStepToAlreadyExist(dispute.getId());
         log.debug("Dispute status has been set to already_exist_created {}", dispute);
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void setNextStepToPoolingExpired(Dispute dispute, String errorMessage) {
-        log.warn("Trying to set pooling_expired Dispute status with '{}' errorMessage, {}", errorMessage,
-                dispute.getId());
-        disputeDao.setNextStepToPoolingExpired(dispute.getId(), errorMessage);
+    public void setNextStepToPoolingExpired(Dispute dispute) {
+        log.warn("Trying to set pooling_expired Dispute status with '{}'", dispute.getId());
+        disputeDao.setNextStepToPoolingExpired(dispute.getId());
         log.debug("Dispute status has been set to pooling_expired {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
     public void updateNextPollingInterval(Dispute dispute, ProviderData providerData) {

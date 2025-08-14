@@ -1,6 +1,5 @@
 package dev.vality.disputes.schedule.core;
 
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.*;
@@ -22,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
+import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
 import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 
 @Slf4j
@@ -57,7 +58,7 @@ public class PendingDisputesService {
             var providerData = getProviderData(dispute);
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
-                    case STATUS_SUCCESS -> disputeStatusResultHandler.handleSucceededResult(
+                    case STATUS_SUCCESS -> disputeStatusResultHandler.handleCreateAdjustmentResult(
                             dispute, result, providerData, invoicePayment.getLastTransactionInfo());
                     case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
                     case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
@@ -73,8 +74,8 @@ public class PendingDisputesService {
             log.error("NotFound when handle PendingDisputesService.callPendingDisputeRemotely, type={}", ex.getType(),
                     ex);
             switch (ex.getType()) {
-                case INVOICE -> disputeStatusResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
-                case PAYMENT -> disputeStatusResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
+                case INVOICE -> disputeStatusResultHandler.handleFailedResult(dispute, INVOICE_NOT_FOUND);
+                case PAYMENT -> disputeStatusResultHandler.handleFailedResult(dispute, PAYMENT_NOT_FOUND);
                 case PROVIDERDISPUTE -> disputeStatusResultHandler.handleProviderDisputeNotFound(
                         dispute, getProviderData(dispute));
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
@@ -90,8 +91,7 @@ public class PendingDisputesService {
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle PendingDisputesService.callPendingDisputeRemotely",
                     ex);
-            disputeStatusResultHandler.handleFailedResult(dispute,
-                    PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+            disputeStatusResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug(
                     "DisputeStatusWasUpdatedByAnotherThread " +

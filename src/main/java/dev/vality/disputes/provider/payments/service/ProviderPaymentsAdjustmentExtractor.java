@@ -19,9 +19,7 @@ public class ProviderPaymentsAdjustmentExtractor {
     public static final String PROVIDER_PAYMENT_MASK = "providerCallbackId=%s";
 
     public String getReason(ProviderCallback providerCallback) {
-        return Optional.ofNullable(providerCallback.getApproveReason())
-                .map(s -> String.format(PROVIDER_PAYMENT_MASK + ", reason=%s", providerCallback.getId(), s))
-                .orElse(String.format(PROVIDER_PAYMENT_MASK, providerCallback.getId()));
+        return String.format(PROVIDER_PAYMENT_MASK, providerCallback.getId());
     }
 
     public boolean isCashFlowAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment,

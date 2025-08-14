@@ -12,7 +12,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
+import static dev.vality.disputes.util.OpenApiUtil.*;
 import static dev.vality.testcontainers.annotations.util.RandomBeans.randomThrift;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,49 +31,12 @@ public class DebugAdminManagementControllerTest {
     @Test
     @SneakyThrows
     public void checkSerialization() {
-        debugAdminManagementController.approvePending("""
-                {
-                  "approveParams": [
-                    {
-                      "invoiceId": "asd",
-                      "paymentId": "asd",
-                      "skipCallHgForCreateAdjustment": true
-                    }
-                  ]
-                }
-                """);
-        debugAdminManagementController.cancelPending("""
-                {
-                  "cancelParams": [
-                    {
-                      "invoiceId": "asd",
-                      "paymentId": "asd",
-                      "cancelReason": "test endpoint"
-                    }
-                  ]
-                }
-                """);
-        debugAdminManagementController.cancelPending("""
-                {
-                  "cancelParams": [
-                    {
-                      "invoiceId": "asd",
-                      "paymentId": "asd",
-                      "cancelReason": "test endpoint"
-                    }
-                  ]
-                }
-                """);
-        debugAdminManagementController.bindCreated("""
-                  {
-                    "bindParams": [
-                      {
-                        "disputeId": "36",
-                        "providerDisputeId": "66098"
-                      }
-                    ]
-                  }
-                """);
+        debugAdminManagementController.approvePending(
+                getApproveRequest(UUID.randomUUID().toString(), UUID.randomUUID().toString(), true));
+        debugAdminManagementController.cancelPending(
+                getCancelRequest(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+        debugAdminManagementController.bindCreated(
+                getBindCreatedRequest(UUID.randomUUID(), UUID.randomUUID().toString()));
         var randomed = new DisputeResult();
         byte[] b = new byte[20];
         new Random().nextBytes(b);
@@ -82,17 +47,8 @@ public class DebugAdminManagementControllerTest {
                 randomThrift(Dispute.class).setAttachments(List.of(new Attachment().setData(a)))));
         given(adminManagementHandler.getDisputes(any()))
                 .willReturn(randomed);
-        var disputes = debugAdminManagementController.getDisputes("""
-                  {
-                    "disputeParams": [
-                      {
-                      "invoiceId": "asd",
-                      "paymentId": "asd"
-                      }
-                    ],
-                    "withAttachments": false
-                  }
-                """);
+        var disputes = debugAdminManagementController.getDisputes(
+                getGetDisputeRequest(UUID.randomUUID().toString(), UUID.randomUUID().toString(), false));
         assertEquals(2, disputes.getDisputes().size());
     }
 }

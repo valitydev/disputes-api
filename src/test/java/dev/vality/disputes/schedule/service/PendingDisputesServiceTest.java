@@ -86,7 +86,7 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains(DISPUTES_UNKNOWN_MAPPING));
+        assertTrue(disputeDao.get(disputeId).getProviderMsg().contains(DISPUTES_UNKNOWN_MAPPING));
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -100,7 +100,7 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
+        assertTrue(disputeDao.get(disputeId).getTechErrorMsg().contains("Unexpected result"));
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -114,7 +114,7 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.manual_pending, disputeDao.get(disputeId).getStatus());
-        assertTrue(disputeDao.get(disputeId).getErrorMessage().contains("Unexpected result"));
+        assertTrue(disputeDao.get(disputeId).getTechErrorMsg().contains("Unexpected result"));
         disputeDao.finishFailed(disputeId, null);
     }
 

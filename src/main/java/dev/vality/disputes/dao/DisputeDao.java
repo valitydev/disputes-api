@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static dev.vality.disputes.constant.Mode.AUTOMATIC;
+import static dev.vality.disputes.constant.Mode.MANUAL;
 import static dev.vality.disputes.domain.tables.Dispute.DISPUTE;
 
 @Component
@@ -111,58 +113,66 @@ public class DisputeDao extends AbstractGenericDao {
     }
 
     public void updateNextPollingInterval(Dispute dispute, LocalDateTime nextCheckAfter) {
-        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null);
+        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null);
     }
 
     public void setNextStepToCreated(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null);
+        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, AUTOMATIC);
     }
 
     public void setNextStepToPending(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null);
+        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null, null, AUTOMATIC);
     }
 
     public void setNextStepToCreateAdjustment(UUID disputeId, Long changedAmount) {
-        update(disputeId, DisputeStatus.create_adjustment, null, null, changedAmount, null);
+        update(disputeId, DisputeStatus.create_adjustment, null, changedAmount, null, null, null, AUTOMATIC);
     }
 
-    public void setNextStepToManualPending(UUID disputeId, String errorMessage) {
-        update(disputeId, DisputeStatus.manual_pending, null, errorMessage, null, null);
+    public void setNextStepToManualPending(UUID disputeId, String providerMessage, String technicalErrorMessage) {
+        update(disputeId, DisputeStatus.manual_pending, null, null, null, providerMessage, technicalErrorMessage,
+                MANUAL);
     }
 
     public void setNextStepToAlreadyExist(UUID disputeId) {
-        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null);
+        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null, null, MANUAL);
     }
 
-    public void setNextStepToPoolingExpired(UUID disputeId, String errorMessage) {
-        update(disputeId, DisputeStatus.pooling_expired, null, errorMessage, null, null);
+    public void setNextStepToPoolingExpired(UUID disputeId) {
+        update(disputeId, DisputeStatus.pooling_expired, null, null, null, null, null, MANUAL);
     }
 
     public void finishSucceeded(UUID disputeId, Long changedAmount) {
-        update(disputeId, DisputeStatus.succeeded, null, null, changedAmount, null);
+        update(disputeId, DisputeStatus.succeeded, null, changedAmount, null, null, null, null);
     }
 
-    public void finishFailed(UUID disputeId, String errorMessage) {
-        update(disputeId, DisputeStatus.failed, null, errorMessage, null, null);
+    public void finishFailed(UUID disputeId, String technicalErrorMessage) {
+        update(disputeId, DisputeStatus.failed, null, null, null, null, technicalErrorMessage, null);
     }
 
-    public void finishFailedWithMapping(UUID disputeId, String errorMessage, String mapping) {
-        update(disputeId, DisputeStatus.failed, null, errorMessage, null, mapping);
+    public void finishFailedWithMapping(UUID disputeId, String mapping, String providerMessage) {
+        update(disputeId, DisputeStatus.failed, null, null, mapping, providerMessage, null, null);
     }
 
-    public void finishCancelled(UUID disputeId, String errorMessage, String mapping) {
-        update(disputeId, DisputeStatus.cancelled, null, errorMessage, null, mapping);
+    public void finishCancelled(UUID disputeId, String mapping) {
+        update(disputeId, DisputeStatus.cancelled, null, null, mapping, null, null, null);
     }
 
-    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, String errorMessage,
-                        Long changedAmount, String mapping) {
+    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, Long changedAmount,
+                        String mapping, String providerMessage, String technicalErrorMessage,
+                        String mode) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
             set = set.set(DISPUTE.NEXT_CHECK_AFTER, nextCheckAfter);
         }
-        if (errorMessage != null) {
-            set = set.set(DISPUTE.ERROR_MESSAGE, errorMessage);
+        if (mode != null) {
+            set = set.set(DISPUTE.MODE, mode);
+        }
+        if (technicalErrorMessage != null) {
+            set = set.set(DISPUTE.TECH_ERROR_MSG, technicalErrorMessage);
+        }
+        if (providerMessage != null) {
+            set = set.set(DISPUTE.PROVIDER_MSG, providerMessage);
         }
         if (mapping != null) {
             set = set.set(DISPUTE.MAPPING, mapping);
