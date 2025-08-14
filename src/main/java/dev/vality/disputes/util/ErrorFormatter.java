@@ -9,29 +9,31 @@ import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static dev.vality.disputes.constant.ErrorMessage.PROVIDER_RESULT_UNEXPECTED;
+
 @UtilityClass
 public class ErrorFormatter {
 
-    public static String getErrorMessage(Failure failure) {
-        return decodeFragment(getDefaultErrorMessage(failure));
+    public static String getProviderMessage(Failure failure) {
+        return getDefaultErrorMessage(failure);
     }
 
-    public static String getErrorMessage(String errorCode, String errorDescription) {
-        return decodeFragment(getDefaultErrorMessage(errorCode, errorDescription));
+    public static String getErrorMessage(String errorMessage) {
+        return getDefaultErrorMessage(errorMessage);
     }
 
     private static String getDefaultErrorMessage(Failure failure) {
         if (!StringUtils.isBlank(failure.getReason())) {
-            return failure.getCode() + ": " + failure.getReason();
+            return failure.getReason();
         }
         return TErrorUtil.toStringVal(failure);
     }
 
-    private static String getDefaultErrorMessage(String errorCode, String errorDescription) {
-        if (!StringUtils.isBlank(errorDescription)) {
-            return errorCode + ": " + errorDescription;
+    private static String getDefaultErrorMessage(String errorMessage) {
+        if (!StringUtils.isBlank(errorMessage)) {
+            return decodeFragment(errorMessage);
         }
-        return errorCode;
+        return PROVIDER_RESULT_UNEXPECTED;
     }
 
     private static String decodeFragment(String errorMessage) {

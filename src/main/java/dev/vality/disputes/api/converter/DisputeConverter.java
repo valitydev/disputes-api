@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+import static dev.vality.disputes.constant.Mode.AUTOMATIC;
+
 @Component
 @RequiredArgsConstructor
 public class DisputeConverter {
@@ -35,6 +37,7 @@ public class DisputeConverter {
         dispute.setReason(reason);
         dispute.setShopId(paymentParams.getShopId());
         dispute.setShopDetailsName(paymentParams.getShopDetailsName());
+        dispute.setMode(AUTOMATIC);
         return dispute;
     }
 

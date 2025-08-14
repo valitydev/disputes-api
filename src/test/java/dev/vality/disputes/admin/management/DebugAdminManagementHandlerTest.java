@@ -2,7 +2,6 @@ package dev.vality.disputes.admin.management;
 
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.util.WiremockUtils;
 import dev.vality.provider.payments.PaymentStatusResult;
@@ -157,7 +156,7 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
-        disputeDao.setNextStepToPoolingExpired(disputeId, ErrorMessage.POOLING_EXPIRED);
+        disputeDao.setNextStepToPoolingExpired(disputeId);
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());

@@ -1,15 +1,12 @@
 package dev.vality.disputes.schedule.core;
 
 import dev.vality.damsel.domain.TransactionInfo;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
-import dev.vality.disputes.provider.DisputeStatusResult;
-import dev.vality.disputes.provider.DisputeStatusSuccessResult;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.schedule.catcher.WoodyRuntimeExceptionCatcher;
@@ -31,10 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
+import static dev.vality.disputes.constant.ErrorMessage.*;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
+import static dev.vality.disputes.util.DisputeStatusResultUtil.getDisputeStatusResult;
 import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 
 @Slf4j
@@ -73,8 +71,12 @@ public class CreatedDisputesService {
             var providerStatus =
                     checkProviderPaymentStatus(dispute, providerData, invoicePayment.getLastTransactionInfo());
             if (providerStatus.isSuccess()) {
-                handleSucceededResultWithCreateAdjustment(dispute, providerStatus, providerData,
-                        invoicePayment.getLastTransactionInfo());
+                disputeStatusResultHandler.handleCreateAdjustmentResult(
+                        dispute,
+                        getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)),
+                        providerData,
+                        invoicePayment.getLastTransactionInfo(),
+                        null);
                 return;
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
@@ -107,22 +109,22 @@ public class CreatedDisputesService {
             log.error("NotFound when handle CreatedDisputesService.callCreateDisputeRemotely, type={}", ex.getType(),
                     ex);
             switch (ex.getType()) {
-                case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.INVOICE_NOT_FOUND);
-                case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.PAYMENT_NOT_FOUND);
-                case ATTACHMENT, FILEMETA ->
-                        disputeCreateResultHandler.handleFailedResult(dispute, ErrorMessage.NO_ATTACHMENTS);
+                case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, INVOICE_NOT_FOUND);
+                case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, PAYMENT_NOT_FOUND);
+                case ATTACHMENT,
+                     FILEMETA -> disputeCreateResultHandler.handleFailedResult(dispute, NO_ATTACHMENTS);
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
         } catch (CapturedPaymentException ex) {
             log.info("CapturedPaymentException when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
-            disputeCreateResultHandler.handleSucceededResult(dispute,
-                    getChangedAmount(ex.getInvoicePayment().getPayment()));
+            disputeCreateResultHandler.handleSucceededResult(
+                    dispute, getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error("InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely",
+            log.error(
+                    "InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely",
                     ex);
-            disputeCreateResultHandler.handleFailedResult(dispute,
-                    PaymentStatusValidator.getInvoicingPaymentStatusRestrictionsErrorReason(ex));
+            disputeCreateResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug(
                     "DisputeStatusWasUpdatedByAnotherThread " +
@@ -154,19 +156,5 @@ public class CreatedDisputesService {
                 dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
-    }
-
-    private void handleSucceededResultWithCreateAdjustment(Dispute dispute, PaymentStatusResult providerStatus,
-                                                           ProviderData providerData, TransactionInfo transactionInfo) {
-        disputeStatusResultHandler.handleSucceededResult(
-                dispute, getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)), providerData,
-                transactionInfo);
-    }
-
-    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
-        return Optional.ofNullable(changedAmount)
-                .map(amount -> DisputeStatusResult.statusSuccess(
-                        new DisputeStatusSuccessResult().setChangedAmount(amount)))
-                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 }

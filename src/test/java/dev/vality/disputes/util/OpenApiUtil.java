@@ -118,7 +118,8 @@ public class OpenApiUtil {
                     {
                       "invoiceId": "%s",
                       "paymentId": "%s",
-                      "cancelReason": "test endpoint"
+                      "mapping": "mapping",
+                      "adminMessage": "adminMessage"
                     }
                   ]
                 }
@@ -132,7 +133,8 @@ public class OpenApiUtil {
                     {
                       "invoiceId": "%s",
                       "paymentId": "%s",
-                      "skipCallHgForCreateAdjustment": %s
+                      "skipCallHgForCreateAdjustment": %s,
+                      "adminMessage": "adminMessage"
                     }
                   ]
                 }

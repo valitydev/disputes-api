@@ -1,10 +1,11 @@
 package dev.vality.disputes.util;
 
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import lombok.experimental.UtilityClass;
+
+import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_STATUS_RESTRICTIONS;
 
 @UtilityClass
 public class PaymentStatusValidator {
@@ -19,11 +20,11 @@ public class PaymentStatusValidator {
         }
     }
 
-    public static String getInvoicingPaymentStatusRestrictionsErrorReason(
+    public static String getTechnicalErrorMessage(
             InvoicingPaymentStatusRestrictionsException ex) {
         if (ex.getStatus() != null) {
-            return ErrorMessage.PAYMENT_STATUS_RESTRICTIONS + ": " + ex.getStatus().getSetField().getFieldName();
+            return PAYMENT_STATUS_RESTRICTIONS + ": " + ex.getStatus().getSetField().getFieldName();
         }
-        return ErrorMessage.PAYMENT_STATUS_RESTRICTIONS;
+        return PAYMENT_STATUS_RESTRICTIONS;
     }
 }

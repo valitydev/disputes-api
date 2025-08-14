@@ -2,7 +2,6 @@ package dev.vality.disputes.api.service;
 
 import dev.vality.disputes.api.converter.DisputeConverter;
 import dev.vality.disputes.api.model.PaymentParams;
-import dev.vality.disputes.constant.ErrorMessage;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
@@ -56,10 +55,6 @@ public class ApiDisputesService {
         log.debug("Trying to get Dispute, disputeId={}", disputeId);
         var dispute = Optional.ofNullable(parseFormat(disputeId))
                 .map(disputeDao::get)
-                .filter(d -> !(ErrorMessage.NO_ATTACHMENTS.equals(d.getErrorMessage())
-                        || ErrorMessage.INVOICE_NOT_FOUND.equals(d.getErrorMessage())
-                        || ErrorMessage.PAYMENT_NOT_FOUND.equals(d.getErrorMessage())
-                        || getSafeErrorMessage(d).contains(ErrorMessage.PAYMENT_STATUS_RESTRICTIONS)))
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Dispute not found, disputeId='%s'", disputeId), Type.DISPUTE));
         log.debug("Dispute has been found, disputeId={}", disputeId);
@@ -72,9 +67,5 @@ public class ApiDisputesService {
         } catch (IllegalArgumentException ex) {
             return null;
         }
-    }
-
-    private String getSafeErrorMessage(Dispute d) {
-        return d.getErrorMessage() == null ? "" : d.getErrorMessage();
     }
 }
