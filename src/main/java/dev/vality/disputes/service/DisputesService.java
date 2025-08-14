@@ -30,12 +30,12 @@ public class DisputesService {
         var dispute = Optional.of(disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId))
                 .filter(d -> DISPUTE_PENDING_STATUSES.contains(d.getStatus()))
                 .orElseThrow();
-        finishSucceeded(dispute, changedAmount);
+        finishSucceeded(dispute, changedAmount, null);
     }
 
-    public void finishSucceeded(Dispute dispute, Long changedAmount) {
+    public void finishSucceeded(Dispute dispute, Long changedAmount, String adminMessage) {
         log.info("Trying to set succeeded Dispute status {}", dispute);
-        disputeDao.finishSucceeded(dispute.getId(), changedAmount);
+        disputeDao.finishSucceeded(dispute.getId(), changedAmount, adminMessage);
         log.debug("Dispute status has been set to succeeded {}", dispute);
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
@@ -63,9 +63,10 @@ public class DisputesService {
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void finishCancelled(Dispute dispute, String mapping) {
-        log.warn("Trying to set cancelled Dispute status with '{}' mapping, {}", mapping, dispute.getId());
-        disputeDao.finishCancelled(dispute.getId(), mapping);
+    public void finishCancelled(Dispute dispute, String mapping, String adminMessage) {
+        log.warn("Trying to set cancelled Dispute status with ''{}' adminMessage, '{}' mapping, {}",
+                adminMessage, mapping, dispute.getId());
+        disputeDao.finishCancelled(dispute.getId(), mapping, adminMessage);
         log.debug("Dispute status has been set to cancelled {}", dispute);
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
@@ -88,9 +89,10 @@ public class DisputesService {
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
 
-    public void setNextStepToCreateAdjustment(Dispute dispute, Long changedAmount) {
+    public void setNextStepToCreateAdjustment(Dispute dispute, Long changedAmount, String providerMessage,
+                                              String adminMessage) {
         log.info("Trying to set create_adjustment Dispute status {}", dispute);
-        disputeDao.setNextStepToCreateAdjustment(dispute.getId(), changedAmount);
+        disputeDao.setNextStepToCreateAdjustment(dispute.getId(), changedAmount, providerMessage, adminMessage);
         log.debug("Dispute status has been set to create_adjustment {}", dispute.getId());
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }

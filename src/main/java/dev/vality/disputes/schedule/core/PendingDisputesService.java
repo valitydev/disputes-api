@@ -59,7 +59,7 @@ public class PendingDisputesService {
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
                     case STATUS_SUCCESS -> disputeStatusResultHandler.handleCreateAdjustmentResult(
-                            dispute, result, providerData, invoicePayment.getLastTransactionInfo());
+                            dispute, result, providerData, invoicePayment.getLastTransactionInfo(), null);
                     case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
                     case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
@@ -86,7 +86,8 @@ public class PendingDisputesService {
             disputeStatusResultHandler.handlePoolingExpired(dispute);
         } catch (CapturedPaymentException ex) {
             log.info("CapturedPaymentException when handle PendingDisputesService.callPendingDisputeRemotely", ex);
-            disputeStatusResultHandler.handleSucceededResult(dispute,
+            disputeStatusResultHandler.handleSucceededResult(
+                    dispute,
                     getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle PendingDisputesService.callPendingDisputeRemotely",

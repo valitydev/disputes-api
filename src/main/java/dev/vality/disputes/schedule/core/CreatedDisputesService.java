@@ -7,8 +7,6 @@ import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadExcep
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
-import dev.vality.disputes.provider.DisputeStatusResult;
-import dev.vality.disputes.provider.DisputeStatusSuccessResult;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
 import dev.vality.disputes.schedule.catcher.WoodyRuntimeExceptionCatcher;
@@ -30,11 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.ErrorMessage.*;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
+import static dev.vality.disputes.util.DisputeStatusResultUtil.getDisputeStatusResult;
 import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 
 @Slf4j
@@ -77,7 +75,8 @@ public class CreatedDisputesService {
                         dispute,
                         getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)),
                         providerData,
-                        invoicePayment.getLastTransactionInfo());
+                        invoicePayment.getLastTransactionInfo(),
+                        null);
                 return;
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {
@@ -157,12 +156,5 @@ public class CreatedDisputesService {
                 dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
-    }
-
-    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
-        return Optional.ofNullable(changedAmount)
-                .map(amount -> DisputeStatusResult.statusSuccess(
-                        new DisputeStatusSuccessResult().setChangedAmount(amount)))
-                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 }

@@ -55,7 +55,7 @@ public class ForgottenDisputesService {
             }
         } catch (CapturedPaymentException ex) {
             log.info("CapturedPaymentException when handle ForgottenDisputesService.process", ex);
-            disputesService.finishSucceeded(dispute, getChangedAmount(ex.getInvoicePayment().getPayment()));
+            disputesService.finishSucceeded(dispute, getChangedAmount(ex.getInvoicePayment().getPayment()), null);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle ForgottenDisputesService.process", ex);
             disputesService.finishFailed(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));

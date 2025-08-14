@@ -42,7 +42,7 @@ public class DisputeCreateResultHandler {
     }
 
     public void handleSucceededResult(Dispute dispute, Long changedAmount) {
-        disputesService.finishSucceeded(dispute, changedAmount);
+        disputesService.finishSucceeded(dispute, changedAmount, null);
     }
 
     public void handleFailedResult(Dispute dispute, DisputeCreatedResult result) {

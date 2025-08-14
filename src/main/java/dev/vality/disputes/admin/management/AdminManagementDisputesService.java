@@ -7,8 +7,6 @@ import dev.vality.disputes.dao.ProviderDisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.polling.PollingInfoService;
-import dev.vality.disputes.provider.DisputeStatusResult;
-import dev.vality.disputes.provider.DisputeStatusSuccessResult;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.result.DisputeStatusResultHandler;
 import dev.vality.disputes.schedule.service.ProviderDataService;
@@ -23,9 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 import static dev.vality.disputes.service.DisputesService.DISPUTE_PENDING_STATUSES;
+import static dev.vality.disputes.util.DisputeStatusResultUtil.getDisputeStatusResult;
 
 @Slf4j
 @Service
@@ -46,7 +44,10 @@ public class AdminManagementDisputesService {
         var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
         if (DISPUTE_PENDING_STATUSES.contains(dispute.getStatus())) {
             // используется не failed, а cancelled чтоб можно было понять, что зафейлен по внешнему вызову
-            disputesService.finishCancelled(dispute, params.getMapping().orElse(null));
+            disputesService.finishCancelled(
+                    dispute,
+                    params.getMapping().orElse(null),
+                    params.getAdminMessage().orElse(null));
         }
     }
 
@@ -69,12 +70,13 @@ public class AdminManagementDisputesService {
                     dispute,
                     getDisputeStatusResult(changedAmount),
                     providerData,
-                    invoicePayment.getLastTransactionInfo());
+                    invoicePayment.getLastTransactionInfo(),
+                    params.getAdminMessage().orElse(null));
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
-            disputesService.finishSucceeded(dispute, changedAmount);
+            disputesService.finishSucceeded(dispute, changedAmount, params.getAdminMessage().orElse(null));
         }
     }
 
@@ -106,13 +108,6 @@ public class AdminManagementDisputesService {
             dispute.setPollingBefore(getLocalDateTime(pollingInfo.getMaxDateTimePolling()));
             disputesService.setNextStepToPending(dispute, providerData);
         }
-    }
-
-    private DisputeStatusResult getDisputeStatusResult(Long changedAmount) {
-        return Optional.ofNullable(changedAmount)
-                .map(amount -> DisputeStatusResult.statusSuccess(
-                        new DisputeStatusSuccessResult().setChangedAmount(amount)))
-                .orElse(DisputeStatusResult.statusSuccess(new DisputeStatusSuccessResult()));
     }
 
     private LocalDateTime getLocalDateTime(Instant instant) {

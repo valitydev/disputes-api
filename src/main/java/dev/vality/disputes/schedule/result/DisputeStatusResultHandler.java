@@ -45,17 +45,22 @@ public class DisputeStatusResultHandler {
     }
 
     public void handleSucceededResult(Dispute dispute, Long changedAmount) {
-        disputesService.finishSucceeded(dispute, changedAmount);
+        disputesService.finishSucceeded(dispute, changedAmount, null);
     }
 
     public void handleCreateAdjustmentResult(
             Dispute dispute,
             DisputeStatusResult result,
             ProviderData providerData,
-            TransactionInfo transactionInfo) {
+            TransactionInfo transactionInfo,
+            String adminMessage) {
         var changedAmount = getChangedAmount(dispute.getAmount(), result);
         providerPaymentsService.createAdjustment(dispute, providerData, transactionInfo);
-        disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
+        disputesService.setNextStepToCreateAdjustment(
+                dispute,
+                changedAmount,
+                result.getStatusSuccess().getProviderMessage().orElse(null),
+                adminMessage);
     }
 
     public void handlePoolingExpired(Dispute dispute) {
