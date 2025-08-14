@@ -57,7 +57,7 @@ public class DisputeStatusResultHandler {
 
     public void handleSucceededResult(Dispute dispute, DisputeStatusResult result, ProviderData providerData,
                                       TransactionInfo transactionInfo) {
-        var changedAmount = result.getStatusSuccess().getChangedAmount().orElse(null);
+        var changedAmount = getChangedAmount(dispute.getAmount(), result);
         disputesService.setNextStepToCreateAdjustment(dispute, changedAmount);
         createAdjustment(dispute, providerData, transactionInfo);
     }
@@ -93,5 +93,11 @@ public class DisputeStatusResultHandler {
         } catch (ProviderCallbackAlreadyExistException ex) {
             log.warn("ProviderCallbackAlreadyExist when handle providerPaymentsService.checkPaymentStatusAndSave", ex);
         }
+    }
+
+    private Long getChangedAmount(long amount, DisputeStatusResult paymentStatusResult) {
+        return paymentStatusResult.getStatusSuccess().getChangedAmount()
+                .filter(changedAmount -> changedAmount != amount)
+                .orElse(null);
     }
 }
