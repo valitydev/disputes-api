@@ -6,7 +6,6 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.config.WiremockAddressesHolder;
 import dev.vality.disputes.dao.DisputeDao;
-import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
@@ -49,8 +48,6 @@ public class DisputesApiDelegateServiceTest {
     @MockitoBean
     private DominantAsyncService dominantAsyncService;
     @MockitoBean
-    private PartyManagementService partyManagementService;
-    @MockitoBean
     private FileStorageSrv.Iface fileStorageClient;
     @Autowired
     private MockMvc mvc;
@@ -63,7 +60,7 @@ public class DisputesApiDelegateServiceTest {
     @BeforeEach
     public void init() {
         preparedMocks = new Object[] {invoicingClient, tokenKeeperClient, bouncerClient,
-                fileStorageClient, dominantAsyncService, partyManagementService};
+                fileStorageClient, dominantAsyncService};
     }
 
     @AfterEach
@@ -84,7 +81,7 @@ public class DisputesApiDelegateServiceTest {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
+        when(dominantAsyncService.getShop(any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(
                 createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();
@@ -104,7 +101,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(1)).getCurrency(any());
         verify(dominantAsyncService, times(1)).getProvider(any());
         verify(dominantAsyncService, times(1)).getProxy(any());
-        verify(partyManagementService, times(1)).getShop(any(), any());
+        verify(dominantAsyncService, times(1)).getShop(any());
         verify(fileStorageClient, times(1)).createNewFile(any(), any());
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer token")
@@ -152,7 +149,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(2)).getCurrency(any());
         verify(dominantAsyncService, times(2)).getProvider(any());
         verify(dominantAsyncService, times(2)).getProxy(any());
-        verify(partyManagementService, times(2)).getShop(any(), any());
+        verify(dominantAsyncService, times(2)).getShop(any());
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
         disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
     }
@@ -196,7 +193,7 @@ public class DisputesApiDelegateServiceTest {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
+        when(dominantAsyncService.getShop(any())).thenReturn(createShop());
         mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
@@ -210,7 +207,7 @@ public class DisputesApiDelegateServiceTest {
         verify(dominantAsyncService, times(1)).getCurrency(any());
         verify(dominantAsyncService, times(1)).getProvider(any());
         verify(dominantAsyncService, times(1)).getProxy(any());
-        verify(partyManagementService, times(1)).getShop(any(), any());
+        verify(dominantAsyncService, times(1)).getShop(any());
     }
 
     @Test

@@ -1,9 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
-import dev.vality.damsel.domain.Currency;
-import dev.vality.damsel.domain.CurrencyRef;
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.TerminalRef;
+import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.external.DominantService;
@@ -60,5 +57,10 @@ public class ProviderDataService {
     @SneakyThrows
     public Currency getAsyncCurrency(InvoicePayment payment) {
         return dominantAsyncService.getCurrency(payment.getPayment().getCost().getCurrency()).get();
+    }
+
+    @SneakyThrows
+    public ShopConfig getAsyncShop(dev.vality.damsel.payment_processing.Invoice invoice) {
+        return dominantAsyncService.getShop(new ShopConfigRef(invoice.getInvoice().getShopId())).get();
     }
 }

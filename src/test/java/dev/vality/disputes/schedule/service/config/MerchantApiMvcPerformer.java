@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WiremockAddressesHolder;
-import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
@@ -34,7 +33,6 @@ public class MerchantApiMvcPerformer {
     private final ArbiterSrv.Iface bouncerClient;
     private final FileStorageSrv.Iface fileStorageClient;
     private final DominantAsyncService dominantAsyncService;
-    private final PartyManagementService partyManagementService;
     private final WiremockAddressesHolder wiremockAddressesHolder;
     private final MockMvc mvc;
 
@@ -47,7 +45,7 @@ public class MerchantApiMvcPerformer {
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
-        when(partyManagementService.getShop(any(), any())).thenReturn(createShop());
+        when(dominantAsyncService.getShop(any())).thenReturn(createShop());
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(
                 createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         WiremockUtils.mockS3AttachmentUpload();

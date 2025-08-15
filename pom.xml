@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.0.10</version>
+        <version>3.1.6</version>
     </parent>
 
     <artifactId>disputes-api</artifactId>
@@ -55,12 +55,10 @@
         <dependency>
             <groupId>dev.vality.geck</groupId>
             <artifactId>serializer</artifactId>
-            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
-            <version>1.651-24932cd</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -79,12 +77,11 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>msgpack-proto</artifactId>
-            <version>1.17-7481bb4</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>adapter-flow-lib</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.3</version>
         </dependency>
 
         <!--spring-->
@@ -148,7 +145,6 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -216,7 +212,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>testcontainers-annotations</artifactId>
-            <version>3.0.0</version>
+            <version>3.3.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -15,7 +15,6 @@ import dev.vality.disputes.schedule.service.config.MerchantApiMvcPerformer;
 import dev.vality.disputes.schedule.service.config.PendingFlowHandler;
 import dev.vality.disputes.schedule.service.config.ProviderCallbackFlowHandler;
 import dev.vality.disputes.service.external.DominantService;
-import dev.vality.disputes.service.external.PartyManagementService;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
@@ -43,8 +42,6 @@ public abstract class AbstractMockitoConfig {
     public DominantService dominantService;
     @MockitoBean
     public DominantAsyncService dominantAsyncService;
-    @MockitoBean
-    public PartyManagementService partyManagementService;
     @MockitoBean
     public ProviderDisputesThriftInterfaceBuilder providerDisputesThriftInterfaceBuilder;
     @MockitoBean
@@ -77,7 +74,7 @@ public abstract class AbstractMockitoConfig {
     void setUp() {
         merchantApiMvcPerformer =
                 new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient,
-                        dominantAsyncService, partyManagementService, wiremockAddressesHolder, mvc);
+                        dominantAsyncService, wiremockAddressesHolder, mvc);
         createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService,
                 createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder,
                 wiremockAddressesHolder, merchantApiMvcPerformer);

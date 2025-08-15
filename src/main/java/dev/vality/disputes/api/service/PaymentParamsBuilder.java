@@ -6,7 +6,6 @@ import dev.vality.disputes.api.model.PaymentParams;
 import dev.vality.disputes.exception.ProviderTrxIdNotFoundException;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.security.AccessData;
-import dev.vality.disputes.service.external.PartyManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,6 @@ import java.util.Optional;
 public class PaymentParamsBuilder {
 
     private final ProviderDataService providerDataService;
-    private final PartyManagementService partyManagementService;
 
     @SneakyThrows
     public PaymentParams buildGeneralPaymentContext(AccessData accessData) {
@@ -28,7 +26,7 @@ public class PaymentParamsBuilder {
         log.debug("Start building PaymentParams id={}", invoice.getId());
         var payment = accessData.getPayment();
         var currency = providerDataService.getAsyncCurrency(payment);
-        var shop = partyManagementService.getShop(invoice.getOwnerId(), invoice.getShopId());
+        var shop = providerDataService.getAsyncShop(accessData.getInvoice());
         var paymentParams = PaymentParams.builder()
                 .invoiceId(invoice.getId())
                 .paymentId(payment.getPayment().getId())
@@ -41,7 +39,7 @@ public class PaymentParamsBuilder {
                 .currencyExponent((int) currency.getExponent())
                 .options(providerDataService.getAsyncProviderData(payment).getOptions())
                 .shopId(invoice.getShopId())
-                .shopDetailsName(shop.getDetails().getName())
+                .shopDetailsName(shop.getName())
                 .invoiceAmount(payment.getPayment().getCost().getAmount())
                 .build();
         log.debug("Finish building PaymentParams {}", paymentParams);

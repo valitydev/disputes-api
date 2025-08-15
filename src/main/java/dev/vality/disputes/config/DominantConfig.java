@@ -1,6 +1,6 @@
 package dev.vality.disputes.config;
 
-import dev.vality.damsel.domain_config.RepositoryClientSrv;
+import dev.vality.damsel.domain_config_v2.RepositoryClientSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
