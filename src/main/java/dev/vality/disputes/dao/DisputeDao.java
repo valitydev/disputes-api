@@ -117,55 +117,53 @@ public class DisputeDao extends AbstractGenericDao {
     }
 
     public void updateNextPollingInterval(Dispute dispute, LocalDateTime nextCheckAfter) {
-        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null, null);
+        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null);
     }
 
     public void setNextStepToCreated(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, null, AUTOMATIC);
+        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, AUTOMATIC);
     }
 
     public void setNextStepToPending(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null, null, null, AUTOMATIC);
+        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null, null, AUTOMATIC);
     }
 
-    public void setNextStepToCreateAdjustment(UUID disputeId, Long changedAmount, String providerMessage,
-                                              String adminMessage) {
-        update(disputeId, DisputeStatus.create_adjustment, null, changedAmount, APPROVED, providerMessage, adminMessage,
-                CLEARED, null);
+    public void setNextStepToCreateAdjustment(UUID disputeId, Long changedAmount, String providerMessage) {
+        update(disputeId, DisputeStatus.create_adjustment, null, changedAmount, APPROVED, providerMessage, CLEARED,
+                null);
     }
 
     public void setNextStepToManualPending(UUID disputeId, String providerMessage, String technicalErrorMessage) {
-        update(disputeId, DisputeStatus.manual_pending, null, null, null, providerMessage, null, technicalErrorMessage,
+        update(disputeId, DisputeStatus.manual_pending, null, null, null, providerMessage, technicalErrorMessage,
                 MANUAL);
     }
 
     public void setNextStepToAlreadyExist(UUID disputeId) {
-        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null, null, null, MANUAL);
+        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null, null, MANUAL);
     }
 
     public void setNextStepToPoolingExpired(UUID disputeId) {
-        update(disputeId, DisputeStatus.pooling_expired, null, null, null, null, null, null, MANUAL);
+        update(disputeId, DisputeStatus.pooling_expired, null, null, null, null, null, MANUAL);
     }
 
-    public void finishSucceeded(UUID disputeId, Long changedAmount, String adminMessage) {
-        update(disputeId, DisputeStatus.succeeded, null, changedAmount, APPROVED, null, adminMessage, CLEARED, null);
+    public void finishSucceeded(UUID disputeId, Long changedAmount, String providerMessage) {
+        update(disputeId, DisputeStatus.succeeded, null, changedAmount, APPROVED, providerMessage, CLEARED, null);
     }
 
     public void finishFailed(UUID disputeId, String technicalErrorMessage) {
-        update(disputeId, DisputeStatus.failed, null, null, SERVER_ERROR, null, null, technicalErrorMessage, null);
+        update(disputeId, DisputeStatus.failed, null, null, SERVER_ERROR, null, technicalErrorMessage, null);
     }
 
     public void finishFailedWithMapping(UUID disputeId, String mapping, String providerMessage) {
-        update(disputeId, DisputeStatus.failed, null, null, mapping, providerMessage, null, null, null);
+        update(disputeId, DisputeStatus.failed, null, null, mapping, providerMessage, null, null);
     }
 
-    public void finishCancelled(UUID disputeId, String mapping, String adminMessage) {
-        update(disputeId, DisputeStatus.cancelled, null, null, mapping, null, adminMessage, null, null);
+    public void finishCancelled(UUID disputeId, String mapping, String providerMessage) {
+        update(disputeId, DisputeStatus.cancelled, null, null, mapping, providerMessage, null, null);
     }
 
     private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, Long changedAmount,
-                        String mapping, String providerMessage, String adminMessage, String technicalErrorMessage,
-                        String mode) {
+                        String mapping, String providerMessage, String technicalErrorMessage, String mode) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
@@ -179,9 +177,6 @@ public class DisputeDao extends AbstractGenericDao {
         }
         if (providerMessage != null) {
             set = set.set(DISPUTE.PROVIDER_MSG, providerMessage);
-        }
-        if (adminMessage != null) {
-            set = set.set(DISPUTE.ADMIN_MSG, adminMessage);
         }
         if (technicalErrorMessage != null) {
             set = set.set(DISPUTE.TECH_ERROR_MSG, technicalErrorMessage);

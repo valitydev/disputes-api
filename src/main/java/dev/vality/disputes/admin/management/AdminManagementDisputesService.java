@@ -47,7 +47,7 @@ public class AdminManagementDisputesService {
             disputesService.finishCancelled(
                     dispute,
                     params.getMapping().orElse(null),
-                    params.getAdminMessage().orElse(null));
+                    params.getProviderMessage().orElse(null));
         }
     }
 
@@ -66,17 +66,18 @@ public class AdminManagementDisputesService {
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             // если ProviderPaymentsUnexpectedPaymentStatus то нехрен апрувить не успешный платеж
+            var disputeStatusResult = getDisputeStatusResult(changedAmount);
+            disputeStatusResult.getStatusSuccess().setProviderMessage(params.getProviderMessage().orElse(null));
             disputeStatusResultHandler.handleCreateAdjustmentResult(
                     dispute,
-                    getDisputeStatusResult(changedAmount),
+                    disputeStatusResult,
                     providerData,
-                    invoicePayment.getLastTransactionInfo(),
-                    params.getAdminMessage().orElse(null));
+                    invoicePayment.getLastTransactionInfo());
         } else if (dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending
                 || dispute.getStatus() == DisputeStatus.pooling_expired
                 || dispute.getStatus() == DisputeStatus.create_adjustment) {
-            disputesService.finishSucceeded(dispute, changedAmount, params.getAdminMessage().orElse(null));
+            disputesService.finishSucceeded(dispute, changedAmount, params.getProviderMessage().orElse(null));
         }
     }
 

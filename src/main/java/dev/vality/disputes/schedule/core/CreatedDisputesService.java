@@ -75,8 +75,8 @@ public class CreatedDisputesService {
                         dispute,
                         getDisputeStatusResult(providerStatus.getChangedAmount().orElse(null)),
                         providerData,
-                        invoicePayment.getLastTransactionInfo(),
-                        null);
+                        invoicePayment.getLastTransactionInfo()
+                );
                 return;
             }
             var finishCreateDisputeResult = (Consumer<DisputeCreatedResult>) result -> {

@@ -49,7 +49,6 @@ public class DisputeThriftConverter {
         disputeThrift.setTechnicalErrorMessage(dispute.getTechErrorMsg());
         disputeThrift.setMode(dispute.getMode());
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
-        disputeThrift.setAdminMessage(dispute.getAdminMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
         if (!withAttachments) {
             return disputeThrift;

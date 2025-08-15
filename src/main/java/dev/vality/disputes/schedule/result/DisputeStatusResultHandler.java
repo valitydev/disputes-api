@@ -52,15 +52,13 @@ public class DisputeStatusResultHandler {
             Dispute dispute,
             DisputeStatusResult result,
             ProviderData providerData,
-            TransactionInfo transactionInfo,
-            String adminMessage) {
+            TransactionInfo transactionInfo) {
         var changedAmount = getChangedAmount(dispute.getAmount(), result);
         providerPaymentsService.createAdjustment(dispute, providerData, transactionInfo);
         disputesService.setNextStepToCreateAdjustment(
                 dispute,
                 changedAmount,
-                result.getStatusSuccess().getProviderMessage().orElse(null),
-                adminMessage);
+                result.getStatusSuccess().getProviderMessage().orElse(null));
     }
 
     public void handlePoolingExpired(Dispute dispute) {

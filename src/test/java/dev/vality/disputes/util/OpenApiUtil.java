@@ -119,7 +119,7 @@ public class OpenApiUtil {
                       "invoiceId": "%s",
                       "paymentId": "%s",
                       "mapping": "mapping",
-                      "adminMessage": "adminMessage"
+                      "providerMessage": "providerMessage"
                     }
                   ]
                 }
@@ -134,7 +134,7 @@ public class OpenApiUtil {
                       "invoiceId": "%s",
                       "paymentId": "%s",
                       "skipCallHgForCreateAdjustment": %s,
-                      "adminMessage": "adminMessage"
+                      "providerMessage": "providerMessage"
                     }
                   ]
                 }
