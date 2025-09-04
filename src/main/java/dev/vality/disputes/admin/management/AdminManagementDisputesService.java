@@ -84,8 +84,15 @@ public class AdminManagementDisputesService {
     @Transactional
     public void updatePendingDispute(UpdatePendingParams params) {
         var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
-        dispute.setProviderMsg(params.getProviderMessage());
-        disputesService.updateDisputeProviderMessage(dispute);
+        if (dispute.getStatus() == DisputeStatus.pending
+                || dispute.getStatus() == DisputeStatus.manual_pending
+                || dispute.getStatus() == DisputeStatus.pooling_expired) {
+            dispute.setProviderMsg(params.getProviderMessage());
+            disputesService.updateDisputeProviderMessage(dispute);
+        } else {
+            log.warn("Dispute {} has final status {}. Provider message won't be updated.", dispute.getId(),
+                    dispute.getStatus());
+        }
     }
 
     @Transactional
