@@ -90,7 +90,7 @@ public class AdminManagementDisputesService {
             dispute.setProviderMsg(params.getProviderMessage());
             disputesService.updateDisputeProviderMessage(dispute);
         } else {
-            log.warn("Dispute {} has final status {}. Provider message won't be updated.", dispute.getId(),
+            log.warn("Dispute {} has final status {}, provider message won't be updated", dispute.getId(),
                     dispute.getStatus());
         }
     }
