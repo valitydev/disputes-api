@@ -5,6 +5,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.schedule.core.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +42,19 @@ public class AdminManagementHandler implements AdminManagementServiceSrv.Iface {
             }
         }
         log.debug("Finish approveParamsRequest {}", approveParamsRequest);
+    }
+
+    @Override
+    public void updatePending(UpdatePendingParamsRequest updatePendingParamsRequest) throws TException {
+        log.info("Got updatePendingParamsRequest {}", updatePendingParamsRequest);
+        for (var updatePendingParam : updatePendingParamsRequest.getPendingParams()) {
+            try {
+                adminManagementDisputesService.updatePendingDispute(updatePendingParam);
+            } catch (NotFoundException ex) {
+                log.warn("NotFound when handle UpdatePendingParamsRequest, type={}", ex.getType(), ex);
+            }
+        }
+        log.debug("Finish updatePendingParamsRequest {}", updatePendingParamsRequest);
     }
 
     @Override

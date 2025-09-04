@@ -1,5 +1,6 @@
 package dev.vality.disputes.provider.payments.service;
 
+import dev.vality.damsel.domain.Invoice;
 import dev.vality.disputes.exception.RoutingException;
 import dev.vality.disputes.schedule.model.ProviderData;
 import lombok.RequiredArgsConstructor;

@@ -162,6 +162,13 @@ public class DisputeDao extends AbstractGenericDao {
         update(disputeId, DisputeStatus.cancelled, null, null, mapping, providerMessage, null, null);
     }
 
+    public void updateProviderMessage(UUID disputeId, String providerMessage) {
+        var set = getDslContext().update(DISPUTE)
+                .set(DISPUTE.PROVIDER_MSG, providerMessage)
+                .where(DISPUTE.ID.eq(disputeId));
+        executeOne(set);
+    }
+
     private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, Long changedAmount,
                         String mapping, String providerMessage, String technicalErrorMessage, String mode) {
         var set = getDslContext().update(DISPUTE)

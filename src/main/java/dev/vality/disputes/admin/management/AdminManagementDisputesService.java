@@ -82,6 +82,13 @@ public class AdminManagementDisputesService {
     }
 
     @Transactional
+    public void updatePendingDispute(UpdatePendingParams params) {
+        var dispute = disputesService.getSkipLockedByInvoiceId(params.getInvoiceId(), params.getPaymentId());
+        dispute.setProviderMsg(params.getProviderMessage());
+        disputesService.updateDisputeProviderMessage(dispute);
+    }
+
+    @Transactional
     public void bindCreatedDispute(BindParams params) {
         var disputeId = params.getDisputeId();
         var dispute = disputesService.getSkipLocked(disputeId);
