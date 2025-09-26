@@ -27,7 +27,7 @@ public class DamselUtil {
     }
 
     @SneakyThrows
-    public static <T extends TBase> T fillRequiredTBaseObject(T tbase, Class<T> type) {
+    public static <T extends TBase<?, ?>> T fillRequiredTBaseObject(T tbase, Class<T> type) {
         return DamselUtil.mockRequiredTBaseProcessor.process(tbase, new TBaseHandler<>(type));
     }
 }

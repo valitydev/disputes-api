@@ -5,7 +5,6 @@ import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.NotFoundException.Type;
 import dev.vality.mapper.RecordRowMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +20,6 @@ public class FileMetaDao extends AbstractGenericDao {
 
     private final RowMapper<FileMeta> fileMetaRowMapper;
 
-    @Autowired
     public FileMetaDao(DataSource dataSource) {
         super(dataSource);
         fileMetaRowMapper = new RecordRowMapper<>(FILE_META, FileMeta.class);
