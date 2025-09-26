@@ -5,7 +5,6 @@ import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,6 @@ public class ProviderCallbackDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderCallback> providerCallbackRowMapper;
 
-    @Autowired
     public ProviderCallbackDao(DataSource dataSource) {
         super(dataSource);
         providerCallbackRowMapper = new RecordRowMapper<>(PROVIDER_CALLBACK, ProviderCallback.class);

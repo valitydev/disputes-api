@@ -5,7 +5,6 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,6 @@ public class DisputeDao extends AbstractGenericDao {
 
     private final RowMapper<Dispute> disputeRowMapper;
 
-    @Autowired
     public DisputeDao(DataSource dataSource) {
         super(dataSource);
         disputeRowMapper = new RecordRowMapper<>(DISPUTE, Dispute.class);

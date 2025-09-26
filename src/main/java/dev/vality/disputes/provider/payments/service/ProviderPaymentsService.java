@@ -40,6 +40,7 @@ import java.util.Optional;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
 import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
 
 @Slf4j
 @Service
@@ -61,6 +62,9 @@ public class ProviderPaymentsService {
 
     @Async("disputesAsyncServiceExecutor")
     public void processCallback(ProviderPaymentsCallbackParams callback) {
+        final var currentThread = Thread.currentThread();
+        final var oldName = currentThread.getName();
+        currentThread.setName(buildThreadName("providerPaymentsService.processCallback", oldName, callback));
         try {
             var invoiceId = callback.getInvoiceId().get();
             var paymentId = callback.getPaymentId().get();
@@ -85,6 +89,8 @@ public class ProviderPaymentsService {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
             log.warn("Failed to handle ProviderPaymentsCallbackParams", ex);
+        } finally {
+            currentThread.setName(oldName);
         }
     }
 

@@ -6,7 +6,6 @@ import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +22,6 @@ public class ProviderDisputeDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderDispute> providerDisputeRowMapper;
 
-    @Autowired
     public ProviderDisputeDao(DataSource dataSource) {
         super(dataSource);
         providerDisputeRowMapper = new RecordRowMapper<>(PROVIDER_DISPUTE, ProviderDispute.class);
