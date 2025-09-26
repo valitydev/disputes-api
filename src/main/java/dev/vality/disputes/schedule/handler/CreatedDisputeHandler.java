@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
+
 @RequiredArgsConstructor
 public class CreatedDisputeHandler {
 
@@ -14,7 +16,7 @@ public class CreatedDisputeHandler {
     public UUID handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("dispute-created-id-" + dispute.getId() + "-" + oldName);
+        currentThread.setName(buildThreadName("created", oldName, dispute));
         try {
             createdDisputesService.callCreateDisputeRemotely(dispute);
             return dispute.getId();

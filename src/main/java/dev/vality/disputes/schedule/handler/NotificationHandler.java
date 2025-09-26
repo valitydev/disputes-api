@@ -4,6 +4,8 @@ import dev.vality.disputes.schedule.core.NotificationService;
 import dev.vality.swag.disputes.model.NotifyRequest;
 import lombok.RequiredArgsConstructor;
 
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
+
 @RequiredArgsConstructor
 public class NotificationHandler {
 
@@ -12,7 +14,7 @@ public class NotificationHandler {
     public String handle(NotifyRequest notifyRequest) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("notification-id-" + notifyRequest.getDisputeId() + "-" + oldName);
+        currentThread.setName(buildThreadName("notification", oldName, notifyRequest));
         try {
             notificationService.process(notifyRequest);
             return notifyRequest.getDisputeId();

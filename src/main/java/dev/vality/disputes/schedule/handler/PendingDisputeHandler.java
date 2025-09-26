@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
+
 @RequiredArgsConstructor
 public class PendingDisputeHandler {
 
@@ -14,7 +16,7 @@ public class PendingDisputeHandler {
     public UUID handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("dispute-pending-id-" + dispute.getId() + "-" + oldName);
+        currentThread.setName(buildThreadName("pending", oldName, dispute));
         try {
             pendingDisputesService.callPendingDisputeRemotely(dispute);
             return dispute.getId();

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
+
 @RequiredArgsConstructor
 public class ForgottenDisputeHandler {
 
@@ -14,7 +16,7 @@ public class ForgottenDisputeHandler {
     public UUID handle(Dispute dispute) {
         final var currentThread = Thread.currentThread();
         final var oldName = currentThread.getName();
-        currentThread.setName("dispute-forgotten-id-" + dispute.getId() + "-" + oldName);
+        currentThread.setName(buildThreadName("forgotten", oldName, dispute));
         try {
             forgottenDisputesService.process(dispute);
             return dispute.getId();
