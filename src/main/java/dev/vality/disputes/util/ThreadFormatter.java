@@ -17,7 +17,8 @@ public class ThreadFormatter {
     }
 
     public static String buildThreadName(String prefix, String oldName, ProviderPaymentsCallbackParams callback) {
-        return String.format("%s-%s-%s.%s", prefix, oldName, callback.getInvoiceId(), callback.getPaymentId());
+        return String.format("%s-%s-%s.%s", prefix, oldName, callback.getInvoiceId().orElse(null),
+                callback.getPaymentId().orElse(null));
     }
 }
 
