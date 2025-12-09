@@ -49,7 +49,7 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
-        disputeDao.setNextStepToPending(disputeId, null);
+        disputeDao.setNextStepToPending(disputeId, null, null);
         when(invoicingClient.getPayment(any(), any())).thenReturn(MockUtil.createInvoicePayment(paymentId));
         var terminal = createTerminal().get();
         terminal.getOptions().putAll(getOptions());
