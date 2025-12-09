@@ -84,7 +84,7 @@ public class DisputesService {
         var nextCheckAfter =
                 exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         log.info("Trying to set pending Dispute status {}", dispute);
-        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter);
+        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter, dispute.getPollingBefore());
         log.debug("Dispute status has been set to pending {}", dispute.getId());
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
