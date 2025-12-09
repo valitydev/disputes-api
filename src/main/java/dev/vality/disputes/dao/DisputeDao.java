@@ -193,7 +193,6 @@ public class DisputeDao extends AbstractGenericDao {
         if (mode != null) {
             set = set.set(DISPUTE.MODE, mode);
         }
-
         var query = set
                 .where(DISPUTE.ID.eq(disputeId));
         executeOne(query);
