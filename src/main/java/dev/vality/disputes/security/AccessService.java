@@ -1,5 +1,6 @@
 package dev.vality.disputes.security;
 
+import dev.vality.bouncer.decisions.Resolution;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.exception.AuthorizationException;
 import dev.vality.disputes.exception.BouncerException;
@@ -74,7 +75,7 @@ public class AccessService {
                         if (restrictions.isSetCapi()) {
                             restrictions.getCapi().getOp().getShops().stream()
                                     .filter(shop -> shop.getId()
-                                            .equals(accessData.getInvoice().getInvoice().getShopId()))
+                                            .equals(accessData.getInvoice().getInvoice().getShopRef().getId()))
                                     .findFirst()
                                     .orElseThrow(() -> new AuthorizationException("No rights to perform dispute"));
                         }

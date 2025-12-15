@@ -61,6 +61,6 @@ public class ProviderDataService {
 
     @SneakyThrows
     public ShopConfig getAsyncShop(dev.vality.damsel.payment_processing.Invoice invoice) {
-        return dominantAsyncService.getShop(new ShopConfigRef(invoice.getInvoice().getShopId())).get();
+        return dominantAsyncService.getShop(new ShopConfigRef(invoice.getInvoice().getShopRef().getId())).get();
     }
 }

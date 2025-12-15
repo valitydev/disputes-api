@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.1.6</version>
+        <version>3.1.9</version>
     </parent>
 
     <artifactId>disputes-api</artifactId>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>bouncer-proto</artifactId>
-            <version>1.56-07dcc7b</version>
+            <version>1.57-31866c3</version>
         </dependency>
         <dependency>
             <groupId>dev.vality.geck</groupId>
@@ -59,6 +59,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
+            <version>1.679-b5c1dc4</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
@@ -81,7 +82,15 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>adapter-flow-lib</artifactId>
-            <version>1.0.3</version>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality.woody</groupId>
+            <artifactId>woody-thrift</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality.woody</groupId>
+            <artifactId>woody-api</artifactId>
         </dependency>
 
         <!--spring-->
@@ -195,6 +204,10 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
             <version>2.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
 
         <!--test-->

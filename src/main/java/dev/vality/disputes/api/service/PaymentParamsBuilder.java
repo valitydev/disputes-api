@@ -38,7 +38,7 @@ public class PaymentParamsBuilder {
                 .currencyNumericCode((int) currency.getNumericCode())
                 .currencyExponent((int) currency.getExponent())
                 .options(providerDataService.getAsyncProviderData(payment).getOptions())
-                .shopId(invoice.getShopId())
+                .shopId(invoice.getShopRef().getId())
                 .shopDetailsName(shop.getName())
                 .invoiceAmount(payment.getPayment().getCost().getAmount())
                 .build();

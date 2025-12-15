@@ -111,8 +111,7 @@ public class CreatedDisputesService {
             switch (ex.getType()) {
                 case INVOICE -> disputeCreateResultHandler.handleFailedResult(dispute, INVOICE_NOT_FOUND);
                 case PAYMENT -> disputeCreateResultHandler.handleFailedResult(dispute, PAYMENT_NOT_FOUND);
-                case ATTACHMENT,
-                     FILEMETA -> disputeCreateResultHandler.handleFailedResult(dispute, NO_ATTACHMENTS);
+                case ATTACHMENT, FILEMETA -> disputeCreateResultHandler.handleFailedResult(dispute, NO_ATTACHMENTS);
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }

@@ -41,7 +41,9 @@ public class MockUtil {
                         .setDue(TypeUtil.temporalToString(LocalDateTime.now().plusDays(1)))
                         .setDetails(new InvoiceDetails()
                                 .setProduct("test_product"))
-                        .setCost(new Cash().setCurrency(new CurrencyRef().setSymbolicCode("RUB"))))
+                        .setCost(new Cash().setCurrency(new CurrencyRef().setSymbolicCode("RUB")))
+                        .setShopRef(new ShopConfigRef().setId(UUID.randomUUID().toString()))
+                        .setPartyRef(new PartyConfigRef().setId(UUID.randomUUID().toString())))
                 .setPayments(List.of(createInvoicePayment(paymentId)));
     }
 

@@ -25,8 +25,8 @@ public class Status200ResponseConverter {
 
     private Status200Response.StatusEnum getStatus(Dispute dispute) {
         return switch (dispute.getStatus()) {
-            case already_exist_created, manual_pending, create_adjustment, pooling_expired,
-                 created, pending -> Status200Response.StatusEnum.PENDING;
+            case already_exist_created, manual_pending, create_adjustment, pooling_expired, created, pending ->
+                    Status200Response.StatusEnum.PENDING;
             case succeeded -> Status200Response.StatusEnum.SUCCEEDED;
             case cancelled, failed -> Status200Response.StatusEnum.FAILED;
             default -> throw new NotFoundException(
