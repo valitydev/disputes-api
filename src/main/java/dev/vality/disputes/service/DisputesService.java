@@ -84,7 +84,7 @@ public class DisputesService {
         var nextCheckAfter =
                 exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         log.info("Trying to set pending Dispute status {}", dispute);
-        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter);
+        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter, dispute.getPollingBefore());
         log.debug("Dispute status has been set to pending {}", dispute.getId());
         callbackNotifier.notify(disputeDao.get(dispute.getId()));
     }
@@ -122,6 +122,12 @@ public class DisputesService {
         var nextCheckAfter =
                 exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
         disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
+    }
+
+    public void updateDisputeProviderMessage(Dispute dispute) {
+        log.info("Trying to update provider message for Dispute {}", dispute);
+        disputeDao.updateProviderMessage(dispute.getId(), dispute.getProviderMsg());
+        log.debug("Provider message has been updated for dispute {}", dispute.getId());
     }
 
     public List<Dispute> getForgottenSkipLocked(int batchSize) {

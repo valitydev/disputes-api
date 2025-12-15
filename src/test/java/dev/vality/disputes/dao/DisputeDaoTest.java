@@ -54,7 +54,7 @@ public abstract class DisputeDaoTest {
         random.setNextCheckAfter(createdAt.plusSeconds(5));
         disputeDao.save(random);
         assertTrue(disputeDao.getSkipLocked(10, random.getStatus()).isEmpty());
-        disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0));
+        disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0), random.getPollingBefore());
         assertFalse(disputeDao.getSkipLocked(10, DisputeStatus.pending).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }
@@ -71,7 +71,7 @@ public abstract class DisputeDaoTest {
         assertTrue(disputeDao.getForgottenSkipLocked(10).isEmpty());
         disputeDao.updateNextPollingInterval(random, createdAt.plusSeconds(0));
         assertFalse(disputeDao.getForgottenSkipLocked(10).isEmpty());
-        disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0));
+        disputeDao.setNextStepToPending(random.getId(), createdAt.plusSeconds(0), random.getPollingBefore());
         assertTrue(disputeDao.getForgottenSkipLocked(10).isEmpty());
         disputeDao.finishFailed(random.getId(), null);
     }

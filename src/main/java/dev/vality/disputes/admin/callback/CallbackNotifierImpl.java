@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,11 +28,16 @@ public class CallbackNotifierImpl implements CallbackNotifier {
         if (!tgBotEnabled) {
             return;
         }
+        final var currentThread = Thread.currentThread();
+        final var oldName = currentThread.getName();
+        currentThread.setName(buildThreadName("callbackNotifier.notify", oldName, dispute));
         try {
             var disputeThrift = disputeThriftConverter.convert(dispute, false);
             disputesTgBotService.notify(disputeThrift);
         } catch (Throwable ex) {
             log.warn("Failed to to call disputes-tg-bot.notify()", ex);
+        } finally {
+            currentThread.setName(oldName);
         }
     }
 }

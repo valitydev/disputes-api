@@ -5,7 +5,6 @@ import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,6 @@ public class DisputeDao extends AbstractGenericDao {
 
     private final RowMapper<Dispute> disputeRowMapper;
 
-    @Autowired
     public DisputeDao(DataSource dataSource) {
         super(dataSource);
         disputeRowMapper = new RecordRowMapper<>(DISPUTE, Dispute.class);
@@ -117,57 +115,68 @@ public class DisputeDao extends AbstractGenericDao {
     }
 
     public void updateNextPollingInterval(Dispute dispute, LocalDateTime nextCheckAfter) {
-        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null);
+        update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null, null);
     }
 
     public void setNextStepToCreated(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, AUTOMATIC);
+        update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, null, AUTOMATIC);
     }
 
-    public void setNextStepToPending(UUID disputeId, LocalDateTime nextCheckAfter) {
-        update(disputeId, DisputeStatus.pending, nextCheckAfter, null, null, null, null, AUTOMATIC);
+    public void setNextStepToPending(UUID disputeId, LocalDateTime nextCheckAfter, LocalDateTime pollingBefore) {
+        update(disputeId, DisputeStatus.pending, nextCheckAfter, pollingBefore, null, null, null, null, AUTOMATIC);
     }
 
     public void setNextStepToCreateAdjustment(UUID disputeId, Long changedAmount, String providerMessage) {
-        update(disputeId, DisputeStatus.create_adjustment, null, changedAmount, APPROVED, providerMessage, CLEARED,
-                null);
+        update(disputeId, DisputeStatus.create_adjustment, null, null, changedAmount, APPROVED, providerMessage,
+                CLEARED, null);
     }
 
     public void setNextStepToManualPending(UUID disputeId, String providerMessage, String technicalErrorMessage) {
-        update(disputeId, DisputeStatus.manual_pending, null, null, null, providerMessage, technicalErrorMessage,
+        update(disputeId, DisputeStatus.manual_pending, null, null, null, null, providerMessage, technicalErrorMessage,
                 MANUAL);
     }
 
     public void setNextStepToAlreadyExist(UUID disputeId) {
-        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null, null, MANUAL);
+        update(disputeId, DisputeStatus.already_exist_created, null, null, null, null, null, null, MANUAL);
     }
 
     public void setNextStepToPoolingExpired(UUID disputeId) {
-        update(disputeId, DisputeStatus.pooling_expired, null, null, null, null, null, MANUAL);
+        update(disputeId, DisputeStatus.pooling_expired, null, null, null, null, null, null, MANUAL);
     }
 
     public void finishSucceeded(UUID disputeId, Long changedAmount, String providerMessage) {
-        update(disputeId, DisputeStatus.succeeded, null, changedAmount, APPROVED, providerMessage, CLEARED, null);
+        update(disputeId, DisputeStatus.succeeded, null, null, changedAmount, APPROVED, providerMessage, CLEARED, null);
     }
 
     public void finishFailed(UUID disputeId, String technicalErrorMessage) {
-        update(disputeId, DisputeStatus.failed, null, null, SERVER_ERROR, null, technicalErrorMessage, null);
+        update(disputeId, DisputeStatus.failed, null, null, null, SERVER_ERROR, null, technicalErrorMessage, null);
     }
 
     public void finishFailedWithMapping(UUID disputeId, String mapping, String providerMessage) {
-        update(disputeId, DisputeStatus.failed, null, null, mapping, providerMessage, null, null);
+        update(disputeId, DisputeStatus.failed, null, null, null, mapping, providerMessage, null, null);
     }
 
     public void finishCancelled(UUID disputeId, String mapping, String providerMessage) {
-        update(disputeId, DisputeStatus.cancelled, null, null, mapping, providerMessage, null, null);
+        update(disputeId, DisputeStatus.cancelled, null, null, null, mapping, providerMessage, null, null);
     }
 
-    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter, Long changedAmount,
-                        String mapping, String providerMessage, String technicalErrorMessage, String mode) {
+    public void updateProviderMessage(UUID disputeId, String providerMessage) {
+        var set = getDslContext().update(DISPUTE)
+                .set(DISPUTE.PROVIDER_MSG, providerMessage)
+                .where(DISPUTE.ID.eq(disputeId));
+        executeOne(set);
+    }
+
+    private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter,
+                        LocalDateTime pollingBefore, Long changedAmount, String mapping, String providerMessage,
+                        String technicalErrorMessage, String mode) {
         var set = getDslContext().update(DISPUTE)
                 .set(DISPUTE.STATUS, status);
         if (nextCheckAfter != null) {
             set = set.set(DISPUTE.NEXT_CHECK_AFTER, nextCheckAfter);
+        }
+        if (pollingBefore != null) {
+            set = set.set(DISPUTE.POLLING_BEFORE, pollingBefore);
         }
         if (changedAmount != null) {
             set = set.set(DISPUTE.CHANGED_AMOUNT, changedAmount);

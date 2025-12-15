@@ -9,7 +9,6 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
 import dev.vality.swag.disputes.model.NotifyRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ public class NotificationDao extends AbstractGenericDao {
     private final RowMapper<Notification> notificationRowMapper;
     private final NotifyRequestMapper notifyRequestMapper;
 
-    @Autowired
     public NotificationDao(DataSource dataSource) {
         super(dataSource);
         notificationRowMapper = new RecordRowMapper<>(NOTIFICATION, Notification.class);
