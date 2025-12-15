@@ -12,4 +12,6 @@ public interface DominantService {
 
     Provider getProvider(ProviderRef providerRef);
 
+    ShopConfig getShop(ShopConfigRef shopConfigRef);
+
 }

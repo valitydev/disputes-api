@@ -41,7 +41,9 @@ public class MockUtil {
                         .setDue(TypeUtil.temporalToString(LocalDateTime.now().plusDays(1)))
                         .setDetails(new InvoiceDetails()
                                 .setProduct("test_product"))
-                        .setCost(new Cash().setCurrency(new CurrencyRef().setSymbolicCode("RUB"))))
+                        .setCost(new Cash().setCurrency(new CurrencyRef().setSymbolicCode("RUB")))
+                        .setShopRef(new ShopConfigRef().setId(UUID.randomUUID().toString()))
+                        .setPartyRef(new PartyConfigRef().setId(UUID.randomUUID().toString())))
                 .setPayments(List.of(createInvoicePayment(paymentId)));
     }
 
@@ -89,6 +91,12 @@ public class MockUtil {
                 .setProxy(new Proxy().setRef(new ProxyRef().setId(1))));
     }
 
+
+    public static CompletableFuture<ShopConfig> createShop() {
+        return CompletableFuture.completedFuture(new ShopConfig()
+                .setName("sjop_id"));
+    }
+
     public static CompletableFuture<ProxyDefinition> createProxyNotFoundCase(Integer port) {
         return createProxy("http://127.0.0.1:" + port + "/debug/v1/admin-management");
     }
@@ -128,12 +136,6 @@ public class MockUtil {
                 .setSymbolicCode("RUB")
                 .setExponent((short) 2)
                 .setNumericCode((short) 643));
-    }
-
-    public static Shop createShop() {
-        return new Shop()
-                .setId("sjop_id")
-                .setDetails(new ShopDetails("shop_details_name"));
     }
 
     public static AuthData createAuthData() {

@@ -55,4 +55,14 @@ public class DominantAsyncService {
             return CompletableFuture.failedFuture(ex);
         }
     }
+
+    @Async("disputesAsyncServiceExecutor")
+    public CompletableFuture<ShopConfig> getShop(ShopConfigRef shopConfigRef) {
+        try {
+            var shop = dominantService.getShop(shopConfigRef);
+            return CompletableFuture.completedFuture(shop);
+        } catch (Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
+    }
 }

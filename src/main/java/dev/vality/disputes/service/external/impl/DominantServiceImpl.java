@@ -34,4 +34,9 @@ public class DominantServiceImpl implements DominantService {
     public Provider getProvider(ProviderRef providerRef) {
         return dominantCacheService.getProvider(providerRef);
     }
+
+    @Override
+    public ShopConfig getShop(ShopConfigRef shopConfigRef) {
+        return dominantCacheService.getShop(shopConfigRef);
+    }
 }

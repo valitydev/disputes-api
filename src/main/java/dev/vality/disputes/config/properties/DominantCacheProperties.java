@@ -18,6 +18,8 @@ public class DominantCacheProperties {
     private CacheConfig providers;
     private CacheConfig paymentServices;
     private CacheConfig proxies;
+    private CacheConfig categories;
+    private CacheConfig shops;
 
 
     @Getter

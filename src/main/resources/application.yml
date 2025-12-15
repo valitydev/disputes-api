@@ -39,6 +39,9 @@ service:
         ttlSec: 300
       proxies:
         poolSize: 30
+        ttlSec: 30
+      shops:
+        poolSize: 30
         ttlSec: 300
   bouncer:
     url: http://localhost:8022/change_it
@@ -57,9 +60,6 @@ service:
     networkTimeout: 5000
     urlLifeTimeDuration: 360
     timeZone: Europe/Moscow
-  party-management:
-    url: http://localhost:8022/change_it
-    networkTimeout: 5000
   disputes-tg-bot:
     provider:
       url: http://localhost:8022/change_it

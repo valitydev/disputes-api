@@ -71,6 +71,14 @@ public class CacheConfig {
         return caffeineCacheManager;
     }
 
+    @Bean
+    public CacheManager shopsCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProxies()));
+        caffeineCacheManager.setCacheNames(List.of("shops"));
+        return caffeineCacheManager;
+    }
+
     private Caffeine<Object, Object> adaptersConnectionsCacheConfig() {
         return Caffeine.newBuilder()
                 .expireAfterWrite(adaptersConnectionProperties.getTtlMin(), TimeUnit.MINUTES)

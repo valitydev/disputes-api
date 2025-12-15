@@ -22,7 +22,7 @@ public class PaymentProcessingInvoiceToCommonApiOperationConverter
                 .setOp(new CommonAPIOperation()
                         .setId(bouncerProperties.getOperationId())
                         .setInvoice(new Entity().setId(source.getInvoice().getId()))
-                        .setParty(new Entity().setId(invoice.getOwnerId()))
-                        .setShop(new Entity().setId(invoice.getShopId())));
+                        .setParty(new Entity().setId(invoice.getPartyRef().getId()))
+                        .setShop(new Entity().setId(invoice.getShopRef().getId())));
     }
 }
