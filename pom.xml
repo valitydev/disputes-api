@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>disputes-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>disputes-api</name>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
-            <version>1.679-b5c1dc4</version>
+            <version>1.680-e231cfc</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>
