@@ -50,8 +50,6 @@ public class PendingDisputesService {
             // validate
             disputesService.checkPendingStatus(dispute);
             // validate
-            pollingInfoService.checkDeadline(dispute);
-            // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
@@ -61,7 +59,11 @@ public class PendingDisputesService {
                     case STATUS_SUCCESS -> disputeStatusResultHandler.handleCreateAdjustmentResult(
                             dispute, result, providerData, invoicePayment.getLastTransactionInfo());
                     case STATUS_FAIL -> disputeStatusResultHandler.handleFailedResult(dispute, result);
-                    case STATUS_PENDING -> disputeStatusResultHandler.handlePendingResult(dispute, providerData);
+                    case STATUS_PENDING -> {
+                        // validate
+                        pollingInfoService.checkDeadline(dispute);
+                        disputeStatusResultHandler.handlePendingResult(dispute, providerData);
+                    }
                     default -> throw new IllegalArgumentException(result.getSetField().getFieldName());
                 }
             };
