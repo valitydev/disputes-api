@@ -1,6 +1,8 @@
 package dev.vality.disputes.schedule.core;
 
+import dev.vality.damsel.domain.Payer;
 import dev.vality.damsel.domain.TransactionInfo;
+import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.ErrorMessage.*;
@@ -67,6 +70,7 @@ public class CreatedDisputesService {
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             // validate
             PaymentStatusValidator.checkStatus(invoicePayment);
+            enrichPaymentRiskData(dispute, invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var providerStatus =
                     checkProviderPaymentStatus(dispute, providerData, invoicePayment.getLastTransactionInfo());
@@ -155,5 +159,30 @@ public class CreatedDisputesService {
                 dispute.getProviderTrxId(), providerData, transactionInfo);
         var currency = disputeCurrencyConverter.convert(dispute);
         return providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
+    }
+
+    private void enrichPaymentRiskData(Dispute dispute, InvoicePayment invoicePayment) {
+        var payerEmail = getPayerEmail(invoicePayment).orElse(null);
+        var riskScore = invoicingService.getInvoicePaymentRiskScore(dispute.getInvoiceId(), dispute.getPaymentId())
+                .orElse(null);
+        disputesService.updatePaymentRiskData(dispute, payerEmail, riskScore);
+    }
+
+    private Optional<String> getPayerEmail(InvoicePayment invoicePayment) {
+        return Optional.ofNullable(invoicePayment.getPayment())
+                .map(dev.vality.damsel.domain.InvoicePayment::getPayer)
+                .flatMap(this::getPayerEmail);
+    }
+
+    private Optional<String> getPayerEmail(Payer payer) {
+        if (payer.isSetPaymentResource()) {
+            return Optional.ofNullable(payer.getPaymentResource().getContactInfo())
+                    .map(contactInfo -> contactInfo.getEmail());
+        }
+        if (payer.isSetRecurrent()) {
+            return Optional.ofNullable(payer.getRecurrent().getContactInfo())
+                    .map(contactInfo -> contactInfo.getEmail());
+        }
+        return Optional.empty();
     }
 }

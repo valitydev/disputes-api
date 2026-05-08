@@ -130,6 +130,14 @@ public class DisputesService {
         log.debug("Provider message has been updated for dispute {}", dispute.getId());
     }
 
+    public void updatePaymentRiskData(Dispute dispute, String payerEmail, String riskScore) {
+        log.info("Trying to update payment risk data for Dispute {}", dispute.getId());
+        disputeDao.updatePaymentRiskData(dispute.getId(), payerEmail, riskScore);
+        dispute.setPayerEmail(payerEmail);
+        dispute.setRiskScore(riskScore);
+        log.debug("Payment risk data has been updated for dispute {}", dispute.getId());
+    }
+
     public List<Dispute> getForgottenSkipLocked(int batchSize) {
         var locked = disputeDao.getForgottenSkipLocked(batchSize);
         if (!locked.isEmpty()) {
