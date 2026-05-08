@@ -2,6 +2,7 @@ package dev.vality.disputes.service.external.impl;
 
 import dev.vality.damsel.domain.RiskScore;
 import dev.vality.damsel.payment_processing.*;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -32,6 +33,17 @@ class InvoicingServiceImplTest {
         var invoicingClient = mock(InvoicingSrv.Iface.class);
         when(invoicingClient.getEvents(eq("invoice_id"), any(EventRange.class)))
                 .thenReturn(List.of(createRiskScoreEvent(1L, "other_payment_id", RiskScore.low)));
+
+        var service = new InvoicingServiceImpl(invoicingClient);
+
+        assertTrue(service.getInvoicePaymentRiskScore("invoice_id", "payment_id").isEmpty());
+    }
+
+    @Test
+    void getInvoicePaymentRiskScoreShouldReturnEmptyWhenEventsLoadingFails() throws Exception {
+        var invoicingClient = mock(InvoicingSrv.Iface.class);
+        when(invoicingClient.getEvents(eq("invoice_id"), any(EventRange.class)))
+                .thenThrow(new TException("test"));
 
         var service = new InvoicingServiceImpl(invoicingClient);
 

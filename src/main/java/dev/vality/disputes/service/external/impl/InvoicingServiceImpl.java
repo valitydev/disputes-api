@@ -89,16 +89,9 @@ public class InvoicingServiceImpl implements InvoicingService {
             log.debug("InvoicePayment riskScore has been found, invoiceId={}, paymentId={}, riskScore={}",
                     invoiceId, paymentId, riskScore);
             return Optional.ofNullable(riskScore);
-        } catch (InvoiceNotFound ex) {
-            throw new NotFoundException(String.format("Unable to find invoice with id: %s", invoiceId), ex,
-                    Type.INVOICE);
-        } catch (EventNotFound ex) {
-            throw new InvoicingException(
-                    String.format("Failed to get invoice events with id: %s, event not found", invoiceId), ex);
-        } catch (TException ex) {
-            throw new InvoicingException(
-                    String.format("Failed to get invoicePayment riskScore with id: %s, paymentId: %s", invoiceId,
-                            paymentId), ex);
+        } catch (Exception ex) {
+            log.warn("Unable to enrich invoicePayment riskScore, invoiceId={}, paymentId={}", invoiceId, paymentId, ex);
+            return Optional.empty();
         }
     }
 
