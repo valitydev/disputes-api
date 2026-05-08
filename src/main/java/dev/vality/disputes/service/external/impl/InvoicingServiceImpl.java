@@ -102,16 +102,6 @@ public class InvoicingServiceImpl implements InvoicingService {
         }
     }
 
-    private Optional<String> getRiskScore(String paymentId, Event event) {
-        return event.getPayload().getInvoiceChanges().stream()
-                .filter(invoiceChange -> invoiceChange.isSetInvoicePaymentChange()
-                        && paymentId.equals(invoiceChange.getInvoicePaymentChange().getId()))
-                .map(invoiceChange -> invoiceChange.getInvoicePaymentChange().getPayload())
-                .filter(InvoicePaymentChangePayload::isSetInvoicePaymentRiskScoreChanged)
-                .map(payload -> payload.getInvoicePaymentRiskScoreChanged().getRiskScore().name())
-                .reduce((previous, current) -> current);
-    }
-
     @Override
     public void createPaymentAdjustment(
             String invoiceId,
@@ -135,5 +125,15 @@ public class InvoicingServiceImpl implements InvoicingService {
         } catch (TException ex) {
             throw new InvoicingException(String.format("Failed to createPaymentAdjustment with id: %s", invoiceId), ex);
         }
+    }
+
+    private Optional<String> getRiskScore(String paymentId, Event event) {
+        return event.getPayload().getInvoiceChanges().stream()
+                .filter(invoiceChange -> invoiceChange.isSetInvoicePaymentChange()
+                        && paymentId.equals(invoiceChange.getInvoicePaymentChange().getId()))
+                .map(invoiceChange -> invoiceChange.getInvoicePaymentChange().getPayload())
+                .filter(InvoicePaymentChangePayload::isSetInvoicePaymentRiskScoreChanged)
+                .map(payload -> payload.getInvoicePaymentRiskScoreChanged().getRiskScore().name())
+                .reduce((previous, current) -> current);
     }
 }
