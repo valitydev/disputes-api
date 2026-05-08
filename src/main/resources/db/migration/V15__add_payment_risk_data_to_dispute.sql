@@ -1,0 +1,3 @@
+ALTER TABLE dspt.dispute
+    ADD COLUMN payer_email CHARACTER VARYING,
+    ADD COLUMN risk_score CHARACTER VARYING;

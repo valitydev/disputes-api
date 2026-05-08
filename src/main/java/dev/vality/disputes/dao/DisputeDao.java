@@ -167,6 +167,14 @@ public class DisputeDao extends AbstractGenericDao {
         executeOne(set);
     }
 
+    public void updatePaymentRiskData(UUID disputeId, String payerEmail, String riskScore) {
+        var set = getDslContext().update(DISPUTE)
+                .set(DISPUTE.PAYER_EMAIL, payerEmail)
+                .set(DISPUTE.RISK_SCORE, riskScore)
+                .where(DISPUTE.ID.eq(disputeId));
+        executeOne(set);
+    }
+
     private void update(UUID disputeId, DisputeStatus status, LocalDateTime nextCheckAfter,
                         LocalDateTime pollingBefore, Long changedAmount, String mapping, String providerMessage,
                         String technicalErrorMessage, String mode) {

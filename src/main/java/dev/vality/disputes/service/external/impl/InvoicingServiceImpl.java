@@ -12,12 +12,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class InvoicingServiceImpl implements InvoicingService {
+
+    private static final int EVENTS_PAGE_LIMIT = 100;
 
     private final InvoicingSrv.Iface invoicingClient;
 
@@ -63,6 +66,36 @@ public class InvoicingServiceImpl implements InvoicingService {
     }
 
     @Override
+    public Optional<String> getInvoicePaymentRiskScore(String invoiceId, String paymentId) {
+        try {
+            log.debug("Looking for invoicePayment riskScore, invoiceId={}, paymentId={}", invoiceId, paymentId);
+            Long after = null;
+            String riskScore = null;
+            var hasMoreEvents = true;
+            while (hasMoreEvents) {
+                var range = new EventRange().setLimit(EVENTS_PAGE_LIMIT);
+                if (after != null) {
+                    range.setAfter(after);
+                }
+                var events = Optional.ofNullable(invoicingClient.getEvents(invoiceId, range)).orElse(List.of());
+                for (var event : events) {
+                    after = event.getId();
+                    if (event.isSetPayload() && event.getPayload().isSetInvoiceChanges()) {
+                        riskScore = getRiskScore(paymentId, event).orElse(riskScore);
+                    }
+                }
+                hasMoreEvents = events.size() == EVENTS_PAGE_LIMIT;
+            }
+            log.debug("InvoicePayment riskScore has been found, invoiceId={}, paymentId={}, riskScore={}",
+                    invoiceId, paymentId, riskScore);
+            return Optional.ofNullable(riskScore);
+        } catch (Exception ex) {
+            log.warn("Unable to enrich invoicePayment riskScore, invoiceId={}, paymentId={}", invoiceId, paymentId, ex);
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public void createPaymentAdjustment(
             String invoiceId,
             String paymentId,
@@ -85,5 +118,15 @@ public class InvoicingServiceImpl implements InvoicingService {
         } catch (TException ex) {
             throw new InvoicingException(String.format("Failed to createPaymentAdjustment with id: %s", invoiceId), ex);
         }
+    }
+
+    private Optional<String> getRiskScore(String paymentId, Event event) {
+        return event.getPayload().getInvoiceChanges().stream()
+                .filter(invoiceChange -> invoiceChange.isSetInvoicePaymentChange()
+                        && paymentId.equals(invoiceChange.getInvoicePaymentChange().getId()))
+                .map(invoiceChange -> invoiceChange.getInvoicePaymentChange().getPayload())
+                .filter(InvoicePaymentChangePayload::isSetInvoicePaymentRiskScoreChanged)
+                .map(payload -> payload.getInvoicePaymentRiskScoreChanged().getRiskScore().name())
+                .reduce((previous, current) -> current);
     }
 }

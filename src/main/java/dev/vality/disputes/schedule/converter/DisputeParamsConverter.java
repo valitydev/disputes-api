@@ -38,6 +38,8 @@ public class DisputeParamsConverter {
         }
         disputeParams.setReason(dispute.getReason());
         disputeParams.setDisputeId(dispute.getId().toString());
+        disputeParams.setPayerEmail(dispute.getPayerEmail());
+        disputeParams.setRiskScore(dispute.getRiskScore());
         return disputeParams;
     }
 }
