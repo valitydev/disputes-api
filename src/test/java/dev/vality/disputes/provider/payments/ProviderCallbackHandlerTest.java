@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
+import static dev.vality.disputes.constant.TerminalOptionsField.PROVIDER_PAYMENTS_CHECK_STATUS_DELAY_SEC;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -67,6 +68,27 @@ public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
             var providerCallback = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallbackId);
             assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         }
+    }
+
+    @Test
+    @SneakyThrows
+    public void testCheckPaymentStatusDelayFromTerminalOptions() {
+        var terminal = createTerminal().get();
+        terminal.getOptions().put(PROVIDER_PAYMENTS_CHECK_STATUS_DELAY_SEC, "1");
+        when(dominantService.getTerminal(any())).thenReturn(terminal);
+        when(dominantService.getCurrency(any())).thenReturn(createCurrency().get());
+        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
+        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
+        var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
+        when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult());
+        when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+
+        executeCallbackIFace("delayed-invoice", "delayed-payment");
+
+        Thread.sleep(300);
+        verify(providerMock, never()).checkPaymentStatus(any(), any());
+        await().atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> verify(providerMock, atLeastOnce()).checkPaymentStatus(any(), any()));
     }
 
     private void executeCallbackIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
