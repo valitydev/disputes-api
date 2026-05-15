@@ -34,12 +34,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
 import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
+import static dev.vality.disputes.util.OptionsExtractor.extractProviderPaymentsCheckStatusDelaySec;
 import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
 
 @Slf4j
@@ -59,6 +61,7 @@ public class ProviderPaymentsService {
     private final ProviderDataService providerDataService;
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
+    private final ProviderPaymentsCheckStatusScheduler providerPaymentsCheckStatusScheduler;
 
     @Async("disputesAsyncServiceExecutor")
     public void processCallback(ProviderPaymentsCallbackParams callback) {
@@ -81,7 +84,7 @@ public class ProviderPaymentsService {
                             invoicePayment.getLastTransactionInfo());
             var currency = providerDataService.getCurrency(invoicePayment.getPayment().getCost().getCurrency());
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
-            checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, invoiceAmount);
+            scheduleCheckPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, invoiceAmount);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.info("InvoicingPaymentStatusRestrictionsException when process ProviderPaymentsCallbackParams {}",
                     callback);
@@ -102,6 +105,39 @@ public class ProviderPaymentsService {
             checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, dispute.getAmount());
         } catch (ProviderCallbackAlreadyExistException ex) {
             log.warn("ProviderCallbackAlreadyExist when handle providerPaymentsService.checkPaymentStatusAndSave", ex);
+        }
+    }
+
+    private void scheduleCheckPaymentStatusAndCreateAdjustment(TransactionContext transactionContext, Currency currency,
+                                                              ProviderData providerData, long amount) {
+        var delaySec = extractProviderPaymentsCheckStatusDelaySec(providerData.getOptions());
+        if (delaySec == 0) {
+            checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, amount);
+            return;
+        }
+        log.info("Schedule providerPaymentsService.checkPaymentStatusAndCreateAdjustment with delaySec={}, " +
+                        "invoiceId={}, paymentId={}",
+                delaySec, transactionContext.getInvoiceId(), transactionContext.getPaymentId());
+        providerPaymentsCheckStatusScheduler.schedule(
+                () -> tryCheckPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, amount),
+                Instant.now().plusSeconds(delaySec));
+    }
+
+    private void tryCheckPaymentStatusAndCreateAdjustment(TransactionContext transactionContext, Currency currency,
+                                                         ProviderData providerData, long amount) {
+        try {
+            checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, amount);
+        } catch (InvoicingPaymentStatusRestrictionsException ex) {
+            log.info("InvoicingPaymentStatusRestrictionsException when scheduled providerPaymentsService." +
+                            "checkPaymentStatusAndCreateAdjustment, invoiceId={}, paymentId={}",
+                    transactionContext.getInvoiceId(), transactionContext.getPaymentId());
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when scheduled providerPaymentsService.checkPaymentStatusAndCreateAdjustment, " +
+                    "type={}", ex.getType(), ex);
+        } catch (Throwable ex) {
+            log.warn("Failed to handle scheduled providerPaymentsService.checkPaymentStatusAndCreateAdjustment, " +
+                            "invoiceId={}, paymentId={}",
+                    transactionContext.getInvoiceId(), transactionContext.getPaymentId(), ex);
         }
     }
 

@@ -130,6 +130,11 @@ provider:
     initialDelayCreateAdjustments: 5000
     isProviderCallbackEnabled: false
     isScheduleCreateAdjustmentsEnabled: true
+    check-status-scheduler:
+      poolSize: 5
+      threadNamePrefix: provider-payments-check-status-scheduler-
+      awaitTermination: true
+      awaitTerminationPeriodSec: 30
 
 time:
   config:

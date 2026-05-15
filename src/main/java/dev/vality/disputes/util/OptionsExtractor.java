@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN;
+import static dev.vality.disputes.constant.TerminalOptionsField.PROVIDER_PAYMENTS_CHECK_STATUS_DELAY_SEC;
 
 @UtilityClass
 public class OptionsExtractor {
@@ -17,6 +18,11 @@ public class OptionsExtractor {
     public static Integer extractMaxTimePolling(Map<String, String> options, int maxTimePolling) {
         return Integer.parseInt(
                 options.getOrDefault(DISPUTE_FLOW_MAX_TIME_POLLING_MIN, String.valueOf(maxTimePolling)));
+    }
+
+    public static Integer extractProviderPaymentsCheckStatusDelaySec(Map<String, String> options) {
+        return Math.max(0, Integer.parseInt(
+                options.getOrDefault(PROVIDER_PAYMENTS_CHECK_STATUS_DELAY_SEC, "0")));
     }
 
     public static Map<String, String> mergeOptions(Provider provider, ProxyDefinition proxy, Terminal terminal) {
