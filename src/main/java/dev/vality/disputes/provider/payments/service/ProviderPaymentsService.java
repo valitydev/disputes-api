@@ -86,7 +86,8 @@ public class ProviderPaymentsService {
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             scheduleCheckPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, invoiceAmount);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException when process ProviderPaymentsCallbackParams {}",
+            log.info("InvoicingPaymentStatusRestrictionsException with status '{}' when process " +
+                            "ProviderPaymentsCallbackParams {}", ex.getStatus().getSetField().getFieldName(),
                     callback);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
