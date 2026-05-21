@@ -32,7 +32,7 @@ public class DisputesApiDelegateService implements DisputesApiDelegate {
         log.info("-> Req: {}, invoiceId={}, paymentId={}, source={}", "/create", req.getInvoiceId(), req.getPaymentId(),
                 checkUserAccessData ? "api" : "merchThrift");
         var accessData =
-                accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData, true,
+                accessService.approveUserAccess(req.getInvoiceId(), req.getPaymentId(), checkUserAccessData, false,
                         true);
         // диспут по платежу может быть открытым только один за раз, если существует, отдаем действующий
         var dispute = apiDisputesService.checkExistBeforeCreate(req.getInvoiceId(), req.getPaymentId());

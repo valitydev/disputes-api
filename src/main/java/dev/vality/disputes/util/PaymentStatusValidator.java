@@ -14,7 +14,7 @@ public class PaymentStatusValidator {
         var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
         switch (invoicePaymentStatus.getSetField()) {
             case CAPTURED -> throw new CapturedPaymentException(invoicePayment);
-            case FAILED, CANCELLED, PENDING -> {
+            case FAILED, CANCELLED -> {
             }
             default -> throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
         }
