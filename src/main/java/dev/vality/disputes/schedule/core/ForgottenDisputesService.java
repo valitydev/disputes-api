@@ -42,7 +42,7 @@ public class ForgottenDisputesService {
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             // validate
-            PaymentStatusValidator.checkStatus(invoicePayment);
+            PaymentStatusValidator.checkStatus(invoicePayment, true);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             disputesService.updateNextPollingInterval(dispute, providerData);
         } catch (NotFoundException ex) {

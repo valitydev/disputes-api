@@ -69,7 +69,7 @@ public class CreatedDisputesService {
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             // validate
-            PaymentStatusValidator.checkStatus(invoicePayment);
+            PaymentStatusValidator.checkStatus(invoicePayment, true);
             enrichPaymentRiskData(dispute, invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var providerStatus =

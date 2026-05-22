@@ -52,7 +52,7 @@ public class PendingDisputesService {
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             // validate
-            PaymentStatusValidator.checkStatus(invoicePayment);
+            PaymentStatusValidator.checkStatus(invoicePayment, true);
             var providerData = getProviderData(dispute);
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
