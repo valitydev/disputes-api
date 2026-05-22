@@ -11,10 +11,19 @@ import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_STATUS_RESTRICTI
 public class PaymentStatusValidator {
 
     public static void checkStatus(InvoicePayment invoicePayment) {
+        checkStatus(invoicePayment, false);
+    }
+
+    public static void checkStatus(InvoicePayment invoicePayment, boolean allowPending) {
         var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
         switch (invoicePaymentStatus.getSetField()) {
             case CAPTURED -> throw new CapturedPaymentException(invoicePayment);
             case FAILED, CANCELLED -> {
+            }
+            case PENDING -> {
+                if (!allowPending) {
+                    throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
+                }
             }
             default -> throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
         }

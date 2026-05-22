@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentPending;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -141,5 +142,21 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testPendingWhenInvoicePaymentStatusIsPending() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
+        when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
+        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
     }
 }
