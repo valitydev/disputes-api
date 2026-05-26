@@ -10,9 +10,20 @@ import java.util.Optional;
 public class PaymentAmountUtil {
 
     public static Long getChangedAmount(InvoicePayment payment) {
+        return getChangedCostAmount(payment)
+                .or(() -> getCapturedCostAmount(payment))
+                .orElse(null);
+    }
+
+    private static Optional<Long> getChangedCostAmount(InvoicePayment payment) {
         return Optional.ofNullable(payment.getChangedCost())
                 .map(Cash::getAmount)
-                .filter(a -> payment.getCost().getAmount() != a)
-                .orElse(null);
+                .filter(a -> payment.getCost().getAmount() != a);
+    }
+
+    private static Optional<Long> getCapturedCostAmount(InvoicePayment payment) {
+        return Optional.of(payment.getStatus())
+                .filter(status -> status.isSetCaptured() && status.getCaptured().isSetCost())
+                .map(status -> status.getCaptured().getCost().getAmount());
     }
 }

@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentPending;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
@@ -231,6 +232,26 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmount() {
+        var invoiceId = "20McecNnWoy";
+        var paymentId = "1";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
+        var invoicePayment = createInvoicePayment(paymentId);
+        var captured = new InvoicePaymentCaptured()
+                .setCost(new Cash()
+                        .setAmount(101L)
+                        .setCurrency(invoicePayment.getPayment().getCost().getCurrency()));
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(captured));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        var dispute = disputeDao.get(disputeId);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
+        assertEquals(101L, updatedDispute.getChangedAmount());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
+import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
@@ -55,5 +56,23 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmount() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        var captured = new InvoicePaymentCaptured()
+                .setCost(new Cash()
+                        .setAmount(101L)
+                        .setCurrency(invoicePayment.getPayment().getCost().getCurrency()));
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(captured));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        forgottenDisputesService.process(dispute);
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
+        assertEquals(101L, updatedDispute.getChangedAmount());
     }
 }
