@@ -2,7 +2,6 @@ package dev.vality.disputes.schedule.core;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
-import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
@@ -59,9 +58,6 @@ public class ForgottenDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error("InvoicingPaymentRestrictionStatus when handle ForgottenDisputesService.process", ex);
-            disputesService.finishFailed(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug("DisputeStatusWasUpdatedByAnotherThread when handle ForgottenDisputesService.process", ex);
         }

@@ -8,10 +8,6 @@ public class InvoicingPaymentStatusRestrictionsException extends RuntimeExceptio
 
     private final InvoicePaymentStatus status;
 
-    public InvoicingPaymentStatusRestrictionsException(InvoicePaymentStatus status) {
-        this.status = status;
-    }
-
     public InvoicingPaymentStatusRestrictionsException(Throwable cause, InvoicePaymentStatus status) {
         super(cause);
         this.status = status;

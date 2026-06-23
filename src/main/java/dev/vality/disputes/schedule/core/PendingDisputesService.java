@@ -96,10 +96,6 @@ public class PendingDisputesService {
         } catch (PoolingExpiredException ex) {
             log.error("PoolingExpired when handle PendingDisputesService.callPendingDisputeRemotely", ex);
             disputeStatusResultHandler.handlePoolingExpired(dispute);
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error("InvoicingPaymentRestrictionStatus when handle PendingDisputesService.callPendingDisputeRemotely",
-                    ex);
-            disputeStatusResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug(
                     "DisputeStatusWasUpdatedByAnotherThread " +

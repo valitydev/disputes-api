@@ -5,7 +5,6 @@ import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
-import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
@@ -129,11 +128,6 @@ public class CreatedDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.error(
-                    "InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely",
-                    ex);
-            disputeCreateResultHandler.handleFailedResult(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));
         } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
             log.debug(
                     "DisputeStatusWasUpdatedByAnotherThread " +

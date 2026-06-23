@@ -57,14 +57,6 @@ public class ErrorControllerAdvice {
                 .message("Blocked: Payment expired");
     }
 
-    @ExceptionHandler({CapturedPaymentException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Object handleCapturedPaymentException(CapturedPaymentException ex) {
-        log.warn("<- Res [400]: Payment already successful", ex);
-        return new GeneralError()
-                .message("Blocked: Payment already successful");
-    }
-
     @ExceptionHandler({InvoicingPaymentStatusRestrictionsException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleInvoicingPaymentStatusRestrictionsException(InvoicingPaymentStatusRestrictionsException ex) {

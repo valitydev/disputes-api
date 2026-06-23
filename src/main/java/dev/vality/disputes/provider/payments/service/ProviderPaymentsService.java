@@ -73,7 +73,9 @@ public class ProviderPaymentsService {
             log.debug("Got invoicePayment {}", callback);
             var statusAction = PaymentStatusValidator.getAdjustmentLifecycleAction(invoicePayment);
             if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
-                throw new InvoicingPaymentStatusRestrictionsException(invoicePayment.getPayment().getStatus());
+                log.info("Payment status restrictions with status '{}' when process ProviderPaymentsCallbackParams {}",
+                        invoicePayment.getPayment().getStatus().getSetField().getFieldName(), callback);
+                return;
             }
             // validate
             var providerTrxId = getProviderTrxId(invoicePayment);
@@ -85,10 +87,6 @@ public class ProviderPaymentsService {
             var currency = providerDataService.getCurrency(invoicePayment.getPayment().getCost().getCurrency());
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             scheduleCheckPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, invoiceAmount);
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException with status '{}' when process " +
-                            "ProviderPaymentsCallbackParams {}", ex.getStatus().getSetField().getFieldName(),
-                    callback);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
@@ -128,10 +126,6 @@ public class ProviderPaymentsService {
                                                          ProviderData providerData, long amount) {
         try {
             checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, amount);
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException when scheduled providerPaymentsService." +
-                            "checkPaymentStatusAndCreateAdjustment, invoiceId={}, paymentId={}",
-                    transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         } catch (NotFoundException ex) {
             log.warn("NotFound when scheduled providerPaymentsService.checkPaymentStatusAndCreateAdjustment, " +
                     "type={}", ex.getType(), ex);
