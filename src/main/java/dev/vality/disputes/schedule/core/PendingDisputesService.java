@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
 import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
-import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
+import static dev.vality.disputes.util.ChangedAmountResolver.fromInvoicePayment;
 
 @Slf4j
 @Service
@@ -51,8 +51,18 @@ public class PendingDisputesService {
             disputesService.checkPendingStatus(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
-            // validate
-            PaymentStatusValidator.checkStatus(invoicePayment, true);
+            var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.SUCCEEDED) {
+                disputeStatusResultHandler.handleSucceededResult(
+                        dispute, fromInvoicePayment(invoicePayment.getPayment()));
+                return;
+            }
+            if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
+                disputeStatusResultHandler.handleFailedResult(
+                        dispute,
+                        PaymentStatusValidator.getTechnicalErrorMessage(invoicePayment));
+                return;
+            }
             var providerData = getProviderData(dispute);
             var finishCheckDisputeStatusResult = (Consumer<DisputeStatusResult>) result -> {
                 switch (result.getSetField()) {
@@ -86,11 +96,6 @@ public class PendingDisputesService {
         } catch (PoolingExpiredException ex) {
             log.error("PoolingExpired when handle PendingDisputesService.callPendingDisputeRemotely", ex);
             disputeStatusResultHandler.handlePoolingExpired(dispute);
-        } catch (CapturedPaymentException ex) {
-            log.info("CapturedPaymentException when handle PendingDisputesService.callPendingDisputeRemotely", ex);
-            disputeStatusResultHandler.handleSucceededResult(
-                    dispute,
-                    getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle PendingDisputesService.callPendingDisputeRemotely",
                     ex);

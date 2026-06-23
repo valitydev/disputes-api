@@ -4,7 +4,6 @@ import dev.vality.damsel.domain.Payer;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
@@ -35,8 +34,8 @@ import java.util.function.Consumer;
 
 import static dev.vality.disputes.constant.ErrorMessage.*;
 import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_PROVIDERS_API_EXIST;
+import static dev.vality.disputes.util.ChangedAmountResolver.fromInvoicePayment;
 import static dev.vality.disputes.util.DisputeStatusResultUtil.getDisputeStatusResult;
-import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
 
 @Slf4j
 @Service
@@ -68,8 +67,19 @@ public class CreatedDisputesService {
             disputesService.checkCreatedStatus(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
-            // validate
-            PaymentStatusValidator.checkStatus(invoicePayment, true);
+            var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.SUCCEEDED) {
+                disputeCreateResultHandler.handleSucceededResult(
+                        dispute,
+                        fromInvoicePayment(invoicePayment.getPayment()));
+                return;
+            }
+            if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
+                disputeCreateResultHandler.handleFailedResult(
+                        dispute,
+                        PaymentStatusValidator.getTechnicalErrorMessage(invoicePayment));
+                return;
+            }
             enrichPaymentRiskData(dispute, invoicePayment);
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var providerStatus =
@@ -119,10 +129,6 @@ public class CreatedDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (CapturedPaymentException ex) {
-            log.info("CapturedPaymentException when handle CreatedDisputesService.callCreateDisputeRemotely", ex);
-            disputeCreateResultHandler.handleSucceededResult(
-                    dispute, getChangedAmount(ex.getInvoicePayment().getPayment()));
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error(
                     "InvoicingPaymentRestrictionStatus when handle CreatedDisputesService.callCreateDisputeRemotely",

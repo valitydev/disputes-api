@@ -1,7 +1,6 @@
 package dev.vality.disputes.schedule.core;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
@@ -18,7 +17,7 @@ import java.util.List;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
 import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
-import static dev.vality.disputes.util.PaymentAmountUtil.getChangedAmount;
+import static dev.vality.disputes.util.ChangedAmountResolver.fromInvoicePayment;
 
 @Slf4j
 @Service
@@ -41,8 +40,15 @@ public class ForgottenDisputesService {
             disputesService.checkPendingStatuses(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
-            // validate
-            PaymentStatusValidator.checkStatus(invoicePayment, true);
+            var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.SUCCEEDED) {
+                disputesService.finishSucceeded(dispute, fromInvoicePayment(invoicePayment.getPayment()), null);
+                return;
+            }
+            if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
+                disputesService.finishFailed(dispute, PaymentStatusValidator.getTechnicalErrorMessage(invoicePayment));
+                return;
+            }
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             disputesService.updateNextPollingInterval(dispute, providerData);
         } catch (NotFoundException ex) {
@@ -53,9 +59,6 @@ public class ForgottenDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (CapturedPaymentException ex) {
-            log.info("CapturedPaymentException when handle ForgottenDisputesService.process", ex);
-            disputesService.finishSucceeded(dispute, getChangedAmount(ex.getInvoicePayment().getPayment()), null);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error("InvoicingPaymentRestrictionStatus when handle ForgottenDisputesService.process", ex);
             disputesService.finishFailed(dispute, PaymentStatusValidator.getTechnicalErrorMessage(ex));

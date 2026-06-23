@@ -141,6 +141,22 @@ public class OpenApiUtil {
                 """, invoiceId, paymentId, skipHg);
     }
 
+    public static String getApproveRequest(String invoiceId, String paymentId, boolean skipHg, long changedAmount) {
+        return String.format("""
+                {
+                  "approveParams": [
+                    {
+                      "invoiceId": "%s",
+                      "paymentId": "%s",
+                      "skipCallHgForCreateAdjustment": %s,
+                      "changedAmount": "%s",
+                      "providerMessage": "providerMessage"
+                    }
+                  ]
+                }
+                """, invoiceId, paymentId, skipHg, changedAmount);
+    }
+
     public static String getSetPendingForPoolingExpiredParamsRequest(String invoiceId, String paymentId) {
         return String.format("""
                   {

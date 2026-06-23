@@ -10,6 +10,14 @@ import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_STATUS_RESTRICTI
 @UtilityClass
 public class PaymentStatusValidator {
 
+    public enum StatusAction {
+        CONTINUE,
+        WAIT,
+        SUCCEEDED,
+        CAPTURED,
+        FAILED
+    }
+
     public static void checkStatus(InvoicePayment invoicePayment) {
         checkStatus(invoicePayment, false);
     }
@@ -27,6 +35,31 @@ public class PaymentStatusValidator {
             }
             default -> throw new InvoicingPaymentStatusRestrictionsException(invoicePaymentStatus);
         }
+    }
+
+    public static StatusAction getDisputeLifecycleAction(InvoicePayment invoicePayment) {
+        var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
+        return switch (invoicePaymentStatus.getSetField()) {
+            case CAPTURED -> StatusAction.SUCCEEDED;
+            case FAILED, CANCELLED, PENDING -> StatusAction.CONTINUE;
+            default -> StatusAction.FAILED;
+        };
+    }
+
+    public static StatusAction getAdjustmentLifecycleAction(InvoicePayment invoicePayment) {
+        var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
+        return switch (invoicePaymentStatus.getSetField()) {
+            case PENDING -> StatusAction.WAIT;
+            case CAPTURED -> StatusAction.CAPTURED;
+            case FAILED, CANCELLED -> StatusAction.CONTINUE;
+            default -> StatusAction.FAILED;
+        };
+    }
+
+    public static String getTechnicalErrorMessage(InvoicePayment invoicePayment) {
+        return PAYMENT_STATUS_RESTRICTIONS + ": " + invoicePayment.getPayment().getStatus()
+                .getSetField()
+                .getFieldName();
     }
 
     public static String getTechnicalErrorMessage(

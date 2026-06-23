@@ -72,6 +72,18 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
     }
 
     @Test
+    public void testApproveCreateAdjustmentWithSkipHgAndChangedAmount() {
+        var disputeId = pendingFlowHandler.handlePending();
+        var dispute = disputeDao.get(disputeId);
+        debugAdminManagementController.approvePending(
+                getApproveRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true, 101L));
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
+        assertEquals(101L, updatedDispute.getChangedAmount());
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
     @SneakyThrows
     public void testApprovePendingWithCallHg() {
         var disputeId = createdFlowHandler.handleCreate();
