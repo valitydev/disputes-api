@@ -1,6 +1,7 @@
 package dev.vality.disputes.provider.payments;
 
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentPending;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -14,6 +15,8 @@ import org.springframework.test.context.TestPropertySource;
 import static dev.vality.disputes.util.MockUtil.createInvoicePayment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
@@ -58,5 +61,43 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testRetryLaterWhenInvoicePaymentStatusIsPending() {
+        var disputeId = pendingFlowHandler.handlePending();
+        var dispute = disputeDao.get(disputeId);
+        var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+
+        providerPaymentsService.callHgForCreateAdjustment(providerCallback);
+
+        providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmount() {
+        var disputeId = pendingFlowHandler.handlePending();
+        var dispute = disputeDao.get(disputeId);
+        var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        providerCallback.setChangedAmount(101L);
+        providerCallbackDao.update(providerCallback);
+        var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+
+        providerPaymentsService.callHgForCreateAdjustment(providerCallback);
+
+        providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
+        assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+        verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
     }
 }

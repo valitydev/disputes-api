@@ -57,7 +57,8 @@ public class AdminManagementDisputesService {
         var changedAmount = params.getChangedAmount()
                 .filter(s -> dispute.getStatus() == DisputeStatus.pending
                         || dispute.getStatus() == DisputeStatus.manual_pending
-                        || dispute.getStatus() == DisputeStatus.pooling_expired)
+                        || dispute.getStatus() == DisputeStatus.pooling_expired
+                        || dispute.getStatus() == DisputeStatus.create_adjustment)
                 .orElse(null);
         if ((dispute.getStatus() == DisputeStatus.pending
                 || dispute.getStatus() == DisputeStatus.manual_pending

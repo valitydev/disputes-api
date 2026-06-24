@@ -8,7 +8,6 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.security.service.BouncerService;
 import dev.vality.disputes.security.service.TokenKeeperService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.util.PaymentStatusValidator;
 import dev.vality.disputes.util.PaymentValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +29,9 @@ public class AccessService {
     private boolean authEnabled;
 
     public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData,
-                                        boolean checkFailedPaymentStatus, boolean checkPaymentAge) {
+                                        boolean checkPaymentAge) {
         log.debug("Start building AccessData {}{}", invoiceId, paymentId);
         var accessData = buildAccessData(invoiceId, paymentId, checkUserAccessData);
-        if (checkFailedPaymentStatus) {
-            PaymentStatusValidator.checkStatus(accessData.getPayment());
-        }
         if (checkUserAccessData) {
             checkUserAccessData(accessData);
         }

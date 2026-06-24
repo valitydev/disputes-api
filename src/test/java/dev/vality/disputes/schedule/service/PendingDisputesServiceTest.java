@@ -18,6 +18,7 @@ import java.util.UUID;
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -161,6 +162,24 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         var updatedDispute = disputeDao.get(disputeId);
         assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
         assertEquals(101L, updatedDispute.getChangedAmount());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithSameAmount() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        var captured = new InvoicePaymentCaptured()
+                .setCost(new Cash()
+                        .setAmount(invoicePayment.getPayment().getCost().getAmount())
+                        .setCurrency(invoicePayment.getPayment().getCost().getCurrency()));
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(captured));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
+        assertNull(updatedDispute.getChangedAmount());
     }
 
     @Test

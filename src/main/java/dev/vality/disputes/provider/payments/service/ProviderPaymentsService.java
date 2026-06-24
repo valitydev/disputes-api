@@ -6,7 +6,6 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
-import dev.vality.disputes.exception.CapturedPaymentException;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.ProviderTrxIdNotFoundException;
@@ -23,7 +22,7 @@ import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
-import dev.vality.disputes.util.PaymentAmountUtil;
+import dev.vality.disputes.util.ChangedAmountResolver;
 import dev.vality.disputes.util.PaymentStatusValidator;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
@@ -36,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
@@ -73,8 +71,12 @@ public class ProviderPaymentsService {
             var paymentId = callback.getPaymentId().get();
             var invoicePayment = invoicingService.getInvoicePayment(invoiceId, paymentId);
             log.debug("Got invoicePayment {}", callback);
-            // validate
-            PaymentStatusValidator.checkStatus(invoicePayment);
+            var statusAction = PaymentStatusValidator.getAdjustmentLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
+                log.info("Payment status restrictions with status '{}' when process ProviderPaymentsCallbackParams {}",
+                        invoicePayment.getPayment().getStatus().getSetField().getFieldName(), callback);
+                return;
+            }
             // validate
             var providerTrxId = getProviderTrxId(invoicePayment);
             var providerData = providerDataService.getProviderData(invoicePayment.getRoute().getProvider(),
@@ -85,10 +87,6 @@ public class ProviderPaymentsService {
             var currency = providerDataService.getCurrency(invoicePayment.getPayment().getCost().getCurrency());
             var invoiceAmount = invoicePayment.getPayment().getCost().getAmount();
             scheduleCheckPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, invoiceAmount);
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException with status '{}' when process " +
-                            "ProviderPaymentsCallbackParams {}", ex.getStatus().getSetField().getFieldName(),
-                    callback);
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle ProviderPaymentsCallbackParams, type={}", ex.getType(), ex);
         } catch (Throwable ex) {
@@ -128,10 +126,6 @@ public class ProviderPaymentsService {
                                                          ProviderData providerData, long amount) {
         try {
             checkPaymentStatusAndCreateAdjustment(transactionContext, currency, providerData, amount);
-        } catch (InvoicingPaymentStatusRestrictionsException ex) {
-            log.info("InvoicingPaymentStatusRestrictionsException when scheduled providerPaymentsService." +
-                            "checkPaymentStatusAndCreateAdjustment, invoiceId={}, paymentId={}",
-                    transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         } catch (NotFoundException ex) {
             log.warn("NotFound when scheduled providerPaymentsService.checkPaymentStatusAndCreateAdjustment, " +
                     "type={}", ex.getType(), ex);
@@ -152,7 +146,8 @@ public class ProviderPaymentsService {
             var providerCallback = new ProviderCallback();
             providerCallback.setInvoiceId(transactionContext.getInvoiceId());
             providerCallback.setPaymentId(transactionContext.getPaymentId());
-            providerCallback.setChangedAmount(getChangedAmount(amount, paymentStatusResult));
+            providerCallback.setChangedAmount(
+                    ChangedAmountResolver.fromPaymentStatusResult(amount, paymentStatusResult));
             providerCallback.setAmount(amount);
             log.info("Save providerCallback {}", providerCallback);
             providerCallbackDao.save(providerCallback);
@@ -176,11 +171,26 @@ public class ProviderPaymentsService {
         try {
             // validate
             checkCreateAdjustmentStatus(providerCallback);
-            // validate
             var invoicePayment = invoicingService.getInvoicePayment(providerCallback.getInvoiceId(),
                     providerCallback.getPaymentId());
-            // validate
-            PaymentStatusValidator.checkStatus(invoicePayment);
+            var statusAction = PaymentStatusValidator.getAdjustmentLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.WAIT) {
+                log.info("Invoice payment is still pending, retry create adjustment later, invoiceId={}, paymentId={}",
+                        providerCallback.getInvoiceId(), providerCallback.getPaymentId());
+                return;
+            }
+            if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
+                finishFailed(providerCallback, PaymentStatusValidator.getTechnicalErrorMessage(invoicePayment));
+                return;
+            }
+            if (statusAction == PaymentStatusValidator.StatusAction.CAPTURED) {
+                var changedAmount = ChangedAmountResolver.fromInvoicePayment(invoicePayment.getPayment());
+                if (changedAmount != null) {
+                    providerCallback.setChangedAmount(changedAmount);
+                }
+                finishSucceeded(providerCallback);
+                return;
+            }
             if (createCashFlowAdjustment(providerCallback, invoicePayment)) {
                 // pause for waiting finish createCashFlowAdjustment
                 return;
@@ -196,13 +206,6 @@ public class ProviderPaymentsService {
                 case PROVIDERCALLBACK -> log.debug("ProviderCallback locked {}", providerCallback);
                 default -> throw ex;
             }
-        } catch (CapturedPaymentException ex) {
-            log.warn("CapturedPaymentException when handle ProviderPaymentsService.callHgForCreateAdjustment", ex);
-            var changedAmount = PaymentAmountUtil.getChangedAmount(ex.getInvoicePayment().getPayment());
-            if (changedAmount != null) {
-                providerCallback.setChangedAmount(changedAmount);
-            }
-            finishSucceeded(providerCallback);
         } catch (InvoicingPaymentStatusRestrictionsException ex) {
             log.error(
                     "InvoicingPaymentRestrictionStatus when handle ProviderPaymentsService.callHgForCreateAdjustment",
@@ -241,12 +244,6 @@ public class ProviderPaymentsService {
                                 payment.getPayment().getId())));
     }
 
-    private Long getChangedAmount(long amount, PaymentStatusResult paymentStatusResult) {
-        return paymentStatusResult.getChangedAmount()
-                .filter(changedAmount -> changedAmount != amount)
-                .orElse(null);
-    }
-
     private void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {
         var forUpdate = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallback.getId());
         if (forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
@@ -255,11 +252,13 @@ public class ProviderPaymentsService {
     }
 
     private boolean createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
-        if (!providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(invoicePayment,
-                providerCallback)
-                && (providerCallback.getAmount() != null
-                && providerCallback.getChangedAmount() != null
-                && !Objects.equals(providerCallback.getAmount(), providerCallback.getChangedAmount()))) {
+        var cashFlowAdjustmentExists = providerPaymentsAdjustmentExtractor.isCashFlowAdjustmentByProviderPaymentsExist(
+                invoicePayment,
+                providerCallback);
+        if (ChangedAmountResolver.shouldCreateCashFlowAdjustment(
+                providerCallback.getAmount(),
+                providerCallback.getChangedAmount(),
+                cashFlowAdjustmentExists)) {
             var cashFlowParams =
                     providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter.convert(providerCallback);
             invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(),

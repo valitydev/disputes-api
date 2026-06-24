@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import static dev.vality.disputes.constant.ModerationPrefix.DISPUTES_UNKNOWN_MAPPING;
+import static dev.vality.disputes.util.ChangedAmountResolver.fromDisputeStatusResult;
 
 @Slf4j
 @Service
@@ -53,7 +54,7 @@ public class DisputeStatusResultHandler {
             DisputeStatusResult result,
             ProviderData providerData,
             TransactionInfo transactionInfo) {
-        var changedAmount = getChangedAmount(dispute.getAmount(), result);
+        var changedAmount = fromDisputeStatusResult(dispute.getAmount(), result);
         providerPaymentsService.createAdjustment(dispute, providerData, transactionInfo);
         disputesService.setNextStepToCreateAdjustment(
                 dispute,
@@ -76,9 +77,4 @@ public class DisputeStatusResultHandler {
         disputesService.setNextStepToManualPending(dispute, null, technicalErrorMessage);
     }
 
-    private Long getChangedAmount(long amount, DisputeStatusResult paymentStatusResult) {
-        return paymentStatusResult.getStatusSuccess().getChangedAmount()
-                .filter(changedAmount -> changedAmount != amount)
-                .orElse(null);
-    }
 }
