@@ -20,8 +20,9 @@ public class PaymentStatusValidator {
     public static StatusAction getDisputeLifecycleAction(InvoicePayment invoicePayment) {
         var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
         return switch (invoicePaymentStatus.getSetField()) {
+            case PENDING, PROCESSED -> StatusAction.WAIT;
             case CAPTURED -> StatusAction.SUCCEEDED;
-            case FAILED, CANCELLED, PENDING -> StatusAction.CONTINUE;
+            case FAILED, CANCELLED -> StatusAction.CONTINUE;
             default -> StatusAction.FAILED;
         };
     }
@@ -29,7 +30,7 @@ public class PaymentStatusValidator {
     public static StatusAction getAdjustmentLifecycleAction(InvoicePayment invoicePayment) {
         var invoicePaymentStatus = invoicePayment.getPayment().getStatus();
         return switch (invoicePaymentStatus.getSetField()) {
-            case PENDING -> StatusAction.WAIT;
+            case PENDING, PROCESSED -> StatusAction.WAIT;
             case CAPTURED -> StatusAction.CAPTURED;
             case FAILED, CANCELLED -> StatusAction.CONTINUE;
             default -> StatusAction.FAILED;

@@ -2,6 +2,7 @@ package dev.vality.disputes.provider.payments;
 
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentPending;
+import dev.vality.damsel.domain.InvoicePaymentProcessed;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -71,6 +72,24 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+
+        providerPaymentsService.callHgForCreateAdjustment(providerCallback);
+
+        providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
+        verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testRetryLaterWhenInvoicePaymentStatusIsProcessed() {
+        var disputeId = pendingFlowHandler.handlePending();
+        var dispute = disputeDao.get(disputeId);
+        var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
 
         providerPaymentsService.callHgForCreateAdjustment(providerCallback);
