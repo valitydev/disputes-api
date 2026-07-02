@@ -40,6 +40,11 @@ public class ForgottenDisputesService {
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
+            if (statusAction == PaymentStatusValidator.StatusAction.WAIT) {
+                log.info("Invoice payment is not final, retry forgotten dispute later, invoiceId={}, paymentId={}",
+                        dispute.getInvoiceId(), dispute.getPaymentId());
+                return;
+            }
             if (statusAction == PaymentStatusValidator.StatusAction.SUCCEEDED) {
                 disputesService.finishSucceeded(dispute, fromInvoicePayment(invoicePayment.getPayment()), null);
                 return;
