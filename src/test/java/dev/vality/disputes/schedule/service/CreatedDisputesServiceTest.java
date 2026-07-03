@@ -3,6 +3,7 @@ package dev.vality.disputes.schedule.service;
 import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentPending;
+import dev.vality.damsel.domain.InvoicePaymentProcessed;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -256,27 +257,31 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testCreatedWhenInvoicePaymentStatusIsPending() {
+    public void testWaitWhenInvoicePaymentStatusIsPending() {
         var paymentId = "1";
         var invoicePayment = createInvoicePayment(paymentId);
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
-        var terminal = createTerminal().get();
-        terminal.getOptions().putAll(getOptions());
-        when(dominantService.getTerminal(any())).thenReturn(terminal);
-        when(dominantService.getProvider(any())).thenReturn(createProvider().get());
-        when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        var providerDisputeId = UUID.randomUUID().toString();
-        when(providerMock.createDispute(any())).thenReturn(createDisputeCreatedSuccessResult(providerDisputeId));
-        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        createdFlowHandler.mockFailStatusProviderPayment();
         var invoiceId = "20McecNnWoy";
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
+    @SneakyThrows
+    public void testWaitWhenInvoicePaymentStatusIsProcessed() {
+        var paymentId = "1";
+        var invoicePayment = createInvoicePayment(paymentId);
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        var invoiceId = "20McecNnWoy";
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
+        var dispute = disputeDao.get(disputeId);
+        createdDisputesService.callCreateDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).getStatus());
         disputeDao.finishFailed(disputeId, null);
     }
 

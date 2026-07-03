@@ -3,6 +3,7 @@ package dev.vality.disputes.schedule.service;
 import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentPending;
+import dev.vality.damsel.domain.InvoicePaymentProcessed;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -186,12 +187,22 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
     @SneakyThrows
     public void testPendingWhenInvoicePaymentStatusIsPending() {
         var disputeId = createdFlowHandler.handleCreate();
-        var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
-        when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusPendingResult());
-        when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        pendingDisputesService.callPendingDisputeRemotely(dispute);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        disputeDao.finishFailed(disputeId, null);
+    }
+
+    @Test
+    @SneakyThrows
+    public void testPendingWhenInvoicePaymentStatusIsProcessed() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());

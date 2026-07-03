@@ -175,7 +175,7 @@ public class ProviderPaymentsService {
                     providerCallback.getPaymentId());
             var statusAction = PaymentStatusValidator.getAdjustmentLifecycleAction(invoicePayment);
             if (statusAction == PaymentStatusValidator.StatusAction.WAIT) {
-                log.info("Invoice payment is still pending, retry create adjustment later, invoiceId={}, paymentId={}",
+                log.info("Invoice payment is not final, retry create adjustment later, invoiceId={}, paymentId={}",
                         providerCallback.getInvoiceId(), providerCallback.getPaymentId());
                 return;
             }

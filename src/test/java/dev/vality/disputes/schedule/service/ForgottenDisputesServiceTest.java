@@ -2,6 +2,8 @@ package dev.vality.disputes.schedule.service;
 
 import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentPending;
+import dev.vality.damsel.domain.InvoicePaymentProcessed;
 import dev.vality.damsel.domain.InvoicePaymentRefunded;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.disputes.config.AbstractMockitoConfig;
@@ -56,6 +58,30 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
         assertEquals(DisputeStatus.succeeded, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testWaitWhenInvoicePaymentStatusIsPending() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        forgottenDisputesService.process(dispute);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+    }
+
+    @Test
+    @SneakyThrows
+    public void testWaitWhenInvoicePaymentStatusIsProcessed() {
+        var disputeId = createdFlowHandler.handleCreate();
+        var dispute = disputeDao.get(disputeId);
+        var invoicePayment = createInvoicePayment(dispute.getPaymentId());
+        invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
+        when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+        forgottenDisputesService.process(dispute);
+        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
     }
 
     @Test
