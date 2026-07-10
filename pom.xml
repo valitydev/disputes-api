@@ -46,7 +46,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>disputes-proto</artifactId>
-            <version>1.57-3b5a8e6</version>
+            <version>1.58-419fe9c</version>
         </dependency>
         <dependency>
             <groupId>dev.vality</groupId>

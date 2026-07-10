@@ -153,7 +153,7 @@ public class ProviderPaymentsService {
         providerCallback.setPaymentId(transactionContext.getPaymentId());
         providerCallback.setAmount(amount);
         providerCallback.setPaymentStatusSuccess(paymentStatusResult.isSuccess());
-        paymentStatusResult.getTransactionInfo()
+        paymentStatusResult.getChangedTransactionInfo()
                 .map(transactionInfoThriftConverter::serialize)
                 .ifPresent(providerCallback::setTransactionInfo);
         if (paymentStatusResult.isSuccess()) {

@@ -140,7 +140,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
     public void testCreateTransactionInfoAdjustment() {
         var transactionInfo = new TransactionInfo("new-trx-id", Map.of("rrn", "123"));
         var disputeId = pendingFlowHandler.handlePending(
-                new PaymentStatusResult(true).setTransactionInfo(transactionInfo));
+                new PaymentStatusResult(true).setChangedTransactionInfo(transactionInfo));
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertNotNull(providerCallback.getTransactionInfo());
@@ -171,7 +171,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
     public void testCreateTransactionInfoAdjustmentForUnsuccessfulPaymentStatus() {
         var transactionInfo = new TransactionInfo("new-trx-id", Map.of("rrn", "123"));
         var disputeId = pendingFlowHandler.handlePending(
-                new PaymentStatusResult(false).setTransactionInfo(transactionInfo));
+                new PaymentStatusResult(false).setChangedTransactionInfo(transactionInfo));
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertNotNull(providerCallback.getTransactionInfo());
