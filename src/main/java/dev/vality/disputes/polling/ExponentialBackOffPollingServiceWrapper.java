@@ -3,6 +3,7 @@ package dev.vality.disputes.polling;
 import dev.vality.adapter.flow.lib.model.PollingInfo;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.Notification;
+import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,6 +40,14 @@ public class ExponentialBackOffPollingServiceWrapper {
         var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, options);
         return getLocalDateTime(
                 notification.getNextAttemptAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
+    }
+
+    public LocalDateTime prepareNextPollingInterval(ProviderCallback providerCallback, Map<String, String> options) {
+        var pollingInfo = new PollingInfo();
+        pollingInfo.setStartDateTimePolling(providerCallback.getCreatedAt().toInstant(ZoneOffset.UTC));
+        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, options);
+        return getLocalDateTime(
+                providerCallback.getNextCheckAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
     }
 
     private LocalDateTime getLocalDateTime(Instant instant) {

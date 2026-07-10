@@ -192,7 +192,9 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -205,7 +207,9 @@ public class PendingDisputesServiceTest extends AbstractMockitoConfig {
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         pendingDisputesService.callPendingDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
         disputeDao.finishFailed(disputeId, null);
     }
 }

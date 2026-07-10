@@ -73,30 +73,19 @@ public class DisputesService {
     }
 
     public void setNextStepToCreated(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
-        log.info("Trying to set created Dispute status {}", dispute.getId());
-        disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
-        log.debug("Dispute status has been set to created {}", dispute.getId());
-        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+        setNextStepToCreated(dispute, providerData.getOptions());
     }
 
     public void setNextStepToCreated(Dispute dispute) {
-        var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, Map.of());
-        log.info("Trying to set created Dispute status {}", dispute.getId());
-        disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
-        log.debug("Dispute status has been set to created {}", dispute.getId());
-        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+        setNextStepToCreated(dispute, Map.of());
     }
 
     public void setNextStepToPending(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
-        log.info("Trying to set pending Dispute status {}", dispute);
-        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter, dispute.getPollingBefore());
-        log.debug("Dispute status has been set to pending {}", dispute.getId());
-        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+        setNextStepToPending(dispute, providerData.getOptions());
+    }
+
+    public void setNextStepToPending(Dispute dispute) {
+        setNextStepToPending(dispute, Map.of());
     }
 
     public void setNextStepToCreateAdjustment(Dispute dispute, Long changedAmount, String providerMessage) {
@@ -129,9 +118,11 @@ public class DisputesService {
     }
 
     public void updateNextPollingInterval(Dispute dispute, ProviderData providerData) {
-        var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
-        disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
+        updateNextPollingInterval(dispute, providerData.getOptions());
+    }
+
+    public void updateNextPollingInterval(Dispute dispute) {
+        updateNextPollingInterval(dispute, Map.of());
     }
 
     public void updateDisputeProviderMessage(Dispute dispute) {
@@ -213,5 +204,29 @@ public class DisputesService {
                 DisputeStatus.create_adjustment,
                 DisputeStatus.already_exist_created,
                 DisputeStatus.pooling_expired);
+    }
+
+    private void setNextStepToCreated(Dispute dispute, Map<String, String> options) {
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
+        log.info("Trying to set created Dispute status {}", dispute.getId());
+        disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
+        log.debug("Dispute status has been set to created {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+    }
+
+    private void setNextStepToPending(Dispute dispute, Map<String, String> options) {
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
+        log.info("Trying to set pending Dispute status {}", dispute);
+        disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter, dispute.getPollingBefore());
+        log.debug("Dispute status has been set to pending {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+    }
+
+    private void updateNextPollingInterval(Dispute dispute, Map<String, String> options) {
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
+        disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
     }
 }

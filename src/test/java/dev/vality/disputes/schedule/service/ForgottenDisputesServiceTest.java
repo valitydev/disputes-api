@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static dev.vality.disputes.util.MockUtil.createInvoicePayment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +70,9 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
     }
 
     @Test
@@ -81,7 +84,9 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
-        assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
     }
 
     @Test

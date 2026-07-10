@@ -15,6 +15,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import static dev.vality.disputes.util.MockUtil.createInvoicePayment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -70,6 +71,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
@@ -78,6 +80,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
     }
@@ -88,6 +91,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
@@ -96,6 +100,7 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
     }
