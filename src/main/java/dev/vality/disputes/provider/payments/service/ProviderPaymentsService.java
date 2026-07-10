@@ -196,12 +196,12 @@ public class ProviderPaymentsService {
             if (createTransactionInfoAdjustment(providerCallback, invoicePayment)) {
                 return;
             }
-            if (!providerCallback.getPaymentStatusSuccess()) {
-                finishFailed(providerCallback, PAYMENT_STATUS_NOT_SUCCESS);
-                return;
-            }
             if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
                 finishFailed(providerCallback, PaymentStatusValidator.getTechnicalErrorMessage(invoicePayment));
+                return;
+            }
+            if (!providerCallback.getPaymentStatusSuccess()) {
+                finishFailed(providerCallback, PAYMENT_STATUS_NOT_SUCCESS);
                 return;
             }
             if (statusAction == PaymentStatusValidator.StatusAction.CAPTURED) {
