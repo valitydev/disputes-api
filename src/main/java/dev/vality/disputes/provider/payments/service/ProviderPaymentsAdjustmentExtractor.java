@@ -39,6 +39,13 @@ public class ProviderPaymentsAdjustmentExtractor {
                         providerCallback));
     }
 
+    public boolean isTransactionInfoAdjustmentByProviderPaymentsExist(InvoicePayment invoicePayment,
+                                                                      ProviderCallback providerCallback) {
+        return getInvoicePaymentAdjustmentStream(invoicePayment)
+                .filter(adj -> isProviderPaymentsAdjustment(adj.getReason(), providerCallback))
+                .anyMatch(adj -> adj.getState() != null && adj.getState().isSetTransactionInfo());
+    }
+
     private Stream<InvoicePaymentAdjustment> getInvoicePaymentAdjustmentStream(InvoicePayment invoicePayment) {
         return Optional.ofNullable(invoicePayment.getAdjustments())
                 .orElse(List.of())

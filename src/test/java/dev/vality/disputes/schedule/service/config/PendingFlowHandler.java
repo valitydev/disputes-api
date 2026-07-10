@@ -34,12 +34,17 @@ public class PendingFlowHandler {
 
     @SneakyThrows
     public UUID handlePending() {
+        return handlePending(new PaymentStatusResult(true));
+    }
+
+    @SneakyThrows
+    public UUID handlePending(PaymentStatusResult paymentStatusResult) {
         var disputeId = createdFlowHandler.handleCreate();
         var providerMock = mock(ProviderDisputesServiceSrv.Client.class);
         when(providerMock.checkDisputeStatus(any())).thenReturn(createDisputeStatusSuccessResult());
         when(providerDisputesThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
         var providerPaymentMock = mock(ProviderPaymentsServiceSrv.Client.class);
-        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(new PaymentStatusResult(true));
+        when(providerPaymentMock.checkPaymentStatus(any(), any())).thenReturn(paymentStatusResult);
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerPaymentMock);
         var dispute = disputeDao.get(disputeId);
         pendingDisputesService.callPendingDisputeRemotely(dispute);

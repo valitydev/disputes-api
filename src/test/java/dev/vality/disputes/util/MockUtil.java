@@ -194,6 +194,18 @@ public class MockUtil {
                         .setScenario(new InvoicePaymentAdjustmentCashFlow().setNewAmount(10L))));
     }
 
+    public static InvoicePaymentAdjustment getTransactionInfoInvoicePaymentAdjustment(
+            String adjustmentId,
+            String reason,
+            TransactionInfo transactionInfo) {
+        return new InvoicePaymentAdjustment()
+                .setId(adjustmentId)
+                .setReason(reason)
+                .setState(InvoicePaymentAdjustmentState.transaction_info(
+                        new InvoicePaymentAdjustmentTransactionInfoState()
+                                .setScenario(new InvoicePaymentAdjustmentTransactionInfo(transactionInfo))));
+    }
+
     public static Failure createFailure() {
         Failure failure = new Failure("no_transfer");
         failure.setReason("code = resp_status_error, description = Tek seferde en fazla 4,000.00 işem yapılabilir.");

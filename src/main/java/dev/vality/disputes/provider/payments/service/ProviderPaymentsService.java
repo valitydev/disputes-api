@@ -13,7 +13,9 @@ import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
+import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentTransactionInfoAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.provider.payments.converter.TransactionInfoThriftConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
@@ -25,7 +27,6 @@ import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.service.external.InvoicingService;
 import dev.vality.disputes.util.ChangedAmountResolver;
 import dev.vality.disputes.util.PaymentStatusValidator;
-import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.TransactionContext;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
-import static dev.vality.disputes.constant.ErrorMessage.PAYMENT_NOT_FOUND;
+import static dev.vality.disputes.constant.ErrorMessage.*;
 import static dev.vality.disputes.util.OptionsExtractor.extractProviderPaymentsCheckStatusDelaySec;
 import static dev.vality.disputes.util.ThreadFormatter.buildThreadName;
 
@@ -56,6 +56,9 @@ public class ProviderPaymentsService {
             providerPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
     private final ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter
             providerPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
+    private final ProviderPaymentsToInvoicePaymentTransactionInfoAdjustmentParamsConverter
+            providerPaymentsToInvoicePaymentTransactionInfoAdjustmentParamsConverter;
+    private final TransactionInfoThriftConverter transactionInfoThriftConverter;
     private final DisputeCurrencyConverter disputeCurrencyConverter;
     private final ProviderPaymentsAdjustmentExtractor providerPaymentsAdjustmentExtractor;
     private final ProviderDataService providerDataService;
@@ -145,14 +148,21 @@ public class ProviderPaymentsService {
         checkProviderCallbackExist(transactionContext.getInvoiceId(), transactionContext.getPaymentId());
         var paymentStatusResult =
                 providerPaymentsRemoteClient.checkPaymentStatus(transactionContext, currency, providerData);
+        var providerCallback = new ProviderCallback();
+        providerCallback.setInvoiceId(transactionContext.getInvoiceId());
+        providerCallback.setPaymentId(transactionContext.getPaymentId());
+        providerCallback.setAmount(amount);
+        providerCallback.setPaymentStatusSuccess(paymentStatusResult.isSuccess());
+        paymentStatusResult.getTransactionInfo()
+                .map(transactionInfoThriftConverter::serialize)
+                .ifPresent(providerCallback::setTransactionInfo);
         if (paymentStatusResult.isSuccess()) {
-            var providerCallback = new ProviderCallback();
-            providerCallback.setInvoiceId(transactionContext.getInvoiceId());
-            providerCallback.setPaymentId(transactionContext.getPaymentId());
             providerCallback.setChangedAmount(
                     ChangedAmountResolver.fromPaymentStatusResult(amount, paymentStatusResult));
-            providerCallback.setAmount(amount);
             log.info("Save providerCallback {}", providerCallback);
+            providerCallbackDao.save(providerCallback);
+        } else if (providerCallback.getTransactionInfo() != null) {
+            log.info("Save unsuccessful providerCallback with transactionInfo {}", providerCallback);
             providerCallbackDao.save(providerCallback);
         } else {
             throw new ProviderPaymentsUnexpectedPaymentStatus(
@@ -181,6 +191,13 @@ public class ProviderPaymentsService {
                 log.info("Invoice payment is not final, retry create adjustment later, invoiceId={}, paymentId={}",
                         providerCallback.getInvoiceId(), providerCallback.getPaymentId());
                 updateNextCheckAfter(providerCallback);
+                return;
+            }
+            if (createTransactionInfoAdjustment(providerCallback, invoicePayment)) {
+                return;
+            }
+            if (!providerCallback.getPaymentStatusSuccess()) {
+                finishFailed(providerCallback, PAYMENT_STATUS_NOT_SUCCESS);
                 return;
             }
             if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
@@ -279,6 +296,22 @@ public class ProviderPaymentsService {
             log.info("Creating CashFlowAdjustment was skipped {}", providerCallback);
             return false;
         }
+    }
+
+    private boolean createTransactionInfoAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
+        if (providerCallback.getTransactionInfo() == null) {
+            return false;
+        }
+        if (!providerPaymentsAdjustmentExtractor.isTransactionInfoAdjustmentByProviderPaymentsExist(
+                invoicePayment, providerCallback)) {
+            var transactionInfoParams =
+                    providerPaymentsToInvoicePaymentTransactionInfoAdjustmentParamsConverter.convert(providerCallback);
+            invoicingService.createPaymentAdjustment(providerCallback.getInvoiceId(), providerCallback.getPaymentId(),
+                    transactionInfoParams);
+            return true;
+        }
+        log.info("Creating TransactionInfoAdjustment was skipped {}", providerCallback);
+        return false;
     }
 
     private void createCapturedAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {
