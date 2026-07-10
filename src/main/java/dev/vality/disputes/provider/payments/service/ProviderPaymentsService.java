@@ -9,6 +9,7 @@ import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.exception.InvoicingPaymentStatusRestrictionsException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.ProviderTrxIdNotFoundException;
+import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCapturedAdjustmentParamsConverter;
 import dev.vality.disputes.provider.payments.converter.ProviderPaymentsToInvoicePaymentCashFlowAdjustmentParamsConverter;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static dev.vality.disputes.constant.ErrorMessage.INVOICE_NOT_FOUND;
@@ -60,6 +62,7 @@ public class ProviderPaymentsService {
     private final DisputesService disputesService;
     private final ProviderPaymentsRemoteClient providerPaymentsRemoteClient;
     private final ProviderPaymentsCheckStatusScheduler providerPaymentsCheckStatusScheduler;
+    private final ExponentialBackOffPollingServiceWrapper exponentialBackOffPollingService;
 
     @Async("disputesAsyncServiceExecutor")
     public void processCallback(ProviderPaymentsCallbackParams callback) {
@@ -177,6 +180,7 @@ public class ProviderPaymentsService {
             if (statusAction == PaymentStatusValidator.StatusAction.WAIT) {
                 log.info("Invoice payment is not final, retry create adjustment later, invoiceId={}, paymentId={}",
                         providerCallback.getInvoiceId(), providerCallback.getPaymentId());
+                updateNextCheckAfter(providerCallback);
                 return;
             }
             if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
@@ -249,6 +253,13 @@ public class ProviderPaymentsService {
         if (forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
             throw new ProviderCallbackStatusWasUpdatedByAnotherThreadException();
         }
+    }
+
+    private void updateNextCheckAfter(ProviderCallback providerCallback) {
+        var nextCheckAfter = exponentialBackOffPollingService.prepareNextPollingInterval(providerCallback, Map.of());
+        log.info("Trying to update ProviderCallback nextCheckAfter {}", providerCallback);
+        providerCallbackDao.updateNextCheckAfter(providerCallback.getId(), nextCheckAfter);
+        log.debug("ProviderCallback nextCheckAfter has been updated {}", providerCallback.getInvoiceId());
     }
 
     private boolean createCashFlowAdjustment(ProviderCallback providerCallback, InvoicePayment invoicePayment) {

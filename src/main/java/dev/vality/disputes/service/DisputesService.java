@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -72,8 +73,16 @@ public class DisputesService {
     }
 
     public void setNextStepToCreated(Dispute dispute, ProviderData providerData) {
+        setNextStepToCreated(dispute, providerData.getOptions());
+    }
+
+    public void setNextStepToCreated(Dispute dispute) {
+        setNextStepToCreated(dispute, Map.of());
+    }
+
+    private void setNextStepToCreated(Dispute dispute, Map<String, String> options) {
         var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
         log.info("Trying to set created Dispute status {}", dispute.getId());
         disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to created {}", dispute.getId());
@@ -81,8 +90,16 @@ public class DisputesService {
     }
 
     public void setNextStepToPending(Dispute dispute, ProviderData providerData) {
+        setNextStepToPending(dispute, providerData.getOptions());
+    }
+
+    public void setNextStepToPending(Dispute dispute) {
+        setNextStepToPending(dispute, Map.of());
+    }
+
+    private void setNextStepToPending(Dispute dispute, Map<String, String> options) {
         var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
         log.info("Trying to set pending Dispute status {}", dispute);
         disputeDao.setNextStepToPending(dispute.getId(), nextCheckAfter, dispute.getPollingBefore());
         log.debug("Dispute status has been set to pending {}", dispute.getId());
@@ -119,8 +136,16 @@ public class DisputesService {
     }
 
     public void updateNextPollingInterval(Dispute dispute, ProviderData providerData) {
+        updateNextPollingInterval(dispute, providerData.getOptions());
+    }
+
+    public void updateNextPollingInterval(Dispute dispute) {
+        updateNextPollingInterval(dispute, Map.of());
+    }
+
+    private void updateNextPollingInterval(Dispute dispute, Map<String, String> options) {
         var nextCheckAfter =
-                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, options);
         disputeDao.updateNextPollingInterval(dispute, nextCheckAfter);
     }
 

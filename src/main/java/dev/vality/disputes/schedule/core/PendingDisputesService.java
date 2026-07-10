@@ -55,6 +55,7 @@ public class PendingDisputesService {
             if (statusAction == PaymentStatusValidator.StatusAction.WAIT) {
                 log.info("Invoice payment is not final, retry pending dispute later, invoiceId={}, paymentId={}",
                         dispute.getInvoiceId(), dispute.getPaymentId());
+                disputesService.setNextStepToPending(dispute);
                 return;
             }
             if (statusAction == PaymentStatusValidator.StatusAction.SUCCEEDED) {

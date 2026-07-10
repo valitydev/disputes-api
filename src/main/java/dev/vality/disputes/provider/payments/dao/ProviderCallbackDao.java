@@ -10,6 +10,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,7 +61,9 @@ public class ProviderCallbackDao extends AbstractGenericDao {
 
     public List<ProviderCallback> getProviderCallbacksForHgCall(int limit) {
         var query = getDslContext().selectFrom(PROVIDER_CALLBACK)
-                .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment))
+                .where(PROVIDER_CALLBACK.STATUS.eq(ProviderPaymentsStatus.create_adjustment)
+                        .and(PROVIDER_CALLBACK.NEXT_CHECK_AFTER.le(LocalDateTime.now(ZoneOffset.UTC))))
+                .orderBy(PROVIDER_CALLBACK.NEXT_CHECK_AFTER)
                 .limit(limit)
                 .forUpdate()
                 .skipLocked();
@@ -72,6 +76,13 @@ public class ProviderCallbackDao extends AbstractGenericDao {
         var query = getDslContext().update(PROVIDER_CALLBACK)
                 .set(record)
                 .where(PROVIDER_CALLBACK.ID.eq(providerCallback.getId()));
+        execute(query);
+    }
+
+    public void updateNextCheckAfter(UUID id, LocalDateTime nextCheckAfter) {
+        var query = getDslContext().update(PROVIDER_CALLBACK)
+                .set(PROVIDER_CALLBACK.NEXT_CHECK_AFTER, nextCheckAfter)
+                .where(PROVIDER_CALLBACK.ID.eq(id));
         execute(query);
     }
 }

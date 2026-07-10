@@ -15,6 +15,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import static dev.vality.disputes.util.MockUtil.createInvoicePayment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -76,8 +77,10 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
         providerPaymentsService.callHgForCreateAdjustment(providerCallback);
 
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
     }
@@ -94,8 +97,10 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
         providerPaymentsService.callHgForCreateAdjustment(providerCallback);
 
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
+        assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
         assertEquals(DisputeStatus.create_adjustment, disputeDao.get(disputeId).getStatus());
         verify(invoicingClient, never()).createPaymentAdjustment(any(), any(), any());
     }
