@@ -71,13 +71,13 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
-        var nextCheckAfter = providerCallback.getNextCheckAfter();
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
 
         providerPaymentsService.callHgForCreateAdjustment(providerCallback);
 
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
         assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
@@ -91,13 +91,13 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
         var disputeId = pendingFlowHandler.handlePending();
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
-        var nextCheckAfter = providerCallback.getNextCheckAfter();
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
 
         providerPaymentsService.callHgForCreateAdjustment(providerCallback);
 
+        var nextCheckAfter = providerCallback.getNextCheckAfter();
         providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
         assertEquals(ProviderPaymentsStatus.create_adjustment, providerCallback.getStatus());
         assertTrue(providerCallback.getNextCheckAfter().isAfter(nextCheckAfter));
