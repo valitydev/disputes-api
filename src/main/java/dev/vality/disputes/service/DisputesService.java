@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -74,6 +75,15 @@ public class DisputesService {
     public void setNextStepToCreated(Dispute dispute, ProviderData providerData) {
         var nextCheckAfter =
                 exponentialBackOffPollingService.prepareNextPollingInterval(dispute, providerData.getOptions());
+        log.info("Trying to set created Dispute status {}", dispute.getId());
+        disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
+        log.debug("Dispute status has been set to created {}", dispute.getId());
+        callbackNotifier.notify(disputeDao.get(dispute.getId()));
+    }
+
+    public void setNextStepToCreated(Dispute dispute) {
+        var nextCheckAfter =
+                exponentialBackOffPollingService.prepareNextPollingInterval(dispute, Map.of());
         log.info("Trying to set created Dispute status {}", dispute.getId());
         disputeDao.setNextStepToCreated(dispute.getId(), nextCheckAfter);
         log.debug("Dispute status has been set to created {}", dispute.getId());

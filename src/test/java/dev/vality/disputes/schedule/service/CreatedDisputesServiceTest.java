@@ -266,7 +266,9 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.created, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
         disputeDao.finishFailed(disputeId, null);
     }
 
@@ -281,7 +283,9 @@ public class CreatedDisputesServiceTest extends AbstractMockitoConfig {
         var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute(invoiceId, paymentId).getDisputeId());
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
-        assertEquals(DisputeStatus.created, disputeDao.get(disputeId).getStatus());
+        var updatedDispute = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.created, updatedDispute.getStatus());
+        assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
         disputeDao.finishFailed(disputeId, null);
     }
 
