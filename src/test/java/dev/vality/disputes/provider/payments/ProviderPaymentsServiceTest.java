@@ -117,10 +117,13 @@ public class ProviderPaymentsServiceTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmount() {
-        var disputeId = pendingFlowHandler.handlePending();
+    public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmountAndTransactionInfo() {
+        var transactionInfo = new TransactionInfo("new-trx-id", Map.of("rrn", "123"));
+        var disputeId = pendingFlowHandler.handlePending(
+                new PaymentStatusResult(true).setChangedTransactionInfo(transactionInfo));
         var dispute = disputeDao.get(disputeId);
         var providerCallback = providerCallbackDao.get(dispute.getInvoiceId(), dispute.getPaymentId());
+        assertNotNull(providerCallback.getTransactionInfo());
         providerCallback.setChangedAmount(101L);
         providerCallbackDao.update(providerCallback);
         var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());

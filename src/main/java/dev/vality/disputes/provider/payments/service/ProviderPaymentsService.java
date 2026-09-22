@@ -193,7 +193,8 @@ public class ProviderPaymentsService {
                 updateNextCheckAfter(providerCallback);
                 return;
             }
-            if (createTransactionInfoAdjustment(providerCallback, invoicePayment)) {
+            if (statusAction != PaymentStatusValidator.StatusAction.CAPTURED
+                    && createTransactionInfoAdjustment(providerCallback, invoicePayment)) {
                 return;
             }
             if (statusAction == PaymentStatusValidator.StatusAction.FAILED) {
