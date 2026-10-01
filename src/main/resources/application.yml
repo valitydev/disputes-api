@@ -107,6 +107,7 @@ auth:
   enabled: true
 
 dispute:
+  maxPaymentAgeDays: 30
   maxRequestSize: 7
   batchSize: 1
   notificationsMaxAttempts: 5
