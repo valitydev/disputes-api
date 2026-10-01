@@ -28,6 +28,9 @@ public class AccessService {
     @Value("${service.bouncer.auth.enabled}")
     private boolean authEnabled;
 
+    @Value("${dispute.maxPaymentAgeDays}")
+    private int maxPaymentAgeDays;
+
     public AccessData approveUserAccess(String invoiceId, String paymentId, boolean checkUserAccessData,
                                         boolean checkPaymentAge) {
         log.debug("Start building AccessData {}{}", invoiceId, paymentId);
@@ -36,7 +39,7 @@ public class AccessService {
             checkUserAccessData(accessData);
         }
         if (checkPaymentAge) {
-            PaymentValidator.validatePaymentAge(accessData);
+            PaymentValidator.validatePaymentAge(accessData, maxPaymentAgeDays);
         }
         log.debug("Finish building AccessData {}{}", invoiceId, paymentId);
         return accessData;

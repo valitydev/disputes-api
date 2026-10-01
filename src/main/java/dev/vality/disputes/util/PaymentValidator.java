@@ -9,7 +9,7 @@ import java.time.format.DateTimeParseException;
 
 public class PaymentValidator {
 
-    public static void validatePaymentAge(AccessData accessData) {
+    public static void validatePaymentAge(AccessData accessData, int maxPaymentAgeDays) {
         var payment = accessData.getPayment().getPayment();
         var invoiceId = accessData.getInvoice().getInvoice().getId();
         LocalDateTime localDateTime;
@@ -19,7 +19,7 @@ public class PaymentValidator {
             throw new IllegalArgumentException(
                     "Invalid date format for invoice " + invoiceId + ": " + payment.getCreatedAt(), e);
         }
-        var threshold = LocalDateTime.now().minusDays(30);
+        var threshold = LocalDateTime.now().minusDays(maxPaymentAgeDays);
         if (localDateTime.isBefore(threshold)) {
             throw new PaymentExpiredException(
                     "Payment expired for invoice " + invoiceId + ": created at " + localDateTime);
