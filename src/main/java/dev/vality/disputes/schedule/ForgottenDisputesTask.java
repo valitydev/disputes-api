@@ -1,10 +1,11 @@
 package dev.vality.disputes.schedule;
 
+import dev.vality.disputes.config.SchedulingConfig;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.ForgottenDisputesService;
 import dev.vality.disputes.schedule.handler.ForgottenDisputeHandler;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,16 +19,23 @@ import java.util.stream.Collectors;
 @Slf4j
 @ConditionalOnProperty(value = "dispute.isScheduleForgottenEnabled", havingValue = "true")
 @Service
-@RequiredArgsConstructor
 public class ForgottenDisputesTask {
 
     private final ForgottenDisputesService forgottenDisputesService;
-    private final ExecutorService disputesThreadPool;
+    private final ExecutorService forgottenDisputesThreadPool;
 
     @Value("${dispute.batchSize}")
     private int batchSize;
 
+    public ForgottenDisputesTask(
+            ForgottenDisputesService forgottenDisputesService,
+            @Qualifier("forgottenDisputesThreadPool") ExecutorService forgottenDisputesThreadPool) {
+        this.forgottenDisputesService = forgottenDisputesService;
+        this.forgottenDisputesThreadPool = forgottenDisputesThreadPool;
+    }
+
     @Scheduled(
+            scheduler = SchedulingConfig.FORGOTTEN_DISPUTES_SCHEDULER,
             fixedDelayString = "${dispute.fixedDelayForgotten}",
             initialDelayString = "${dispute.initialDelayForgotten}")
     public void processForgottenDisputes() {
@@ -36,7 +44,7 @@ public class ForgottenDisputesTask {
             var callables = disputes.stream()
                     .map(this::handleForgotten)
                     .collect(Collectors.toList());
-            disputesThreadPool.invokeAll(callables);
+            forgottenDisputesThreadPool.invokeAll(callables);
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();

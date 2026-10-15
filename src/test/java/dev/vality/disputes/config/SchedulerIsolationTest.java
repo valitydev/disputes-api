@@ -55,11 +55,12 @@ class SchedulerIsolationTest {
 
     private static final Duration AWAIT = Duration.ofSeconds(10);
     private static final String DEFAULT_SCHEDULER_PREFIX = "scheduling-";
+    private static final String CREATED_SCHEDULER_PREFIX = "dispute-created-scheduler-";
     private static final String ADJUSTMENT_SCHEDULER_PREFIX = "provider-payments-adjustment-scheduler-";
     private static final String ADJUSTMENT_WORKER_MARKER = "provider-payments-exec-";
 
     @Test
-    void adjustmentsRunWhileCreatedDisputeBlocksDefaultScheduler() throws Exception {
+    void adjustmentsRunWhileCreatedDisputeBlocksItsScheduler() throws Exception {
         var services = new Services();
         var blockedCreated = new BlockedCreatedDispute(services.created);
         var adjustment = new DueAdjustment(services.providerPayments);
@@ -70,7 +71,7 @@ class SchedulerIsolationTest {
                 "provider.payments.isScheduleCreateAdjustmentsEnabled=true")) {
             schedulers.addAll(context.getBeansOfType(ThreadPoolTaskScheduler.class).values());
             try {
-                blockedCreated.awaitDefaultSchedulerWaitingForWorker();
+                blockedCreated.awaitSchedulerWaitingForWorker();
                 adjustment.makeDue();
 
                 assertThat(adjustment.handled.await(AWAIT.toSeconds(), TimeUnit.SECONDS))
@@ -78,9 +79,9 @@ class SchedulerIsolationTest {
 
                 assertThat(blockedCreated.release.getCount()).as("created worker is still blocked").isEqualTo(1);
                 assertThat(blockedCreated.schedulerThread.get().getState())
-                        .as("default scheduler thread is still waiting for the created batch")
+                        .as("created scheduler thread is still waiting for its batch")
                         .isIn(Thread.State.WAITING, Thread.State.TIMED_WAITING);
-                assertThat(blockedCreated.schedulerThread.get().getName()).startsWith(DEFAULT_SCHEDULER_PREFIX);
+                assertThat(blockedCreated.schedulerThread.get().getName()).startsWith(CREATED_SCHEDULER_PREFIX);
                 assertThat(adjustment.polledOn.get()).startsWith(ADJUSTMENT_SCHEDULER_PREFIX);
                 assertThat(adjustment.handledOn.get())
                         .contains(ADJUSTMENT_WORKER_MARKER)
@@ -105,7 +106,7 @@ class SchedulerIsolationTest {
                 "dispute.isScheduleCreatedEnabled=true",
                 "provider.payments.isScheduleCreateAdjustmentsEnabled=true")) {
             try {
-                blockedCreated.awaitDefaultSchedulerWaitingForWorker();
+                blockedCreated.awaitSchedulerWaitingForWorker();
                 adjustment.makeDue();
 
                 await().during(Duration.ofSeconds(2)).atMost(AWAIT)
@@ -120,7 +121,7 @@ class SchedulerIsolationTest {
     }
 
     @Test
-    void disabledAdjustmentsKeepOtherTasksOnDefaultScheduler() {
+    void disabledAdjustmentsKeepOtherTasksOnTheirOwnSchedulers() {
         var services = new Services();
         var polledOn = new ConcurrentHashMap<String, String>();
         when(services.created.getCreatedSkipLocked(anyInt())).thenAnswer(inv -> record(polledOn, "created"));
@@ -139,11 +140,20 @@ class SchedulerIsolationTest {
             assertThat(context.getBeansOfType(ProviderPaymentsTask.class)).isEmpty();
             verifyNoInteractions(services.providerPayments);
             assertThat(polledOn).containsOnlyKeys("created", "pending", "forgotten", "notification");
-            assertThat(List.of("created", "pending", "forgotten", "notification"))
-                    .allSatisfy(task -> assertThat(polledOn.get(task)).startsWith(DEFAULT_SCHEDULER_PREFIX));
+            Map.of(
+                    "created", CREATED_SCHEDULER_PREFIX,
+                    "pending", "dispute-pending-scheduler-",
+                    "forgotten", "dispute-forgotten-scheduler-",
+                    "notification", "dispute-notification-scheduler-")
+                    .forEach((task, prefix) -> assertThat(polledOn.get(task)).startsWith(prefix));
 
             assertThat(context.getBeansOfType(TaskScheduler.class)).containsOnlyKeys(
-                    "taskScheduler", SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER);
+                    "taskScheduler",
+                    SchedulingConfig.CREATED_DISPUTES_SCHEDULER,
+                    SchedulingConfig.PENDING_DISPUTES_SCHEDULER,
+                    SchedulingConfig.FORGOTTEN_DISPUTES_SCHEDULER,
+                    SchedulingConfig.NOTIFICATION_SCHEDULER,
+                    SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER);
             var defaultScheduler = context.getBean("taskScheduler", ThreadPoolTaskScheduler.class);
             var adjustmentScheduler = context.getBean(
                     SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER, ThreadPoolTaskScheduler.class);
@@ -222,7 +232,7 @@ class SchedulerIsolationTest {
             }).when(created).callCreateDisputeRemotely(any());
         }
 
-        void awaitDefaultSchedulerWaitingForWorker() throws InterruptedException {
+        void awaitSchedulerWaitingForWorker() throws InterruptedException {
             assertThat(workerEntered.await(AWAIT.toSeconds(), TimeUnit.SECONDS))
                     .as("created worker entered the slow remote call").isTrue();
             await().atMost(AWAIT).untilAsserted(() -> {
@@ -293,7 +303,13 @@ class SchedulerIsolationTest {
     @Import(TasksConfig.class)
     static class SharedSchedulerConfig {
 
-        @Bean(name = {"taskScheduler", SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER})
+        @Bean(name = {
+                "taskScheduler",
+                SchedulingConfig.CREATED_DISPUTES_SCHEDULER,
+                SchedulingConfig.PENDING_DISPUTES_SCHEDULER,
+                SchedulingConfig.FORGOTTEN_DISPUTES_SCHEDULER,
+                SchedulingConfig.NOTIFICATION_SCHEDULER,
+                SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER})
         public ThreadPoolTaskScheduler sharedScheduler(ThreadPoolTaskSchedulerBuilder builder) {
             return builder.build();
         }
