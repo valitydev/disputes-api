@@ -1,6 +1,5 @@
 package dev.vality.disputes.schedule.core;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.disputes.admin.MerchantsNotificationParamsRequest;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.NotificationDao;
@@ -20,6 +19,7 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -43,7 +43,6 @@ public class NotificationService {
     }
 
     @Transactional
-    @SneakyThrows
     public void process(NotifyRequest notifyRequest) {
         var plainTextBody = customObjectMapper.writeValueAsString(notifyRequest);
         try {

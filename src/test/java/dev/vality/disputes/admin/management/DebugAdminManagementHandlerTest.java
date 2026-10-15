@@ -14,7 +14,7 @@ import java.util.UUID;
 
 import static dev.vality.disputes.util.MockUtil.*;
 import static dev.vality.disputes.util.OpenApiUtil.*;
-import static dev.vality.testcontainers.annotations.util.ValuesGenerator.generateId;
+import static dev.vality.disputes.util.ValuesGenerator.generateId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

@@ -1,8 +1,9 @@
 package dev.vality.disputes.config;
 
-import dev.vality.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,7 +12,8 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@PostgresqlTestcontainerSingleton
+@ContextConfiguration(initializers = EmbeddedPostgresInitializer.class)
+@ExtendWith(DatabaseCleanupExtension.class)
 @DisableScheduling
 @SpringBootTest
 @DirtiesContext

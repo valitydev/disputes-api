@@ -1,5 +1,6 @@
 package dev.vality.disputes.dao;
 
+import dev.vality.disputes.config.PostgresqlSpringBootITest;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.exception.NotFoundException;
@@ -10,10 +11,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
+import static dev.vality.disputes.util.RandomBeans.random;
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class DisputeDaoTest {
+@PostgresqlSpringBootITest
+public class DisputeDaoTest {
 
     @Autowired
     private DisputeDao disputeDao;

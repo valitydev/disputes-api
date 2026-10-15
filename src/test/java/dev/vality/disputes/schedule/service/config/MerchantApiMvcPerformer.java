@@ -1,6 +1,5 @@
 package dev.vality.disputes.schedule.service.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WiremockAddressesHolder;
@@ -15,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
@@ -57,7 +57,7 @@ public class MerchantApiMvcPerformer {
                                 wiremockAddressesHolder.getNotificationUrl())))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        return new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+        return new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                 Create200Response.class);
     }
 }
