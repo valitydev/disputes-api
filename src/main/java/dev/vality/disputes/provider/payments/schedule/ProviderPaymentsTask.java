@@ -1,5 +1,6 @@
 package dev.vality.disputes.provider.payments.schedule;
 
+import dev.vality.disputes.config.SchedulingConfig;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.handler.ProviderPaymentHandler;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
@@ -28,6 +29,7 @@ public class ProviderPaymentsTask {
     private int batchSize;
 
     @Scheduled(
+            scheduler = SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER,
             fixedDelayString = "${provider.payments.fixedDelayCreateAdjustments}",
             initialDelayString = "${provider.payments.initialDelayCreateAdjustments}")
     public void processPending() {
