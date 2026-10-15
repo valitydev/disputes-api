@@ -18,7 +18,6 @@ import dev.vality.disputes.provider.payments.converter.TransactionContextConvert
 import dev.vality.disputes.provider.payments.converter.TransactionInfoThriftConverter;
 import dev.vality.disputes.provider.payments.dao.ProviderCallbackDao;
 import dev.vality.disputes.provider.payments.exception.ProviderCallbackAlreadyExistException;
-import dev.vality.disputes.provider.payments.exception.ProviderCallbackStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.provider.payments.exception.ProviderPaymentsUnexpectedPaymentStatus;
 import dev.vality.disputes.schedule.converter.DisputeCurrencyConverter;
 import dev.vality.disputes.schedule.model.ProviderData;
@@ -36,6 +35,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -180,10 +181,13 @@ public class ProviderPaymentsService {
     }
 
     @Transactional
-    public void callHgForCreateAdjustment(ProviderCallback providerCallback) {
+    public void callHgForCreateAdjustment(ProviderCallback selected) {
+        var current = getForProcessing(selected);
+        if (current.isEmpty()) {
+            return;
+        }
+        var providerCallback = current.get();
         try {
-            // validate
-            checkCreateAdjustmentStatus(providerCallback);
             var invoicePayment = invoicingService.getInvoicePayment(providerCallback.getInvoiceId(),
                     providerCallback.getPaymentId());
             var statusAction = PaymentStatusValidator.getAdjustmentLifecycleAction(invoicePayment);
@@ -233,11 +237,6 @@ public class ProviderPaymentsService {
                     "InvoicingPaymentRestrictionStatus when handle ProviderPaymentsService.callHgForCreateAdjustment",
                     ex);
             finishFailed(providerCallback, PaymentStatusValidator.getTechnicalErrorMessage(ex));
-        } catch (ProviderCallbackStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug(
-                    "ProviderCallbackStatusWasUpdatedByAnotherThread " +
-                            "when handle ProviderPaymentsService.callHgForCreateAdjustment",
-                    ex);
         }
     }
 
@@ -266,10 +265,21 @@ public class ProviderPaymentsService {
                                 payment.getPayment().getId())));
     }
 
-    private void checkCreateAdjustmentStatus(ProviderCallback providerCallback) {
-        var forUpdate = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallback.getId());
-        if (forUpdate.getStatus() != ProviderPaymentsStatus.create_adjustment) {
-            throw new ProviderCallbackStatusWasUpdatedByAnotherThreadException();
+    private Optional<ProviderCallback> getForProcessing(ProviderCallback selected) {
+        try {
+            var current = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(selected.getId());
+            if (current.getStatus() != ProviderPaymentsStatus.create_adjustment
+                    || current.getNextCheckAfter().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+                log.debug("Skip stale or not due ProviderCallback {}", selected.getId());
+                return Optional.empty();
+            }
+            return Optional.of(current);
+        } catch (NotFoundException ex) {
+            if (ex.getType() != NotFoundException.Type.PROVIDERCALLBACK) {
+                throw ex;
+            }
+            log.debug("Skip locked or missing ProviderCallback {}", selected.getId());
+            return Optional.empty();
         }
     }
 

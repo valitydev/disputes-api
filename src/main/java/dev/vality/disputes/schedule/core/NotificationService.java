@@ -5,6 +5,7 @@ import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.dao.NotificationDao;
 import dev.vality.disputes.domain.enums.NotificationStatus;
 import dev.vality.disputes.domain.tables.pojos.Notification;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.exception.NotificationStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.schedule.service.ProviderDataService;
@@ -22,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -43,10 +47,15 @@ public class NotificationService {
     }
 
     @Transactional
-    public void process(NotifyRequest notifyRequest) {
+    public void process(NotifyRequest selected) {
+        var current = getForProcessing(selected);
+        if (current.isEmpty()) {
+            return;
+        }
+        var forUpdate = current.get();
+        var notifyRequest = notificationDao.getNotifyRequest(forUpdate.getDisputeId());
         var plainTextBody = customObjectMapper.writeValueAsString(notifyRequest);
         try {
-            var forUpdate = checkPending(notifyRequest);
             var httpRequest = new HttpPost(forUpdate.getNotificationUrl());
             httpRequest.setEntity(HttpEntities.create(plainTextBody, ContentType.APPLICATION_JSON));
             httpClient.execute(httpRequest, new BasicHttpClientResponseHandler());
@@ -54,7 +63,6 @@ public class NotificationService {
             log.info("Delivered NotifyRequest {}", notifyRequest);
         } catch (IOException ex) {
             log.info("IOException when handle NotificationService.process {}", notifyRequest, ex);
-            var forUpdate = checkPending(notifyRequest);
             var dispute = disputeDao.get(UUID.fromString(notifyRequest.getDisputeId()));
             var providerData = providerDataService.getProviderData(dispute.getProviderId(), dispute.getTerminalId());
             var nextAttemptAfter =
@@ -62,9 +70,26 @@ public class NotificationService {
                             providerData.getOptions());
             notificationDao.updateNextAttempt(forUpdate, nextAttemptAfter);
             log.debug("Finish IOException handler {}", notifyRequest, ex);
+        }
+    }
+
+    private Optional<Notification> getForProcessing(NotifyRequest selected) {
+        try {
+            var current = checkPending(selected);
+            if (current.getNextAttemptAfter().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+                log.debug("Skip not due Notification {}", current.getDisputeId());
+                return Optional.empty();
+            }
+            return Optional.of(current);
         } catch (NotificationStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug("NotificationStatusWasUpdatedByAnotherThreadException when handle NotificationService.process",
-                    ex);
+            log.debug("Skip stale Notification {}", selected.getDisputeId());
+            return Optional.empty();
+        } catch (NotFoundException ex) {
+            if (ex.getType() != NotFoundException.Type.NOTIFICATION) {
+                throw ex;
+            }
+            log.debug("Skip locked or missing Notification {}", selected.getDisputeId());
+            return Optional.empty();
         }
     }
 

@@ -3,6 +3,7 @@ package dev.vality.disputes.schedule.service.config;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WiremockAddressesHolder;
+import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.service.external.impl.dominant.DominantAsyncService;
 import dev.vality.disputes.util.MockUtil;
 import dev.vality.disputes.util.OpenApiUtil;
@@ -15,6 +16,10 @@ import lombok.SneakyThrows;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
@@ -35,6 +40,7 @@ public class MerchantApiMvcPerformer {
     private final DominantAsyncService dominantAsyncService;
     private final WiremockAddressesHolder wiremockAddressesHolder;
     private final MockMvc mvc;
+    private final DisputeDao disputeDao;
 
     @SneakyThrows
     public Create200Response createDispute(String invoiceId, String paymentId) {
@@ -57,7 +63,11 @@ public class MerchantApiMvcPerformer {
                                 wiremockAddressesHolder.getNotificationUrl())))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        return new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+        var response = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                 Create200Response.class);
+        // Simulate the initial polling delay having elapsed before workers run in tests.
+        disputeDao.updateNextPollingInterval(disputeDao.get(UUID.fromString(response.getDisputeId())),
+                LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1));
+        return response;
     }
 }
