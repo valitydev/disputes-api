@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
+import static dev.vality.disputes.util.RandomBeans.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @PostgresqlSpringBootITest

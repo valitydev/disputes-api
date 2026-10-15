@@ -1,7 +1,5 @@
 package dev.vality.disputes.api.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.swag.disputes.model.GeneralError;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +12,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Slf4j
@@ -39,7 +38,7 @@ public class RequestSizeFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String getMessage() throws JsonProcessingException {
+    private String getMessage() {
         return customObjectMapper.writeValueAsString(new GeneralError()
                 .message("Blocked: Request too large"));
     }

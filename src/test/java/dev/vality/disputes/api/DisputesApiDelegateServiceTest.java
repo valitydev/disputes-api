@@ -1,6 +1,5 @@
 package dev.vality.disputes.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.bouncer.decisions.ArbiterSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.config.WireMockSpringBootITest;
@@ -22,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -92,7 +92,7 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        var response = new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+        var response = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                 Create200Response.class);
         verify(invoicingClient, times(1)).get(any(), any());
         verify(tokenKeeperClient, times(1)).authenticate(any(), any());
@@ -123,7 +123,7 @@ public class DisputesApiDelegateServiceTest {
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         assertEquals(response.getDisputeId(),
-                new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                         Create200Response.class).getDisputeId());
         verify(invoicingClient, times(3)).get(any(), any());
         verify(tokenKeeperClient, times(3)).authenticate(any(), any());
@@ -140,7 +140,7 @@ public class DisputesApiDelegateServiceTest {
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         assertNotEquals(response.getDisputeId(),
-                new ObjectMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                         Create200Response.class).getDisputeId());
         verify(invoicingClient, times(4)).get(any(), any());
         verify(tokenKeeperClient, times(4)).authenticate(any(), any());

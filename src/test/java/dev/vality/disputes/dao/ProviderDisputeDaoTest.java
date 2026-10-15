@@ -5,7 +5,7 @@ import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static dev.vality.testcontainers.annotations.util.RandomBeans.random;
+import static dev.vality.disputes.util.RandomBeans.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @PostgresqlSpringBootITest

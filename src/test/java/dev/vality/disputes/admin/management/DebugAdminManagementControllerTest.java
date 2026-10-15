@@ -15,7 +15,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import static dev.vality.disputes.util.OpenApiUtil.*;
-import static dev.vality.testcontainers.annotations.util.RandomBeans.randomThrift;
+import static dev.vality.disputes.util.RandomBeans.randomThrift;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;

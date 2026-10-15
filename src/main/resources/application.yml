@@ -8,9 +8,9 @@ management:
     health:
       show-details: always
     metrics:
-      enabled: true
+      access: read-only
     prometheus:
-      enabled: true
+      access: read-only
   endpoints:
     web:
       exposure:
@@ -141,21 +141,12 @@ time:
   config:
     max-time-polling-min: 600
 
-testcontainers:
-  postgresql:
-    tag: '14.12'
-
 http-client:
   requestTimeout: 60000
   poolTimeout: 10000
   connectionTimeout: 10000
   maxTotalPooling: 200
   defaultMaxPerRoute: 200
-
-otel:
-  resource: http://localhost:4318/v1/traces
-  timeout: 60000
-  enabled: false
 
 async:
   core-pool-size: 5
