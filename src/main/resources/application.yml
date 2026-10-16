@@ -146,7 +146,7 @@ background-processing:
   remote-call:
     connect-timeout: 5s
     pool-timeout: 5s
-    response-timeout: 30s
+    max-duration: 30s
   retry:
     initial-delay: 5s
     max-delay: 5m

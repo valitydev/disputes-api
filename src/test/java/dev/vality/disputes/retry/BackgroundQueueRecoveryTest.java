@@ -1,5 +1,6 @@
 package dev.vality.disputes.retry;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.domain.TransactionInfo;
@@ -7,11 +8,14 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.damsel.payment_processing.InvoicePaymentAdjustmentParams;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
+import dev.vality.disputes.config.properties.RemoteCallProperties;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.converter.TransactionInfoThriftConverter;
 import dev.vality.disputes.provider.payments.schedule.ProviderPaymentsTask;
+import dev.vality.disputes.remote.RemoteCallBudget;
+import dev.vality.disputes.remote.BudgetedClientFactory;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -28,6 +32,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.net.SocketTimeoutException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -41,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -51,7 +58,7 @@ import static org.mockito.Mockito.when;
 @TestPropertySource(properties = {
         "background-processing.remote-call.connect-timeout=100ms",
         "background-processing.remote-call.pool-timeout=100ms",
-        "background-processing.remote-call.response-timeout=100ms",
+        "background-processing.remote-call.max-duration=100ms",
         "background-processing.retry.initial-delay=1s",
         "background-processing.retry.max-delay=2s",
         "http-client.max-total-pooling=1",
@@ -66,8 +73,14 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
     @Autowired
     private TransactionInfoThriftConverter transactionInfoThriftConverter;
     @Autowired
-    @Qualifier("woodyHttpClient")
-    private CloseableHttpClient woodyHttpClient;
+    @Qualifier("gatewayCheckHttpClient")
+    private CloseableHttpClient budgetedHttpClient;
+    @Autowired
+    private RemoteCallBudget remoteCallBudget;
+    @Autowired
+    private BudgetedClientFactory budgetedClientFactory;
+    @Autowired
+    private RemoteCallProperties remoteCallProperties;
     @Autowired
     private CloseableHttpClient httpClient;
     @Value("${wiremock.server.baseUrl}")
@@ -79,7 +92,7 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
         stubFor(post(urlEqualTo("/slow-rpc")).willReturn(aResponse().withFixedDelay(3000)));
         stubFor(get(urlEqualTo("/hold-connection")).willReturn(ok("unconsumed body")));
         stubFor(get(urlEqualTo("/outside-background")).willReturn(ok("ok").withFixedDelay(300)));
-        var remote = new THSpawnClientBuilder().withHttpClient(woodyHttpClient).withNetworkTimeout(10_000)
+        var remote = new THSpawnClientBuilder().withHttpClient(budgetedHttpClient).withNetworkTimeout(10_000)
                 .withAddress(URI.create(baseUrl + "/slow-rpc")).build(InvoicingSrv.Iface.class);
         var blocked = callback("blocked", 24);
         var healthy = callback("healthy", 12);
@@ -94,7 +107,7 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
             ReflectionTestUtils.setField(task, "batchSize", 1);
             var started = System.nanoTime();
             try (var held = exhaustPool
-                    ? woodyHttpClient.executeOpen(null, new HttpGet(baseUrl + "/hold-connection"), null) : null) {
+                    ? budgetedHttpClient.executeOpen(null, new HttpGet(baseUrl + "/hold-connection"), null) : null) {
                 task.processPending();
             }
             assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(2));
@@ -111,12 +124,12 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
                     .isEqualTo(ProviderPaymentsStatus.succeeded);
             assertThat(providerPaymentsService.getPaymentsForHgCall(1)).isEmpty();
             assertThat(workers.submit(() -> {
-                assertThat(BackgroundProcessing.isActive()).isFalse();
+                assertThat(remoteCallBudget.isBackground()).isFalse();
                 return httpClient.execute(new HttpGet(baseUrl + "/outside-background"),
                         new BasicHttpClientResponseHandler());
             }).get(2, TimeUnit.SECONDS)).isEqualTo("ok");
         }
-        assertThat(BackgroundProcessing.isActive()).isFalse();
+        assertThat(remoteCallBudget.isBackground()).isFalse();
     }
 
     @Test
@@ -130,7 +143,7 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
         stubFor(post(urlEqualTo("/slow-adapter")).willReturn(aResponse().withFixedDelay(3000)));
-        var adapter = new THSpawnClientBuilder().withHttpClient(woodyHttpClient).withNetworkTimeout(10_000)
+        var adapter = budgetedClientFactory.spawnClientBuilder().withNetworkTimeout(10_000)
                 .withAddress(URI.create(baseUrl + "/slow-adapter")).build(ProviderPaymentsServiceSrv.Iface.class);
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(adapter);
 
@@ -189,6 +202,45 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
         scheduledRetryService.deferProviderCallback(selected.getId());
         assertThat(providerCallbackDao.get(selected.getInvoiceId(), "1").getNextCheckAfter())
                 .isEqualTo(finished.getNextCheckAfter());
+    }
+
+    @Test
+    void budgetBoundsCompositeCallsAndContinuouslyArrivingResponse() {
+        stubFor(get(urlEqualTo("/budget-first")).willReturn(ok("first").withFixedDelay(250)));
+        stubFor(get(urlEqualTo("/budget-second")).willReturn(ok("second").withFixedDelay(250)));
+        stubFor(get(urlEqualTo("/budget-trickle")).willReturn(ok("x".repeat(400))
+                .withChunkedDribbleDelay(20, 1600)));
+        var previous = remoteCallProperties.getMaxDuration();
+        remoteCallProperties.setMaxDuration(Duration.ofMillis(400));
+        try {
+            var started = System.nanoTime();
+            var compositeError = catchThrowable(() -> remoteCallBudget.runInBackground(() ->
+                    remoteCallBudget.asOneOperation(() -> {
+                        budgetedGet("/budget-first");
+                        budgetedGet("/budget-second");
+                    })));
+            assertThat(TransientErrorClassifier.isTransient(compositeError)).isTrue();
+            assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(1));
+            WireMock.verify(getRequestedFor(urlEqualTo("/budget-first")));
+            WireMock.verify(getRequestedFor(urlEqualTo("/budget-second")));
+
+            started = System.nanoTime();
+            var trickleError = catchThrowable(() -> remoteCallBudget.runInBackground(() ->
+                    budgetedGet("/budget-trickle")));
+            assertThat(TransientErrorClassifier.isTransient(trickleError)).isTrue();
+            assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(1));
+            assertThat(remoteCallBudget.isBackground()).isFalse();
+        } finally {
+            remoteCallProperties.setMaxDuration(previous);
+        }
+    }
+
+    private void budgetedGet(String path) {
+        try {
+            budgetedHttpClient.execute(new HttpGet(baseUrl + path), new BasicHttpClientResponseHandler());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private ProviderCallback callback(String invoiceId, int ageHours) {

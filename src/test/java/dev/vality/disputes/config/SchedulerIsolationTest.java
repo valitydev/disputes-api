@@ -1,6 +1,8 @@
 package dev.vality.disputes.config;
 
 import dev.vality.disputes.config.properties.ProviderPaymentsAdjustmentSchedulerProperties;
+import dev.vality.disputes.config.properties.RemoteCallProperties;
+import dev.vality.disputes.remote.RemoteCallBudget;
 import dev.vality.disputes.retry.BackgroundProcessing;
 import dev.vality.disputes.retry.ScheduledRetryService;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
@@ -284,6 +286,8 @@ class SchedulerIsolationTest {
     @ImportAutoConfiguration(TaskSchedulingAutoConfiguration.class)
     @Import({
             ApplicationConfig.class,
+            RemoteCallProperties.class,
+            RemoteCallBudget.class,
             ProviderPaymentsAdjustmentSchedulerProperties.class,
             CreatedDisputesTask.class,
             PendingDisputesTask.class,
@@ -292,8 +296,8 @@ class SchedulerIsolationTest {
             ProviderPaymentsTask.class})
     static class TasksConfig {
         @Bean
-        public BackgroundProcessing backgroundProcessing() {
-            return new BackgroundProcessing(mock(ScheduledRetryService.class));
+        public BackgroundProcessing backgroundProcessing(RemoteCallBudget remoteCallBudget) {
+            return new BackgroundProcessing(mock(ScheduledRetryService.class), remoteCallBudget);
         }
     }
 
