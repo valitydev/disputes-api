@@ -1,6 +1,8 @@
 package dev.vality.disputes.config;
 
 import dev.vality.disputes.config.properties.ProviderPaymentsAdjustmentSchedulerProperties;
+import dev.vality.disputes.retry.BackgroundProcessing;
+import dev.vality.disputes.retry.ScheduledRetryService;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.schedule.ProviderPaymentsTask;
@@ -289,6 +291,10 @@ class SchedulerIsolationTest {
             NotificationTask.class,
             ProviderPaymentsTask.class})
     static class TasksConfig {
+        @Bean
+        public BackgroundProcessing backgroundProcessing() {
+            return new BackgroundProcessing(mock(ScheduledRetryService.class));
+        }
     }
 
     @Configuration

@@ -85,4 +85,11 @@ public class ProviderCallbackDao extends AbstractGenericDao {
                 .where(PROVIDER_CALLBACK.ID.eq(id));
         execute(query);
     }
+
+    public int deferNextCheckAfter(UUID id, ProviderPaymentsStatus status, LocalDateTime expected, LocalDateTime next) {
+        return execute(getDslContext().update(PROVIDER_CALLBACK)
+                .set(PROVIDER_CALLBACK.NEXT_CHECK_AFTER, next)
+                .where(PROVIDER_CALLBACK.ID.eq(id).and(PROVIDER_CALLBACK.STATUS.eq(status))
+                        .and(PROVIDER_CALLBACK.NEXT_CHECK_AFTER.eq(expected))));
+    }
 }

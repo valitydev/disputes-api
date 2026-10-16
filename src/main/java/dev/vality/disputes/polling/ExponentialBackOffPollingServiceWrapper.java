@@ -50,6 +50,14 @@ public class ExponentialBackOffPollingServiceWrapper {
                 providerCallback.getNextCheckAfter().toInstant(ZoneOffset.UTC).plusSeconds(seconds));
     }
 
+    public LocalDateTime prepareTransportRetry(LocalDateTime createdAt, LocalDateTime now,
+                                               Map<String, String> options) {
+        var pollingInfo = new PollingInfo();
+        pollingInfo.setStartDateTimePolling(createdAt.toInstant(ZoneOffset.UTC));
+        var seconds = exponentialBackOffPollingService.prepareNextPollingInterval(pollingInfo, options);
+        return now.plusSeconds(Math.max(1, seconds));
+    }
+
     private LocalDateTime getLocalDateTime(Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
     }
