@@ -23,9 +23,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
+import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_MAX_TIME_BACKOFF_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_TIMER_EXPONENTIAL;
 import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -77,7 +83,14 @@ public class DisputesApiDelegateServiceTest {
                 .thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
         when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
-        when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
+        var terminal = createTerminal();
+        // Payment-only options must not be parsed or used by disputes.
+        terminal.get().getOptions().putAll(Map.of(
+                "max_time_polling_min", "15",
+                "exponential", "payment-only",
+                "max_time_backoff_sec", "payment-only",
+                "default_initial_exponential_sec", "payment-only"));
+        when(dominantAsyncService.getTerminal(any())).thenReturn(terminal);
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
@@ -94,6 +107,9 @@ public class DisputesApiDelegateServiceTest {
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         var response = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                 Create200Response.class);
+        var defaulted = disputeDao.get(UUID.fromString(response.getDisputeId()));
+        assertEquals(Duration.ofDays(7), Duration.between(defaulted.getCreatedAt(), defaulted.getPollingBefore()));
+        assertEquals(Duration.ofSeconds(2), Duration.between(defaulted.getCreatedAt(), defaulted.getNextCheckAfter()));
         verify(invoicingClient, times(1)).get(any(), any());
         verify(tokenKeeperClient, times(1)).authenticate(any(), any());
         verify(bouncerClient, times(1)).judge(any(), any());
@@ -130,6 +146,11 @@ public class DisputesApiDelegateServiceTest {
         verify(bouncerClient, times(3)).judge(any(), any());
         disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
         // new after failed
+        terminal.get().getOptions().putAll(Map.of(
+                DISPUTE_FLOW_MAX_TIME_POLLING_MIN, "180",
+                DISPUTE_TIMER_EXPONENTIAL, "3",
+                DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC, "7",
+                DISPUTE_MAX_TIME_BACKOFF_SEC, "11"));
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(
                 createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
@@ -139,9 +160,14 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        assertNotEquals(response.getDisputeId(),
-                new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
-                        Create200Response.class).getDisputeId());
+        var newResponse = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                Create200Response.class);
+        assertNotEquals(response.getDisputeId(), newResponse.getDisputeId());
+        var overridden = disputeDao.get(UUID.fromString(newResponse.getDisputeId()));
+        assertEquals(Duration.ofMinutes(180),
+                Duration.between(overridden.getCreatedAt(), overridden.getPollingBefore()));
+        assertEquals(Duration.ofSeconds(7),
+                Duration.between(overridden.getCreatedAt(), overridden.getNextCheckAfter()));
         verify(invoicingClient, times(4)).get(any(), any());
         verify(tokenKeeperClient, times(4)).authenticate(any(), any());
         verify(bouncerClient, times(4)).judge(any(), any());

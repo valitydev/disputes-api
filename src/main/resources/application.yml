@@ -153,7 +153,7 @@ background-processing:
 
 time:
   config:
-    max-time-polling-min: 600
+    max-time-polling-min: 10080 # 7 days
 
 http-client:
   requestTimeout: 60000

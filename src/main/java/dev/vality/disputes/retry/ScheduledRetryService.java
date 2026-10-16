@@ -19,8 +19,8 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 
-import static dev.vality.disputes.polling.TimeOptionsExtractors.DEFAULT_INITIAL_EXPONENTIAL_SEC;
-import static dev.vality.disputes.polling.TimeOptionsExtractors.MAX_TIME_BACKOFF_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_MAX_TIME_BACKOFF_SEC;
 
 @Slf4j
 @Service
@@ -83,8 +83,8 @@ public class ScheduledRetryService {
 
     private Map<String, String> retryOptions() {
         // Reuse the existing age-based exponential backoff; no new attempt counters or database migration.
-        return Map.of(DEFAULT_INITIAL_EXPONENTIAL_SEC,
+        return Map.of(DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC,
                 Long.toString(properties.getRetry().getInitialDelay().toSeconds()),
-                MAX_TIME_BACKOFF_SEC, Long.toString(properties.getRetry().getMaxDelay().toSeconds()));
+                DISPUTE_MAX_TIME_BACKOFF_SEC, Long.toString(properties.getRetry().getMaxDelay().toSeconds()));
     }
 }
