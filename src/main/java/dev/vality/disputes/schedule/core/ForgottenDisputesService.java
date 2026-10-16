@@ -1,7 +1,6 @@
 package dev.vality.disputes.schedule.core;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.schedule.service.ProviderDataService;
 import dev.vality.disputes.service.DisputesService;
@@ -33,10 +32,13 @@ public class ForgottenDisputesService {
     }
 
     @Transactional
-    public void process(Dispute dispute) {
+    public void process(Dispute selected) {
+        var current = disputesService.getForgottenForProcessing(selected);
+        if (current.isEmpty()) {
+            return;
+        }
+        var dispute = current.get();
         try {
-            // validate
-            disputesService.checkPendingStatuses(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
@@ -64,8 +66,6 @@ public class ForgottenDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug("DisputeStatusWasUpdatedByAnotherThread when handle ForgottenDisputesService.process", ex);
         }
     }
 }

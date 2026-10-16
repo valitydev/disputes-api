@@ -136,6 +136,11 @@ provider:
       threadNamePrefix: provider-payments-check-status-scheduler-
       awaitTermination: true
       awaitTerminationPeriodSec: 30
+    adjustment-scheduler:
+      poolSize: 1
+      threadNamePrefix: provider-payments-adjustment-scheduler-
+      awaitTermination: true
+      awaitTerminationPeriodSec: 30
 
 time:
   config:

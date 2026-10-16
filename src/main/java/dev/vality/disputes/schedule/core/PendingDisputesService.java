@@ -45,10 +45,13 @@ public class PendingDisputesService {
     }
 
     @Transactional
-    public void callPendingDisputeRemotely(Dispute dispute) {
+    public void callPendingDisputeRemotely(Dispute selected) {
+        var current = disputesService.getPendingForProcessing(selected);
+        if (current.isEmpty()) {
+            return;
+        }
+        var dispute = current.get();
         try {
-            // validate
-            disputesService.checkPendingStatus(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
@@ -102,11 +105,6 @@ public class PendingDisputesService {
         } catch (PoolingExpiredException ex) {
             log.error("PoolingExpired when handle PendingDisputesService.callPendingDisputeRemotely", ex);
             disputeStatusResultHandler.handlePoolingExpired(dispute);
-        } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug(
-                    "DisputeStatusWasUpdatedByAnotherThread " +
-                            "when handle CreatedDisputesService.callPendingDisputeRemotely",
-                    ex);
         }
     }
 

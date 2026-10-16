@@ -4,13 +4,15 @@ import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.dao.DisputeDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
+import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.polling.ExponentialBackOffPollingServiceWrapper;
 import dev.vality.disputes.schedule.model.ProviderData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -199,24 +201,34 @@ public class DisputesService {
         return disputeDao.getSkipLockedByInvoiceId(invoiceId, paymentId);
     }
 
-    public void checkCreatedStatus(Dispute dispute) {
-        var forUpdate = getSkipLocked(dispute.getId().toString());
-        if (forUpdate.getStatus() != DisputeStatus.created) {
-            throw new DisputeStatusWasUpdatedByAnotherThreadException();
-        }
+    public Optional<Dispute> getCreatedForProcessing(Dispute selected) {
+        return getForProcessing(selected, Set.of(DisputeStatus.created));
     }
 
-    public void checkPendingStatus(Dispute dispute) {
-        var forUpdate = getSkipLocked(dispute.getId().toString());
-        if (forUpdate.getStatus() != DisputeStatus.pending) {
-            throw new DisputeStatusWasUpdatedByAnotherThreadException();
-        }
+    public Optional<Dispute> getPendingForProcessing(Dispute selected) {
+        return getForProcessing(selected, Set.of(DisputeStatus.pending));
     }
 
-    public void checkPendingStatuses(Dispute dispute) {
-        var forUpdate = getSkipLocked(dispute.getId().toString());
-        if (!DISPUTE_PENDING_STATUSES.contains(forUpdate.getStatus())) {
-            throw new DisputeStatusWasUpdatedByAnotherThreadException();
+    public Optional<Dispute> getForgottenForProcessing(Dispute selected) {
+        return getForProcessing(selected, Set.of(DisputeStatus.manual_pending, DisputeStatus.create_adjustment,
+                DisputeStatus.already_exist_created, DisputeStatus.pooling_expired));
+    }
+
+    private Optional<Dispute> getForProcessing(Dispute selected, Set<DisputeStatus> allowedStatuses) {
+        try {
+            var current = disputeDao.getSkipLocked(selected.getId());
+            if (current.getStatus() != selected.getStatus() || !allowedStatuses.contains(current.getStatus())
+                    || current.getNextCheckAfter().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+                log.debug("Skip stale or not due Dispute {}", selected.getId());
+                return Optional.empty();
+            }
+            return Optional.of(current);
+        } catch (NotFoundException ex) {
+            if (ex.getType() != NotFoundException.Type.DISPUTE) {
+                throw ex;
+            }
+            log.debug("Skip locked or missing Dispute {}", selected.getId());
+            return Optional.empty();
         }
     }
 

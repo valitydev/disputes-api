@@ -1,10 +1,11 @@
 package dev.vality.disputes.provider.payments.schedule;
 
+import dev.vality.disputes.config.SchedulingConfig;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.handler.ProviderPaymentHandler;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @ConditionalOnProperty(value = "provider.payments.isScheduleCreateAdjustmentsEnabled", havingValue = "true")
 @Service
-@RequiredArgsConstructor
 public class ProviderPaymentsTask {
 
     private final ExecutorService providerPaymentsThreadPool;
@@ -27,7 +27,14 @@ public class ProviderPaymentsTask {
     @Value("${provider.payments.batchSize}")
     private int batchSize;
 
+    public ProviderPaymentsTask(@Qualifier("providerPaymentsThreadPool") ExecutorService providerPaymentsThreadPool,
+                                 ProviderPaymentsService providerPaymentsService) {
+        this.providerPaymentsThreadPool = providerPaymentsThreadPool;
+        this.providerPaymentsService = providerPaymentsService;
+    }
+
     @Scheduled(
+            scheduler = SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER,
             fixedDelayString = "${provider.payments.fixedDelayCreateAdjustments}",
             initialDelayString = "${provider.payments.initialDelayCreateAdjustments}")
     public void processPending() {

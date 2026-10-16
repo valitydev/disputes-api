@@ -17,6 +17,8 @@ import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static dev.vality.disputes.util.MockUtil.*;
@@ -60,6 +62,9 @@ public class CreatedFlowHandler {
         var dispute = disputeDao.get(disputeId);
         createdDisputesService.callCreateDisputeRemotely(dispute);
         assertEquals(DisputeStatus.pending, disputeDao.get(disputeId).getStatus());
+        // Make the next simulated scheduler step due without waiting for the polling interval.
+        disputeDao.updateNextPollingInterval(disputeDao.get(disputeId),
+                LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1));
         return disputeId;
     }
 

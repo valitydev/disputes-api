@@ -1,10 +1,11 @@
 package dev.vality.disputes.schedule;
 
+import dev.vality.disputes.config.SchedulingConfig;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
 import dev.vality.disputes.schedule.handler.PendingDisputeHandler;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,23 +19,31 @@ import java.util.stream.Collectors;
 @Slf4j
 @ConditionalOnProperty(value = "dispute.isSchedulePendingEnabled", havingValue = "true")
 @Service
-@RequiredArgsConstructor
 public class PendingDisputesTask {
 
-    private final ExecutorService disputesThreadPool;
+    private final ExecutorService pendingDisputesThreadPool;
     private final PendingDisputesService pendingDisputesService;
 
     @Value("${dispute.batchSize}")
     private int batchSize;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayPending}", initialDelayString = "${dispute.initialDelayPending}")
+    public PendingDisputesTask(@Qualifier("pendingDisputesThreadPool") ExecutorService pendingDisputesThreadPool,
+                               PendingDisputesService pendingDisputesService) {
+        this.pendingDisputesThreadPool = pendingDisputesThreadPool;
+        this.pendingDisputesService = pendingDisputesService;
+    }
+
+    @Scheduled(
+            scheduler = SchedulingConfig.PENDING_DISPUTES_SCHEDULER,
+            fixedDelayString = "${dispute.fixedDelayPending}",
+            initialDelayString = "${dispute.initialDelayPending}")
     public void processPending() {
         try {
             var disputes = pendingDisputesService.getPendingSkipLocked(batchSize);
             var callables = disputes.stream()
                     .map(this::handlePending)
                     .collect(Collectors.toList());
-            disputesThreadPool.invokeAll(callables);
+            pendingDisputesThreadPool.invokeAll(callables);
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();

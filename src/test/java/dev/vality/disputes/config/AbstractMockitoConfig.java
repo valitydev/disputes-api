@@ -74,7 +74,7 @@ public abstract class AbstractMockitoConfig {
     void setUp() {
         merchantApiMvcPerformer =
                 new MerchantApiMvcPerformer(invoicingClient, tokenKeeperClient, bouncerClient, fileStorageClient,
-                        dominantAsyncService, wiremockAddressesHolder, mvc);
+                        dominantAsyncService, wiremockAddressesHolder, mvc, disputeDao);
         createdFlowHandler = new CreatedFlowHandler(invoicingClient, fileStorageClient, disputeDao, dominantService,
                 createdDisputesService, providerDisputesThriftInterfaceBuilder, providerPaymentsThriftInterfaceBuilder,
                 wiremockAddressesHolder, merchantApiMvcPerformer);

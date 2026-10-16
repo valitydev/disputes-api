@@ -1,10 +1,11 @@
 package dev.vality.disputes.schedule;
 
+import dev.vality.disputes.config.SchedulingConfig;
 import dev.vality.disputes.schedule.core.NotificationService;
 import dev.vality.disputes.schedule.handler.NotificationHandler;
 import dev.vality.swag.disputes.model.NotifyRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,16 +18,22 @@ import java.util.stream.Collectors;
 @Slf4j
 @ConditionalOnProperty(value = "dispute.isScheduleNotificationEnabled", havingValue = "true")
 @Service
-@RequiredArgsConstructor
 public class NotificationTask {
 
-    private final ExecutorService disputesThreadPool;
+    private final ExecutorService notificationThreadPool;
     private final NotificationService notificationService;
 
     @Value("${dispute.batchSize}")
     private int batchSize;
 
+    public NotificationTask(@Qualifier("notificationThreadPool") ExecutorService notificationThreadPool,
+                             NotificationService notificationService) {
+        this.notificationThreadPool = notificationThreadPool;
+        this.notificationService = notificationService;
+    }
+
     @Scheduled(
+            scheduler = SchedulingConfig.NOTIFICATION_SCHEDULER,
             fixedDelayString = "${dispute.fixedDelayNotification}",
             initialDelayString = "${dispute.initialDelayNotification}")
     public void processNotifications() {
@@ -35,7 +42,7 @@ public class NotificationTask {
             var callables = notifications.stream()
                     .map(this::handleNotification)
                     .collect(Collectors.toList());
-            disputesThreadPool.invokeAll(callables);
+            notificationThreadPool.invokeAll(callables);
         } catch (InterruptedException ex) {
             log.error("Received InterruptedException while thread executed report", ex);
             Thread.currentThread().interrupt();

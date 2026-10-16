@@ -4,7 +4,6 @@ import dev.vality.damsel.domain.Payer;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.exception.DisputeStatusWasUpdatedByAnotherThreadException;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
@@ -60,10 +59,13 @@ public class CreatedDisputesService {
     }
 
     @Transactional
-    public void callCreateDisputeRemotely(Dispute dispute) {
+    public void callCreateDisputeRemotely(Dispute selected) {
+        var current = disputesService.getCreatedForProcessing(selected);
+        if (current.isEmpty()) {
+            return;
+        }
+        var dispute = current.get();
         try {
-            // validate
-            disputesService.checkCreatedStatus(dispute);
             // validate
             var invoicePayment = invoicingService.getInvoicePayment(dispute.getInvoiceId(), dispute.getPaymentId());
             var statusAction = PaymentStatusValidator.getDisputeLifecycleAction(invoicePayment);
@@ -134,11 +136,6 @@ public class CreatedDisputesService {
                 case DISPUTE -> log.debug("Dispute locked {}", dispute);
                 default -> throw ex;
             }
-        } catch (DisputeStatusWasUpdatedByAnotherThreadException ex) {
-            log.debug(
-                    "DisputeStatusWasUpdatedByAnotherThread " +
-                            "when handle CreatedDisputesService.callCreateDisputeRemotely",
-                    ex);
         }
     }
 

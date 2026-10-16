@@ -14,6 +14,8 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.UUID;
+
 import static dev.vality.disputes.util.MockUtil.createInvoicePayment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -30,17 +32,26 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testUpdateNextPollingInterval() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         when(invoicingClient.getPayment(any(), any())).thenReturn(createInvoicePayment(dispute.getPaymentId()));
         forgottenDisputesService.process(dispute);
-        assertNotEquals(dispute.getNextCheckAfter(), disputeDao.get(disputeId).getNextCheckAfter());
+        var rescheduled = disputeDao.get(disputeId);
+        assertNotEquals(dispute.getNextCheckAfter(), rescheduled.getNextCheckAfter());
+        forgottenDisputesService.process(dispute);
+        assertEquals(rescheduled.getNextCheckAfter(), disputeDao.get(disputeId).getNextCheckAfter());
+
+        disputeDao.setNextStepToPending(disputeId, dispute.getNextCheckAfter(), dispute.getPollingBefore());
+        forgottenDisputesService.process(dispute);
+        var pending = disputeDao.get(disputeId);
+        assertEquals(DisputeStatus.pending, pending.getStatus());
+        assertEquals(dispute.getNextCheckAfter(), pending.getNextCheckAfter());
     }
 
     @Test
     @SneakyThrows
     public void testFailedWhenInvoicePaymentStatusIsRefunded() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.refunded(new InvoicePaymentRefunded()));
@@ -52,7 +63,7 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testSuccessWhenInvoicePaymentStatusIsCaptured() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
@@ -64,35 +75,35 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
     @Test
     @SneakyThrows
     public void testWaitWhenInvoicePaymentStatusIsPending() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.pending(new InvoicePaymentPending()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
         var updatedDispute = disputeDao.get(disputeId);
-        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertEquals(DisputeStatus.manual_pending, updatedDispute.getStatus());
         assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
     }
 
     @Test
     @SneakyThrows
     public void testWaitWhenInvoicePaymentStatusIsProcessed() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         invoicePayment.getPayment().setStatus(InvoicePaymentStatus.processed(new InvoicePaymentProcessed()));
         when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
         forgottenDisputesService.process(dispute);
         var updatedDispute = disputeDao.get(disputeId);
-        assertEquals(DisputeStatus.pending, updatedDispute.getStatus());
+        assertEquals(DisputeStatus.manual_pending, updatedDispute.getStatus());
         assertTrue(updatedDispute.getNextCheckAfter().isAfter(dispute.getNextCheckAfter()));
     }
 
     @Test
     @SneakyThrows
     public void testSuccessWhenInvoicePaymentStatusIsCapturedWithChangedAmount() {
-        var disputeId = createdFlowHandler.handleCreate();
+        var disputeId = createForgottenDispute();
         var dispute = disputeDao.get(disputeId);
         var invoicePayment = createInvoicePayment(dispute.getPaymentId());
         var captured = new InvoicePaymentCaptured()
@@ -105,5 +116,11 @@ public class ForgottenDisputesServiceTest extends AbstractMockitoConfig {
         var updatedDispute = disputeDao.get(disputeId);
         assertEquals(DisputeStatus.succeeded, updatedDispute.getStatus());
         assertEquals(101L, updatedDispute.getChangedAmount());
+    }
+
+    private UUID createForgottenDispute() {
+        var disputeId = createdFlowHandler.handleCreate();
+        disputeDao.setNextStepToManualPending(disputeId, null, null);
+        return disputeId;
     }
 }

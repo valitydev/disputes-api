@@ -17,21 +17,33 @@ import java.util.concurrent.Executors;
 public class ApplicationConfig {
 
     @Bean
-    public ExecutorService disputesThreadPool(@Value("${dispute.batchSize}") int threadPoolSize) {
-        final var threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("dispute-exec-%d")
-                .setDaemon(true)
-                .build();
-        return Executors.newFixedThreadPool(threadPoolSize, threadFactory);
+    public ExecutorService createdDisputesThreadPool(
+            @Value("${dispute.workers.created.pool-size:${dispute.batchSize}}") int threadPoolSize) {
+        return workerPool(threadPoolSize, "dispute-created-exec-%d");
     }
 
     @Bean
-    public ExecutorService providerPaymentsThreadPool(@Value("${provider.payments.batchSize}") int threadPoolSize) {
-        final var threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("provider-payments-exec-%d")
-                .setDaemon(true)
-                .build();
-        return Executors.newFixedThreadPool(threadPoolSize, threadFactory);
+    public ExecutorService pendingDisputesThreadPool(
+            @Value("${dispute.workers.pending.pool-size:${dispute.batchSize}}") int threadPoolSize) {
+        return workerPool(threadPoolSize, "dispute-pending-exec-%d");
+    }
+
+    @Bean
+    public ExecutorService forgottenDisputesThreadPool(
+            @Value("${dispute.workers.forgotten.pool-size:${dispute.batchSize}}") int threadPoolSize) {
+        return workerPool(threadPoolSize, "dispute-forgotten-exec-%d");
+    }
+
+    @Bean
+    public ExecutorService notificationThreadPool(
+            @Value("${dispute.workers.notification.pool-size:${dispute.batchSize}}") int threadPoolSize) {
+        return workerPool(threadPoolSize, "dispute-notification-exec-%d");
+    }
+
+    @Bean
+    public ExecutorService providerPaymentsThreadPool(
+            @Value("${provider.payments.worker-pool-size:${provider.payments.batchSize}}") int threadPoolSize) {
+        return workerPool(threadPoolSize, "provider-payments-exec-%d");
     }
 
     @Bean
@@ -42,5 +54,13 @@ public class ApplicationConfig {
                 .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true)
                 .changeDefaultPropertyInclusion(inclusion -> inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
                 .build();
+    }
+
+    private static ExecutorService workerPool(int threadPoolSize, String threadNameFormat) {
+        var threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat(threadNameFormat)
+                .setDaemon(true)
+                .build();
+        return Executors.newFixedThreadPool(threadPoolSize, threadFactory);
     }
 }
