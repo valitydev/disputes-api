@@ -180,7 +180,7 @@ public class ProviderPaymentsService {
         return locked;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void callHgForCreateAdjustment(ProviderCallback selected) {
         var current = getForProcessing(selected);
         if (current.isEmpty()) {

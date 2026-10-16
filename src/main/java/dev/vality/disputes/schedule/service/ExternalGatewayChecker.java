@@ -4,7 +4,6 @@ import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.woody.api.flow.error.WErrorSource;
 import dev.vality.woody.api.flow.error.WErrorType;
 import dev.vality.woody.api.flow.error.WRuntimeException;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -12,14 +11,20 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ExternalGatewayChecker {
 
     private final CloseableHttpClient httpClient;
     private final ProviderDisputesRouting providerDisputesRouting;
+
+    public ExternalGatewayChecker(@Qualifier("gatewayCheckHttpClient") CloseableHttpClient httpClient,
+                                  ProviderDisputesRouting providerDisputesRouting) {
+        this.httpClient = httpClient;
+        this.providerDisputesRouting = providerDisputesRouting;
+    }
 
     public boolean isProviderDisputesUnexpectedResultMapping(WRuntimeException ex) {
         return ex.getErrorDefinition() != null

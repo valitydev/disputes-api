@@ -44,7 +44,7 @@ public class PendingDisputesService {
         return disputesService.getPendingSkipLocked(batchSize);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void callPendingDisputeRemotely(Dispute selected) {
         var current = disputesService.getPendingForProcessing(selected);
         if (current.isEmpty()) {

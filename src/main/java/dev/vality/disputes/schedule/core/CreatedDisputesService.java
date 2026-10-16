@@ -8,6 +8,7 @@ import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.provider.DisputeCreatedResult;
 import dev.vality.disputes.provider.payments.client.ProviderPaymentsRemoteClient;
 import dev.vality.disputes.provider.payments.converter.TransactionContextConverter;
+import dev.vality.disputes.remote.RemoteCallBudget;
 import dev.vality.disputes.schedule.catcher.WoodyRuntimeExceptionCatcher;
 import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.client.RemoteClient;
@@ -52,13 +53,14 @@ public class CreatedDisputesService {
     private final DisputeCreateResultHandler disputeCreateResultHandler;
     private final DisputeStatusResultHandler disputeStatusResultHandler;
     private final WoodyRuntimeExceptionCatcher woodyRuntimeExceptionCatcher;
+    private final RemoteCallBudget remoteCallBudget;
 
     @Transactional
     public List<Dispute> getCreatedSkipLocked(int batchSize) {
         return disputesService.getCreatedSkipLocked(batchSize);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void callCreateDisputeRemotely(Dispute selected) {
         var current = disputesService.getCreatedForProcessing(selected);
         if (current.isEmpty()) {
@@ -142,12 +144,13 @@ public class CreatedDisputesService {
     private void createDisputeByRemoteClient(Dispute dispute, ProviderData providerData,
                                              Runnable createDisputeByRemoteClient,
                                              Runnable createDisputeByDefaultClient) {
-        woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
+        // Share the deadline across createDispute, the endpoint check and any fallback request.
+        remoteCallBudget.asOneOperation(() -> woodyRuntimeExceptionCatcher.catchUnexpectedResultMapping(
                 () -> woodyRuntimeExceptionCatcher.catchProviderDisputesApiNotExist(
                         providerData,
                         createDisputeByRemoteClient,
                         () -> createDisputeByDefaultClient(dispute, createDisputeByDefaultClient)),
-                ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex));
+                ex -> disputeCreateResultHandler.handleUnexpectedResultMapping(dispute, ex)));
     }
 
     private void createDisputeByDefaultClient(Dispute dispute, Runnable createDisputeByDefaultClient) {

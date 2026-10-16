@@ -2,6 +2,7 @@ package dev.vality.disputes.config;
 
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.provider.ProviderDisputesServiceSrv;
+import dev.vality.disputes.remote.BudgetedClientFactory;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,8 +17,9 @@ public class TgBotConfig {
     @Bean
     public ProviderDisputesServiceSrv.Iface providerDisputesTgBotClient(
             @Value("${service.disputes-tg-bot.provider.url}") Resource resource,
-            @Value("${service.disputes-tg-bot.provider.networkTimeout}") int networkTimeout) throws IOException {
-        return new THSpawnClientBuilder()
+            @Value("${service.disputes-tg-bot.provider.networkTimeout}") int networkTimeout,
+            BudgetedClientFactory budgetedClientFactory) throws IOException {
+        return budgetedClientFactory.spawnClientBuilder()
                 .withNetworkTimeout(networkTimeout)
                 .withAddress(resource.getURI())
                 .build(ProviderDisputesServiceSrv.Iface.class);

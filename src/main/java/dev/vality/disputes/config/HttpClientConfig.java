@@ -1,6 +1,8 @@
 package dev.vality.disputes.config;
 
 import dev.vality.disputes.config.properties.HttpClientProperties;
+import dev.vality.disputes.remote.BudgetedClientFactory;
+import dev.vality.disputes.remote.BudgetedHttpClient;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.hc.client5.http.config.ConnectionConfig;
@@ -17,6 +19,7 @@ import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 @RequiredArgsConstructor
@@ -48,6 +51,7 @@ public class HttpClientConfig {
     }
 
     @Bean
+    @Primary
     public CloseableHttpClient httpClient(
             PoolingHttpClientConnectionManager manager,
             RequestConfig requestConfig) {
@@ -57,6 +61,23 @@ public class HttpClientConfig {
                 .disableAutomaticRetries()
                 .setConnectionManagerShared(true)
                 .build();
+    }
+
+    /**
+     * The client of the adapter availability check made by background processing: the same connections as
+     * {@link #httpClient}, but the call is bounded by the background processing budget. Requests made outside of
+     * background processing are passed through unchanged.
+     */
+    @Bean
+    public CloseableHttpClient gatewayCheckHttpClient(
+            CloseableHttpClient httpClient,
+            RequestConfig requestConfig,
+            BudgetedClientFactory budgetedClientFactory) {
+        return budgetedClientFactory.wrapShared(httpClient, new BudgetedHttpClient.Limits(
+                requestConfig,
+                Timeout.ofMilliseconds(httpClientProperties.getConnectionTimeout()),
+                Timeout.ofMilliseconds(httpClientProperties.getRequestTimeout()),
+                Timeout.ofMilliseconds(httpClientProperties.getPoolTimeout())));
     }
 
     @SneakyThrows
