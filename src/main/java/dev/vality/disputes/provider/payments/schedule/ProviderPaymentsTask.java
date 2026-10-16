@@ -1,6 +1,7 @@
 package dev.vality.disputes.provider.payments.schedule;
 
 import dev.vality.disputes.config.SchedulingConfig;
+import dev.vality.disputes.retry.BackgroundProcessing;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.handler.ProviderPaymentHandler;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
@@ -23,14 +24,17 @@ public class ProviderPaymentsTask {
 
     private final ExecutorService providerPaymentsThreadPool;
     private final ProviderPaymentsService providerPaymentsService;
+    private final BackgroundProcessing backgroundProcessing;
 
     @Value("${provider.payments.batchSize}")
     private int batchSize;
 
     public ProviderPaymentsTask(@Qualifier("providerPaymentsThreadPool") ExecutorService providerPaymentsThreadPool,
-                                 ProviderPaymentsService providerPaymentsService) {
+                                 ProviderPaymentsService providerPaymentsService,
+                                 BackgroundProcessing backgroundProcessing) {
         this.providerPaymentsThreadPool = providerPaymentsThreadPool;
         this.providerPaymentsService = providerPaymentsService;
+        this.backgroundProcessing = backgroundProcessing;
     }
 
     @Scheduled(
@@ -53,6 +57,7 @@ public class ProviderPaymentsTask {
     }
 
     private Callable<UUID> handleProviderPaymentsCreateAdjustment(ProviderCallback providerCallback) {
-        return () -> new ProviderPaymentHandler(providerPaymentsService).handle(providerCallback);
+        return () -> backgroundProcessing.processProviderCallback(providerCallback,
+                () -> new ProviderPaymentHandler(providerPaymentsService).handle(providerCallback));
     }
 }

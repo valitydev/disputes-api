@@ -58,7 +58,7 @@ public class CreatedDisputesService {
         return disputesService.getCreatedSkipLocked(batchSize);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void callCreateDisputeRemotely(Dispute selected) {
         var current = disputesService.getCreatedForProcessing(selected);
         if (current.isEmpty()) {

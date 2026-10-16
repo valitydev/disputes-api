@@ -31,7 +31,7 @@ public class ForgottenDisputesService {
         return disputesService.getForgottenSkipLocked(batchSize);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void process(Dispute selected) {
         var current = disputesService.getForgottenForProcessing(selected);
         if (current.isEmpty()) {

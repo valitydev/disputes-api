@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.config.SchedulingConfig;
+import dev.vality.disputes.retry.BackgroundProcessing;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.ForgottenDisputesService;
 import dev.vality.disputes.schedule.handler.ForgottenDisputeHandler;
@@ -23,15 +24,18 @@ public class ForgottenDisputesTask {
 
     private final ForgottenDisputesService forgottenDisputesService;
     private final ExecutorService forgottenDisputesThreadPool;
+    private final BackgroundProcessing backgroundProcessing;
 
     @Value("${dispute.batchSize}")
     private int batchSize;
 
     public ForgottenDisputesTask(
             ForgottenDisputesService forgottenDisputesService,
-            @Qualifier("forgottenDisputesThreadPool") ExecutorService forgottenDisputesThreadPool) {
+            @Qualifier("forgottenDisputesThreadPool") ExecutorService forgottenDisputesThreadPool,
+            BackgroundProcessing backgroundProcessing) {
         this.forgottenDisputesService = forgottenDisputesService;
         this.forgottenDisputesThreadPool = forgottenDisputesThreadPool;
+        this.backgroundProcessing = backgroundProcessing;
     }
 
     @Scheduled(
@@ -54,6 +58,7 @@ public class ForgottenDisputesTask {
     }
 
     private Callable<UUID> handleForgotten(Dispute dispute) {
-        return () -> new ForgottenDisputeHandler(forgottenDisputesService).handle(dispute);
+        return () -> backgroundProcessing.processDispute(dispute,
+                () -> new ForgottenDisputeHandler(forgottenDisputesService).handle(dispute));
     }
 }

@@ -1,6 +1,7 @@
 package dev.vality.disputes.schedule;
 
 import dev.vality.disputes.config.SchedulingConfig;
+import dev.vality.disputes.retry.BackgroundProcessing;
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.handler.CreatedDisputeHandler;
@@ -23,14 +24,17 @@ public class CreatedDisputesTask {
 
     private final ExecutorService createdDisputesThreadPool;
     private final CreatedDisputesService createdDisputesService;
+    private final BackgroundProcessing backgroundProcessing;
 
     @Value("${dispute.batchSize}")
     private int batchSize;
 
     public CreatedDisputesTask(@Qualifier("createdDisputesThreadPool") ExecutorService createdDisputesThreadPool,
-                               CreatedDisputesService createdDisputesService) {
+                               CreatedDisputesService createdDisputesService,
+                               BackgroundProcessing backgroundProcessing) {
         this.createdDisputesThreadPool = createdDisputesThreadPool;
         this.createdDisputesService = createdDisputesService;
+        this.backgroundProcessing = backgroundProcessing;
     }
 
     @Scheduled(
@@ -53,6 +57,7 @@ public class CreatedDisputesTask {
     }
 
     private Callable<UUID> handleCreated(Dispute dispute) {
-        return () -> new CreatedDisputeHandler(createdDisputesService).handle(dispute);
+        return () -> backgroundProcessing.processDispute(dispute,
+                () -> new CreatedDisputeHandler(createdDisputesService).handle(dispute));
     }
 }
