@@ -2,6 +2,7 @@ package dev.vality.disputes.retry;
 
 import dev.vality.disputes.domain.tables.pojos.Dispute;
 import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
+import dev.vality.disputes.util.RemoteErrors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +35,11 @@ public class BackgroundProcessing {
         try {
             operation.run();
         } catch (Exception error) {
-            if (TransientErrorClassifier.containsInterruption(error)) {
+            if (RemoteErrors.containsInterruption(error)) {
                 Thread.currentThread().interrupt();
                 throw error;
             }
-            if (Thread.currentThread().isInterrupted() || !TransientErrorClassifier.isTransient(error)) {
+            if (Thread.currentThread().isInterrupted() || !RemoteErrors.isTransient(error)) {
                 throw error;
             }
             // The transactional worker was invoked through its proxy and has already released its row lock.

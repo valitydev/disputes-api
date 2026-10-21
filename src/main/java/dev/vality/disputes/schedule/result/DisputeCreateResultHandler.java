@@ -7,6 +7,7 @@ import dev.vality.disputes.schedule.client.DefaultRemoteClient;
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.service.DisputesService;
 import dev.vality.disputes.util.ErrorFormatter;
+import dev.vality.disputes.util.RemoteErrors;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,8 +66,7 @@ public class DisputeCreateResultHandler {
     }
 
     public void handleUnexpectedResultMapping(Dispute dispute, WRuntimeException ex) {
-        var errorReason = ex.getErrorDefinition().getErrorReason();
-        var technicalErrorMessage = ErrorFormatter.getErrorMessage(errorReason);
+        var technicalErrorMessage = RemoteErrors.getTechnicalMessage(ex);
         disputesService.setNextStepToManualPending(dispute, null, technicalErrorMessage);
     }
 }

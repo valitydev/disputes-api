@@ -1,9 +1,6 @@
 package dev.vality.disputes.schedule.service;
 
 import dev.vality.disputes.schedule.model.ProviderData;
-import dev.vality.woody.api.flow.error.WErrorSource;
-import dev.vality.woody.api.flow.error.WErrorType;
-import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -21,26 +18,8 @@ public class ExternalGatewayChecker {
     private final CloseableHttpClient httpClient;
     private final ProviderDisputesRouting providerDisputesRouting;
 
-    public boolean isProviderDisputesUnexpectedResultMapping(WRuntimeException ex) {
-        return ex.getErrorDefinition() != null
-                && ex.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
-                && ex.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
-                && ex.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && ex.getErrorDefinition().getErrorReason() != null
-                && ex.getErrorDefinition().getErrorReason().contains("code = ")
-                && ex.getErrorDefinition().getErrorReason().contains("description = ");
-    }
-
-    public boolean isProviderDisputesApiNotExist(ProviderData providerData, WRuntimeException ex) {
-        return ex.getErrorDefinition() != null
-                && ex.getErrorDefinition().getGenerationSource() == WErrorSource.EXTERNAL
-                && ex.getErrorDefinition().getErrorType() == WErrorType.UNEXPECTED_ERROR
-                && ex.getErrorDefinition().getErrorSource() == WErrorSource.INTERNAL
-                && isProviderDisputesApiNotFound(providerData);
-    }
-
     @SneakyThrows
-    private Boolean isProviderDisputesApiNotFound(ProviderData providerData) {
+    public boolean isProviderDisputesApiNotFound(ProviderData providerData) {
         return httpClient.execute(new HttpGet(getRouteUrl(providerData)), isNotFoundResponse());
     }
 

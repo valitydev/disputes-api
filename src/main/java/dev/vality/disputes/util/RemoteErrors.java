@@ -1,4 +1,4 @@
-package dev.vality.disputes.retry;
+package dev.vality.disputes.util;
 
 import dev.vality.woody.api.flow.error.WErrorDefinition;
 import dev.vality.woody.api.flow.error.WErrorSource;
@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class TransientErrorClassifier {
+public class RemoteErrors {
 
     private static final Set<String> APACHE_CONNECTION_ERRORS = Set.of(
             ConnectTimeoutException.class.getName(), HttpHostConnectException.class.getName(),
@@ -47,6 +47,26 @@ public class TransientErrorClassifier {
             }
         }
         return false;
+    }
+
+    public static boolean isExternalUnexpectedError(WRuntimeException error) {
+        var definition = error.getErrorDefinition();
+        return definition != null
+                && definition.getGenerationSource() == WErrorSource.EXTERNAL
+                && definition.getErrorType() == WErrorType.UNEXPECTED_ERROR
+                && definition.getErrorSource() == WErrorSource.INTERNAL;
+    }
+
+    public static boolean isUnexpectedResultMapping(WRuntimeException error) {
+        if (!isExternalUnexpectedError(error)) {
+            return false;
+        }
+        var reason = error.getErrorDefinition().getErrorReason();
+        return reason != null && reason.contains("code = ") && reason.contains("description = ");
+    }
+
+    public static String getTechnicalMessage(WRuntimeException error) {
+        return ErrorFormatter.getErrorMessage(error.getErrorDefinition().getErrorReason());
     }
 
     private static boolean isNativeConnectionFailure(WErrorDefinition error) {
