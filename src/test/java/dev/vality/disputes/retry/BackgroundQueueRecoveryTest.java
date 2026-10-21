@@ -13,34 +13,31 @@ import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.converter.TransactionInfoThriftConverter;
 import dev.vality.disputes.provider.payments.schedule.ProviderPaymentsTask;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
+import dev.vality.woody.api.flow.error.WRuntimeException;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static dev.vality.disputes.util.MockUtil.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -49,13 +46,8 @@ import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
 @TestPropertySource(properties = {
-        "background-processing.remote-call.connect-timeout=100ms",
-        "background-processing.remote-call.pool-timeout=100ms",
-        "background-processing.remote-call.response-timeout=100ms",
         "background-processing.retry.initial-delay=1s",
-        "background-processing.retry.max-delay=2s",
-        "http-client.max-total-pooling=1",
-        "http-client.default-max-per-route=1"
+        "background-processing.retry.max-delay=2s"
 })
 class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
 
@@ -65,22 +57,21 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
     private ScheduledRetryService scheduledRetryService;
     @Autowired
     private TransactionInfoThriftConverter transactionInfoThriftConverter;
-    @Autowired
-    @Qualifier("woodyHttpClient")
-    private CloseableHttpClient woodyHttpClient;
-    @Autowired
-    private CloseableHttpClient httpClient;
     @Value("${wiremock.server.baseUrl}")
     private String baseUrl;
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void timeoutMovesOldCallbackBehindHealthyWork(boolean exhaustPool) throws Exception {
+    void networkFailureMovesOldCallbackBehindHealthyWork(boolean connectionRefused) throws Exception {
         stubFor(post(urlEqualTo("/slow-rpc")).willReturn(aResponse().withFixedDelay(3000)));
-        stubFor(get(urlEqualTo("/hold-connection")).willReturn(ok("unconsumed body")));
-        stubFor(get(urlEqualTo("/outside-background")).willReturn(ok("ok").withFixedDelay(300)));
-        var remote = new THSpawnClientBuilder().withHttpClient(woodyHttpClient).withNetworkTimeout(10_000)
-                .withAddress(URI.create(baseUrl + "/slow-rpc")).build(InvoicingSrv.Iface.class);
+        var address = URI.create(baseUrl + "/slow-rpc");
+        if (connectionRefused) {
+            try (var socket = new ServerSocket(0)) {
+                address = URI.create("http://127.0.0.1:" + socket.getLocalPort() + "/slow-rpc");
+            }
+        }
+        var remote = new THSpawnClientBuilder().withNetworkTimeout(100)
+                .withAddress(address).build(InvoicingSrv.Iface.class);
         var blocked = callback("blocked", 24);
         var healthy = callback("healthy", 12);
         when(invoicingClient.getPayment(blocked.getInvoiceId(), "1"))
@@ -92,12 +83,7 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
         try (var workers = Executors.newSingleThreadExecutor()) {
             var task = new ProviderPaymentsTask(workers, providerPaymentsService, backgroundProcessing);
             ReflectionTestUtils.setField(task, "batchSize", 1);
-            var started = System.nanoTime();
-            try (var held = exhaustPool
-                    ? woodyHttpClient.executeOpen(null, new HttpGet(baseUrl + "/hold-connection"), null) : null) {
-                task.processPending();
-            }
-            assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(2));
+            task.processPending();
             var deferred = providerCallbackDao.get(blocked.getInvoiceId(), "1");
             assertThat(deferred.getStatus()).isEqualTo(ProviderPaymentsStatus.create_adjustment);
             assertThat(deferred.getCreatedAt()).isEqualTo(blocked.getCreatedAt());
@@ -110,17 +96,11 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
             assertThat(providerCallbackDao.get(healthy.getInvoiceId(), "1").getStatus())
                     .isEqualTo(ProviderPaymentsStatus.succeeded);
             assertThat(providerPaymentsService.getPaymentsForHgCall(1)).isEmpty();
-            assertThat(workers.submit(() -> {
-                assertThat(BackgroundProcessing.isActive()).isFalse();
-                return httpClient.execute(new HttpGet(baseUrl + "/outside-background"),
-                        new BasicHttpClientResponseHandler());
-            }).get(2, TimeUnit.SECONDS)).isEqualTo("ok");
         }
-        assertThat(BackgroundProcessing.isActive()).isFalse();
     }
 
     @Test
-    void adapterTimeoutRollsBackEnrichmentButCommitsDisputeRetry() throws Exception {
+    void adapterFailuresRollBackEnrichmentAndOnlyNetworkErrorsScheduleRetry() throws Exception {
         var id = UUID.fromString(merchantApiMvcPerformer.createDispute("created-timeout", "1").getDisputeId());
         final var selected = disputeDao.get(id);
         disputeDao.updatePaymentRiskData(id, "original-email", "original-risk");
@@ -129,11 +109,18 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
         when(dominantService.getProvider(any())).thenReturn(createProvider().get());
         when(dominantService.getTerminal(any())).thenReturn(createTerminal().get());
         when(dominantService.getProxy(any())).thenReturn(createProxy().get());
-        stubFor(post(urlEqualTo("/slow-adapter")).willReturn(aResponse().withFixedDelay(3000)));
-        var adapter = new THSpawnClientBuilder().withHttpClient(woodyHttpClient).withNetworkTimeout(10_000)
+        stubFor(post(urlEqualTo("/slow-adapter")).willReturn(ok("not a Thrift response")
+                .withHeader("Content-Type", "application/x-thrift")));
+        var adapter = new THSpawnClientBuilder().withNetworkTimeout(100)
                 .withAddress(URI.create(baseUrl + "/slow-adapter")).build(ProviderPaymentsServiceSrv.Iface.class);
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(adapter);
 
+        assertThatThrownBy(() -> backgroundProcessing.processDispute(selected,
+                () -> createdDisputesService.callCreateDisputeRemotely(selected)))
+                .isInstanceOf(WRuntimeException.class);
+        assertThat(disputeDao.get(id).getNextCheckAfter()).isEqualTo(selected.getNextCheckAfter());
+
+        stubFor(post(urlEqualTo("/slow-adapter")).willReturn(aResponse().withFixedDelay(3000)));
         backgroundProcessing.processDispute(selected,
                 () -> createdDisputesService.callCreateDisputeRemotely(selected));
 

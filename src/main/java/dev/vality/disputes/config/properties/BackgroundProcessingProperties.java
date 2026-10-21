@@ -22,24 +22,7 @@ public class BackgroundProcessingProperties {
 
     @Valid
     @NotNull
-    private RemoteCall remoteCall = new RemoteCall();
-    @Valid
-    @NotNull
     private Retry retry = new Retry();
-
-    @Getter
-    @Setter
-    public static class RemoteCall {
-        @NotNull
-        @DurationMin(millis = 1)
-        private Duration connectTimeout = Duration.ofSeconds(5);
-        @NotNull
-        @DurationMin(millis = 1)
-        private Duration poolTimeout = Duration.ofSeconds(5);
-        @NotNull
-        @DurationMin(millis = 1)
-        private Duration responseTimeout = Duration.ofSeconds(30);
-    }
 
     @Getter
     @Setter

@@ -15,14 +15,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class BackgroundProcessing {
 
-    // Selects background-only HTTP timeouts, not a deadline or a budget shared between RPCs.
-    private static final ThreadLocal<Boolean> ACTIVE = new ThreadLocal<>();
-
     private final ScheduledRetryService scheduledRetryService;
-
-    public static boolean isActive() {
-        return Boolean.TRUE.equals(ACTIVE.get());
-    }
 
     public UUID processDispute(Dispute selected, Runnable operation) {
         process(selected.getId(), operation,
@@ -37,12 +30,10 @@ public class BackgroundProcessing {
 
     @SneakyThrows
     private void process(UUID id, Runnable operation, Runnable retry) {
-        var previous = ACTIVE.get();
         var started = System.nanoTime();
-        ACTIVE.set(true);
         try {
             operation.run();
-        } catch (Throwable error) {
+        } catch (Exception error) {
             if (TransientErrorClassifier.containsInterruption(error)) {
                 Thread.currentThread().interrupt();
                 throw error;
@@ -59,12 +50,6 @@ public class BackgroundProcessing {
                 retryError.addSuppressed(error);
                 log.error("Failed to persist retry for queued record {}", id, retryError);
                 throw retryError;
-            }
-        } finally {
-            if (previous == null) {
-                ACTIVE.remove();
-            } else {
-                ACTIVE.set(previous);
             }
         }
     }

@@ -1,11 +1,16 @@
 package dev.vality.disputes.retry;
 
+import dev.vality.woody.api.flow.error.WErrorDefinition;
+import dev.vality.woody.api.flow.error.WErrorSource;
 import dev.vality.woody.api.flow.error.WErrorType;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.hc.client5.http.ConnectTimeoutException;
+import org.apache.hc.client5.http.HttpHostConnectException;
 import org.apache.hc.core5.http.ConnectionRequestTimeoutException;
 import org.apache.hc.core5.http.NoHttpResponseException;
+import org.apache.thrift.transport.TTransportException;
 
 import java.net.ConnectException;
 import java.net.SocketException;
@@ -14,10 +19,15 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.function.Predicate;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TransientErrorClassifier {
+
+    private static final Set<String> APACHE_CONNECTION_ERRORS = Set.of(
+            ConnectTimeoutException.class.getName(), HttpHostConnectException.class.getName(),
+            ConnectionRequestTimeoutException.class.getName());
 
     public static boolean isTransient(Throwable error) {
         if (containsInterruption(error)) {
@@ -27,7 +37,8 @@ public class TransientErrorClassifier {
         for (var cause = error; cause != null && seen.size() < 16 && seen.add(cause); cause = cause.getCause()) {
             if (cause instanceof WRuntimeException woody && woody.getErrorDefinition() != null) {
                 var type = woody.getErrorDefinition().getErrorType();
-                return type == WErrorType.UNAVAILABLE_RESULT || type == WErrorType.UNDEFINED_RESULT;
+                return type == WErrorType.UNAVAILABLE_RESULT || type == WErrorType.UNDEFINED_RESULT
+                        || isNativeConnectionFailure(woody.getErrorDefinition());
             }
             if (cause instanceof SocketTimeoutException || cause instanceof ConnectException
                     || cause instanceof SocketException || cause instanceof UnknownHostException
@@ -36,6 +47,21 @@ public class TransientErrorClassifier {
             }
         }
         return false;
+    }
+
+    private static boolean isNativeConnectionFailure(WErrorDefinition error) {
+        // Woody 3 drops the cause for these errors. Match its local transport envelope and exact exception class,
+        // not arbitrary provider/business messages containing "timeout".
+        if (error.getErrorType() != WErrorType.PROVIDER_ERROR
+                || error.getGenerationSource() != WErrorSource.INTERNAL
+                || error.getErrorSource() != WErrorSource.INTERNAL
+                || !TTransportException.class.getSimpleName().equals(error.getErrorName())
+                || error.getErrorMessage() == null) {
+            return false;
+        }
+        var message = error.getErrorMessage();
+        var separator = message.indexOf(':');
+        return APACHE_CONNECTION_ERRORS.contains(separator < 0 ? message : message.substring(0, separator));
     }
 
     public static boolean containsInterruption(Throwable error) {
