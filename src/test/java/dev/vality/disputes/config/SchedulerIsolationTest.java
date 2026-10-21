@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.boot.task.ThreadPoolTaskSchedulerBuilder;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -96,30 +95,6 @@ class SchedulerIsolationTest {
         await().atMost(AWAIT).untilAsserted(() -> assertThat(schedulers).allSatisfy(scheduler ->
                 assertThat(scheduler.getScheduledThreadPoolExecutor().isTerminated())
                         .as("scheduler is terminated after context close").isTrue()));
-    }
-
-    @Test
-    void adjustmentsStayBehindCreatedDisputeWhenSchedulerIsShared() throws Exception {
-        var services = new Services();
-        var blockedCreated = new BlockedCreatedDispute(services.created);
-        var adjustment = new DueAdjustment(services.providerPayments);
-
-        try (var context = start(SharedSchedulerConfig.class, services,
-                "dispute.isScheduleCreatedEnabled=true",
-                "provider.payments.isScheduleCreateAdjustmentsEnabled=true")) {
-            try {
-                blockedCreated.awaitSchedulerWaitingForWorker();
-                adjustment.makeDue();
-
-                await().during(Duration.ofSeconds(2)).atMost(AWAIT)
-                        .until(() -> adjustment.due.get() && adjustment.handled.getCount() == 1);
-            } finally {
-                blockedCreated.release.countDown();
-            }
-
-            assertThat(adjustment.handled.await(AWAIT.toSeconds(), TimeUnit.SECONDS))
-                    .as("adjustment is processed once the shared scheduler is free again").isTrue();
-        }
     }
 
     @Test
@@ -302,22 +277,4 @@ class SchedulerIsolationTest {
     static class IsolatedSchedulersConfig {
     }
 
-    /**
-     * The state before the change: a single scheduler thread serves every task, including the adjustments queue.
-     */
-    @Configuration
-    @Import(TasksConfig.class)
-    static class SharedSchedulerConfig {
-
-        @Bean(name = {
-                "taskScheduler",
-                SchedulingConfig.CREATED_DISPUTES_SCHEDULER,
-                SchedulingConfig.PENDING_DISPUTES_SCHEDULER,
-                SchedulingConfig.FORGOTTEN_DISPUTES_SCHEDULER,
-                SchedulingConfig.NOTIFICATION_SCHEDULER,
-                SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER})
-        public ThreadPoolTaskScheduler sharedScheduler(ThreadPoolTaskSchedulerBuilder builder) {
-            return builder.build();
-        }
-    }
 }

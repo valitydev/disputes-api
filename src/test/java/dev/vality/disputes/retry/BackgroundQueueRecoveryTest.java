@@ -32,7 +32,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static dev.vality.disputes.util.MockUtil.*;
@@ -97,6 +99,53 @@ class BackgroundQueueRecoveryTest extends AbstractMockitoConfig {
                     .isEqualTo(ProviderPaymentsStatus.succeeded);
             assertThat(providerPaymentsService.getPaymentsForHgCall(1)).isEmpty();
         }
+    }
+
+    @Test
+    void competingWorkersSkipLockedCallbackWithoutDuplicatingAdjustmentOrBlockingOtherWork() throws Exception {
+        var blocked = callback("concurrent-blocked", 24);
+        var healthy = callback("concurrent-healthy", 12);
+        when(invoicingClient.getPayment(blocked.getInvoiceId(), "1")).thenReturn(createInvoicePayment("1"));
+        var captured = createInvoicePayment("1");
+        captured.getPayment().setStatus(InvoicePaymentStatus.captured(new InvoicePaymentCaptured()));
+        when(invoicingClient.getPayment(healthy.getInvoiceId(), "1")).thenReturn(captured);
+        var writeStarted = new CountDownLatch(1);
+        var releaseWrite = new CountDownLatch(1);
+        when(invoicingClient.createPaymentAdjustment(any(), any(), any())).thenAnswer(invocation -> {
+            writeStarted.countDown();
+            assertThat(releaseWrite.await(30, TimeUnit.SECONDS)).as("remote write was released").isTrue();
+            return getCapturedInvoicePaymentAdjustment("concurrent-adjustment",
+                    providerPaymentsAdjustmentExtractor.getReason(blocked));
+        });
+
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            try {
+                var owner = workers.submit(() -> backgroundProcessing.processProviderCallback(blocked,
+                        () -> providerPaymentsService.callHgForCreateAdjustment(blocked)));
+                assertThat(writeStarted.await(10, TimeUnit.SECONDS)).as("first worker holds the row lock").isTrue();
+
+                workers.submit(() -> backgroundProcessing.processProviderCallback(blocked,
+                        () -> providerPaymentsService.callHgForCreateAdjustment(blocked))).get(5, TimeUnit.SECONDS);
+                workers.submit(() -> backgroundProcessing.processProviderCallback(healthy,
+                        () -> providerPaymentsService.callHgForCreateAdjustment(healthy))).get(5, TimeUnit.SECONDS);
+
+                assertThat(owner.isDone()).as("first worker is still waiting for its remote write").isFalse();
+                assertThat(providerCallbackDao.get(healthy.getInvoiceId(), "1").getStatus())
+                        .isEqualTo(ProviderPaymentsStatus.succeeded);
+                releaseWrite.countDown();
+                owner.get(5, TimeUnit.SECONDS);
+            } finally {
+                releaseWrite.countDown();
+            }
+        }
+
+        backgroundProcessing.processProviderCallback(blocked,
+                () -> providerPaymentsService.callHgForCreateAdjustment(blocked));
+        verify(invoicingClient).getPayment(blocked.getInvoiceId(), "1");
+        verify(invoicingClient).createPaymentAdjustment(any(), any(), any());
+        assertThat(providerCallbackDao.get(blocked.getInvoiceId(), "1").getStatus())
+                .isEqualTo(ProviderPaymentsStatus.succeeded);
+        assertThat(providerPaymentsService.getPaymentsForHgCall(10)).isEmpty();
     }
 
     @Test

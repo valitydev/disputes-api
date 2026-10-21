@@ -40,10 +40,17 @@ public class DisputeDaoTest {
         random.setInvoiceId("setInvoiceId");
         random.setPaymentId("setPaymentId");
         random.setStatus(DisputeStatus.failed);
+        var latestCreatedAt = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
+        random.setCreatedAt(latestCreatedAt.minusHours(1));
         disputeDao.save(random);
+        random.setCreatedAt(latestCreatedAt);
+        var latestId = disputeDao.save(random);
+        random.setCreatedAt(latestCreatedAt.minusHours(2));
         disputeDao.save(random);
-        disputeDao.save(random);
-        assertNotNull(disputeDao.getByInvoiceId(random.getInvoiceId(), random.getPaymentId()));
+
+        var latest = disputeDao.getByInvoiceId(random.getInvoiceId(), random.getPaymentId());
+        assertEquals(latestId, latest.getId());
+        assertEquals(latestCreatedAt, latest.getCreatedAt());
     }
 
     @Test
