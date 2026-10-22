@@ -44,7 +44,7 @@ public class ScheduledRetryService {
                 return;
             }
             var next = pollingService.prepareTransportRetry(current.getCreatedAt(), now, retryOptions());
-            if (disputeDao.deferNextCheckAfter(id, expectedStatus, current.getNextCheckAfter(), next) == 1) {
+            if (disputeDao.deferNextCheckAfter(id, next) == 1) {
                 log.info("Retry Dispute {}, invoice={}, payment={}, next_check_after={} UTC",
                         id, current.getInvoiceId(), current.getPaymentId(), next);
             }
@@ -67,8 +67,7 @@ public class ScheduledRetryService {
                 return;
             }
             var next = pollingService.prepareTransportRetry(current.getCreatedAt(), now, retryOptions());
-            var updated = providerCallbackDao.deferNextCheckAfter(id, current.getStatus(),
-                    current.getNextCheckAfter(), next);
+            var updated = providerCallbackDao.deferNextCheckAfter(id, next);
             if (updated == 1) {
                 log.info("Retry ProviderCallback {}, invoice={}, payment={}, next_check_after={} UTC",
                         id, current.getInvoiceId(), current.getPaymentId(), next);
