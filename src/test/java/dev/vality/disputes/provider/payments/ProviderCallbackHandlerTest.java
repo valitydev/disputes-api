@@ -3,6 +3,7 @@ package dev.vality.disputes.provider.payments;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
 import dev.vality.disputes.domain.enums.ProviderPaymentsStatus;
+import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.util.TestUrlPaths;
 import dev.vality.provider.payments.ProviderPaymentsCallbackParams;
 import dev.vality.provider.payments.ProviderPaymentsCallbackServiceSrv;
@@ -15,14 +16,14 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static dev.vality.disputes.config.NetworkConfig.CALLBACK;
 import static dev.vality.disputes.constant.TerminalOptionsField.PROVIDER_PAYMENTS_CHECK_STATUS_DELAY_SEC;
 import static dev.vality.disputes.util.MockUtil.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -45,29 +46,32 @@ public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
         var providerMock = mock(ProviderPaymentsServiceSrv.Client.class);
         when(providerMock.checkPaymentStatus(any(), any())).thenReturn(createPaymentStatusResult());
         when(providerPaymentsThriftInterfaceBuilder.buildWoodyClient(any())).thenReturn(providerMock);
-        var minNumberOfInvocations = 4;
-        for (int i = 0; i < minNumberOfInvocations; i++) {
+        for (int i = 0; i < 4; i++) {
             var invoiceId = String.valueOf(i);
             var paymentId = String.valueOf(i);
             executeCallbackIFace(invoiceId, paymentId);
         }
         await().atMost(30, TimeUnit.SECONDS)
-                .untilAsserted(() -> verify(providerCallbackDao, atLeast(minNumberOfInvocations)).save(any()));
-        var providerCallbackIds = new ArrayList<UUID>();
-        for (var providerCallback : providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)) {
-            providerCallbackIds.add(providerCallback.getId());
+                .untilAsserted(() -> assertThat(providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE))
+                        .extracting(ProviderCallback::getInvoiceId, ProviderCallback::getPaymentId)
+                        .containsExactlyInAnyOrder(tuple("0", "0"), tuple("1", "1"), tuple("2", "2"), tuple("3", "3")));
+        var callbacks = providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE);
+        assertThat(callbacks).hasSize(4);
+        for (var providerCallback : callbacks) {
             var reason = providerPaymentsAdjustmentExtractor.getReason(providerCallback);
             var invoicePayment = createInvoicePayment(providerCallback.getPaymentId());
             invoicePayment.setAdjustments(List.of(getCashFlowInvoicePaymentAdjustment("adjustmentId", reason)));
-            when(invoicingClient.getPayment(any(), any())).thenReturn(invoicePayment);
+            when(invoicingClient.getPayment(providerCallback.getInvoiceId(), providerCallback.getPaymentId()))
+                    .thenReturn(invoicePayment);
             when(invoicingClient.createPaymentAdjustment(any(), any(), any()))
                     .thenReturn(getCapturedInvoicePaymentAdjustment("adjustmentId", reason));
             providerPaymentsService.callHgForCreateAdjustment(providerCallback);
         }
-        for (var providerCallbackId : providerCallbackIds) {
-            var providerCallback = providerCallbackDao.getProviderCallbackForUpdateSkipLocked(providerCallbackId);
+        for (var callback : callbacks) {
+            var providerCallback = providerCallbackDao.get(callback.getInvoiceId(), callback.getPaymentId());
             assertEquals(ProviderPaymentsStatus.succeeded, providerCallback.getStatus());
         }
+        assertThat(providerPaymentsService.getPaymentsForHgCall(Integer.MAX_VALUE)).isEmpty();
     }
 
     @Test
@@ -93,7 +97,7 @@ public class ProviderCallbackHandlerTest extends AbstractMockitoConfig {
 
     private void executeCallbackIFace(String invoiceId, String paymentId) throws TException, URISyntaxException {
         var invoice = createInvoice(invoiceId, paymentId);
-        when(invoicingClient.getPayment(any(), any())).thenReturn(invoice.getPayments().getFirst());
+        when(invoicingClient.getPayment(invoiceId, paymentId)).thenReturn(invoice.getPayments().getFirst());
         var request = new ProviderPaymentsCallbackParams()
                 .setInvoiceId(invoiceId)
                 .setPaymentId(paymentId);

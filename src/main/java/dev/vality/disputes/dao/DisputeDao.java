@@ -118,6 +118,12 @@ public class DisputeDao extends AbstractGenericDao {
         update(dispute.getId(), dispute.getStatus(), nextCheckAfter, null, null, null, null, null, null);
     }
 
+    public int deferNextCheckAfter(UUID id, LocalDateTime next) {
+        return execute(getDslContext().update(DISPUTE)
+                .set(DISPUTE.NEXT_CHECK_AFTER, next)
+                .where(DISPUTE.ID.eq(id)));
+    }
+
     public void setNextStepToCreated(UUID disputeId, LocalDateTime nextCheckAfter) {
         update(disputeId, DisputeStatus.created, nextCheckAfter, null, null, null, null, null, AUTOMATIC);
     }

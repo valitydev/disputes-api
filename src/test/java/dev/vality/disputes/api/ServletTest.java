@@ -21,6 +21,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.net.URI;
 
 import static dev.vality.disputes.config.NetworkConfig.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @WireMockSpringBootITest
 @TestPropertySource(properties = {
@@ -44,6 +48,7 @@ public class ServletTest {
                 DisputeParams.class
         );
         Assertions.assertThrows(WRuntimeException.class, () -> iface.createDispute(request));
+        verify(invoicingClient).get(eq(request.getInvoiceId()), any());
     }
 
     @Test
@@ -86,5 +91,6 @@ public class ServletTest {
                 DisputeParams.class
         );
         Assertions.assertThrows(WRuntimeException.class, () -> iface.createDispute(request));
+        verifyNoInteractions(invoicingClient);
     }
 }

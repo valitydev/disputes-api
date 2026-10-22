@@ -142,9 +142,14 @@ provider:
       awaitTermination: true
       awaitTerminationPeriodSec: 30
 
+background-processing:
+  retry:
+    initial-delay: 5s
+    max-delay: 5m
+
 time:
   config:
-    max-time-polling-min: 600
+    max-time-polling-min: 10080 # 7 days
 
 http-client:
   requestTimeout: 60000

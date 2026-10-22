@@ -2,6 +2,7 @@ package dev.vality.disputes.schedule.catcher;
 
 import dev.vality.disputes.schedule.model.ProviderData;
 import dev.vality.disputes.schedule.service.ExternalGatewayChecker;
+import dev.vality.disputes.util.RemoteErrors;
 import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,8 @@ public class WoodyRuntimeExceptionCatcher {
         try {
             runnable.run();
         } catch (WRuntimeException ex) {
-            if (externalGatewayChecker.isProviderDisputesApiNotExist(providerData, ex)) {
+            if (RemoteErrors.isExternalUnexpectedError(ex)
+                    && externalGatewayChecker.isProviderDisputesApiNotFound(providerData)) {
                 log.info("Trying to call defaultRemoteClient.createDispute() by case remoteClient.createDispute()==404",
                         ex);
                 defaultRemoteClientRunnable.run();
@@ -36,7 +38,7 @@ public class WoodyRuntimeExceptionCatcher {
         try {
             runnable.run();
         } catch (WRuntimeException ex) {
-            if (externalGatewayChecker.isProviderDisputesUnexpectedResultMapping(ex)) {
+            if (RemoteErrors.isUnexpectedResultMapping(ex)) {
                 unexpectedResultMappingHandler.accept(ex);
                 return;
             }

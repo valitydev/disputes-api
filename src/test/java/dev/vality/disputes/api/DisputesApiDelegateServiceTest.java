@@ -14,8 +14,6 @@ import dev.vality.geck.common.util.TypeUtil;
 import dev.vality.swag.disputes.model.Create200Response;
 import dev.vality.token.keeper.TokenAuthenticatorSrv;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,9 +21,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
+import static dev.vality.disputes.constant.TerminalOptionsField.DISPUTE_FLOW_MAX_TIME_POLLING_MIN;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_MAX_TIME_BACKOFF_SEC;
+import static dev.vality.disputes.polling.TimeOptionsExtractors.DISPUTE_TIMER_EXPONENTIAL;
 import static dev.vality.disputes.util.MockUtil.*;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,18 +59,6 @@ public class DisputesApiDelegateServiceTest {
     private DisputeDao disputeDao;
     @Autowired
     private WiremockAddressesHolder wiremockAddressesHolder;
-    private Object[] preparedMocks;
-
-    @BeforeEach
-    public void init() {
-        preparedMocks = new Object[] {invoicingClient, tokenKeeperClient, bouncerClient,
-                fileStorageClient, dominantAsyncService};
-    }
-
-    @AfterEach
-    public void clean() throws Exception {
-        verifyNoMoreInteractions(preparedMocks);
-    }
 
     @Test
     @SneakyThrows
@@ -77,7 +69,14 @@ public class DisputesApiDelegateServiceTest {
                 .thenReturn(MockUtil.createInvoice(invoiceId, paymentId));
         when(tokenKeeperClient.authenticate(any(), any())).thenReturn(createAuthData());
         when(bouncerClient.judge(any(), any())).thenReturn(createJudgementAllowed());
-        when(dominantAsyncService.getTerminal(any())).thenReturn(createTerminal());
+        var terminal = createTerminal();
+        // Payment-only options must not be parsed or used by disputes.
+        terminal.get().getOptions().putAll(Map.of(
+                "max_time_polling_min", "15",
+                "exponential", "payment-only",
+                "max_time_backoff_sec", "payment-only",
+                "default_initial_exponential_sec", "payment-only"));
+        when(dominantAsyncService.getTerminal(any())).thenReturn(terminal);
         when(dominantAsyncService.getCurrency(any())).thenReturn(createCurrency());
         when(dominantAsyncService.getProvider(any())).thenReturn(createProvider());
         when(dominantAsyncService.getProxy(any())).thenReturn(createProxy());
@@ -94,15 +93,9 @@ public class DisputesApiDelegateServiceTest {
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
         var response = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                 Create200Response.class);
-        verify(invoicingClient, times(1)).get(any(), any());
-        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
-        verify(bouncerClient, times(1)).judge(any(), any());
-        verify(dominantAsyncService, times(1)).getTerminal(any());
-        verify(dominantAsyncService, times(1)).getCurrency(any());
-        verify(dominantAsyncService, times(1)).getProvider(any());
-        verify(dominantAsyncService, times(1)).getProxy(any());
-        verify(dominantAsyncService, times(1)).getShop(any());
-        verify(fileStorageClient, times(1)).createNewFile(any(), any());
+        var defaulted = disputeDao.get(UUID.fromString(response.getDisputeId()));
+        assertEquals(Duration.ofDays(7), Duration.between(defaulted.getCreatedAt(), defaulted.getPollingBefore()));
+        assertEquals(Duration.ofSeconds(2), Duration.between(defaulted.getCreatedAt(), defaulted.getNextCheckAfter()));
         mvc.perform(get("/disputes/status")
                         .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
@@ -110,10 +103,7 @@ public class DisputesApiDelegateServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().is2xxSuccessful())
-                .andExpect(jsonPath("$.status").isNotEmpty());
-        verify(invoicingClient, times(2)).get(any(), any());
-        verify(tokenKeeperClient, times(2)).authenticate(any(), any());
-        verify(bouncerClient, times(2)).judge(any(), any());
+                .andExpect(jsonPath("$.status").value("pending"));
         // exist
         resultActions = mvc.perform(post("/disputes/create")
                         .header("Authorization", "Bearer token")
@@ -125,11 +115,13 @@ public class DisputesApiDelegateServiceTest {
         assertEquals(response.getDisputeId(),
                 new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
                         Create200Response.class).getDisputeId());
-        verify(invoicingClient, times(3)).get(any(), any());
-        verify(tokenKeeperClient, times(3)).authenticate(any(), any());
-        verify(bouncerClient, times(3)).judge(any(), any());
         disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
         // new after failed
+        terminal.get().getOptions().putAll(Map.of(
+                DISPUTE_FLOW_MAX_TIME_POLLING_MIN, "180",
+                DISPUTE_TIMER_EXPONENTIAL, "3",
+                DISPUTE_DEFAULT_INITIAL_EXPONENTIAL_SEC, "7",
+                DISPUTE_MAX_TIME_BACKOFF_SEC, "11"));
         when(fileStorageClient.createNewFile(any(), any())).thenReturn(
                 createNewFileResult(wiremockAddressesHolder.getUploadUrl()));
         resultActions = mvc.perform(post("/disputes/create")
@@ -139,19 +131,16 @@ public class DisputesApiDelegateServiceTest {
                         .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.disputeId").isNotEmpty());
-        assertNotEquals(response.getDisputeId(),
-                new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
-                        Create200Response.class).getDisputeId());
-        verify(invoicingClient, times(4)).get(any(), any());
-        verify(tokenKeeperClient, times(4)).authenticate(any(), any());
-        verify(bouncerClient, times(4)).judge(any(), any());
-        verify(dominantAsyncService, times(2)).getTerminal(any());
-        verify(dominantAsyncService, times(2)).getCurrency(any());
-        verify(dominantAsyncService, times(2)).getProvider(any());
-        verify(dominantAsyncService, times(2)).getProxy(any());
-        verify(dominantAsyncService, times(2)).getShop(any());
+        var newResponse = new JsonMapper().readValue(resultActions.andReturn().getResponse().getContentAsString(),
+                Create200Response.class);
+        assertNotEquals(response.getDisputeId(), newResponse.getDisputeId());
+        var overridden = disputeDao.get(UUID.fromString(newResponse.getDisputeId()));
+        assertEquals(Duration.ofMinutes(180),
+                Duration.between(overridden.getCreatedAt(), overridden.getPollingBefore()));
+        assertEquals(Duration.ofSeconds(7),
+                Duration.between(overridden.getCreatedAt(), overridden.getNextCheckAfter()));
         verify(fileStorageClient, times(2)).createNewFile(any(), any());
-        disputeDao.finishFailed(UUID.fromString(response.getDisputeId()), null);
+        disputeDao.finishFailed(UUID.fromString(newResponse.getDisputeId()), null);
     }
 
     @Test
@@ -163,7 +152,7 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentInvalidCreateRequest(paymentId)))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -177,7 +166,7 @@ public class DisputesApiDelegateServiceTest {
                         .params(OpenApiUtil.getStatusRequiredParams(randomUUID().toString(), invoiceId, paymentId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -199,15 +188,8 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentInvalidMimeTypeCreateRequest(invoiceId, paymentId)))
-                .andExpect(status().is4xxClientError());
-        verify(invoicingClient, times(1)).get(any(), any());
-        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
-        verify(bouncerClient, times(1)).judge(any(), any());
-        verify(dominantAsyncService, times(1)).getTerminal(any());
-        verify(dominantAsyncService, times(1)).getCurrency(any());
-        verify(dominantAsyncService, times(1)).getProvider(any());
-        verify(dominantAsyncService, times(1)).getProxy(any());
-        verify(dominantAsyncService, times(1)).getShop(any());
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(fileStorageClient);
     }
 
     @Test
@@ -226,16 +208,14 @@ public class DisputesApiDelegateServiceTest {
                         .header("Authorization", "Bearer token")
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(OpenApiUtil.getContentInvalidMimeTypeCreateRequest(invoiceId, paymentId)))
-                .andExpect(status().is4xxClientError());
-        verify(invoicingClient, times(1)).get(any(), any());
-        verify(tokenKeeperClient, times(1)).authenticate(any(), any());
-        verify(bouncerClient, times(1)).judge(any(), any());
+                        .content(OpenApiUtil.getContentCreateRequest(invoiceId, paymentId)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(fileStorageClient);
     }
 
     @Test
     @SneakyThrows
-    void testBadRequestWhenRequestSizeBellowLimit() {
+    void testPayloadTooLargeWhenRequestExceedsLimit() {
         var invoiceId = "20McecNnWoy";
         var paymentId = "1";
         mvc.perform(post("/disputes/create")
@@ -243,6 +223,6 @@ public class DisputesApiDelegateServiceTest {
                         .header("X-Request-ID", randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(OpenApiUtil.getContentInvalidSizeCreateRequest(invoiceId, paymentId)))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isContentTooLarge());
     }
 }
