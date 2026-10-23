@@ -1,30 +1,61 @@
 package dev.vality.disputes.admin.management;
 
+import dev.vality.disputes.admin.AdminCallbackServiceSrv;
+import dev.vality.disputes.admin.AdminManagementServiceSrv;
+import dev.vality.disputes.admin.AttachmentRef;
+import dev.vality.disputes.admin.Dispute;
+import dev.vality.disputes.admin.DisputeParams;
+import dev.vality.disputes.admin.DisputeParamsRequest;
+import dev.vality.disputes.admin.callback.CallbackNotifier;
 import dev.vality.disputes.config.AbstractMockitoConfig;
 import dev.vality.disputes.config.WireMockSpringBootITest;
+import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.domain.enums.DisputeStatus;
-import dev.vality.disputes.util.WiremockUtils;
+import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.provider.payments.PaymentStatusResult;
 import dev.vality.provider.payments.ProviderPaymentsServiceSrv;
+import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import lombok.SneakyThrows;
+import org.apache.thrift.TDeserializer;
+import org.apache.thrift.TSerializer;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static dev.vality.disputes.config.NetworkConfig.ADMIN_MANAGEMENT;
 import static dev.vality.disputes.util.MockUtil.*;
 import static dev.vality.disputes.util.OpenApiUtil.*;
+import static dev.vality.disputes.util.TestUrlPaths.MOCK_DOWNLOAD;
+import static dev.vality.disputes.util.TestUrlPaths.S3_PATH;
 import static dev.vality.disputes.util.ValuesGenerator.generateId;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.when;
 
 @WireMockSpringBootITest
+@TestPropertySource(properties = "service.disputes-tg-bot.admin.enabled=true")
 public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Autowired
     private DebugAdminManagementController debugAdminManagementController;
+    @Autowired
+    private FileMetaDao fileMetaDao;
+    @Autowired
+    private CallbackNotifier callbackNotifier;
+    @MockitoBean
+    private AdminCallbackServiceSrv.Iface adminCallbackDisputesTgBotClient;
 
     @Test
     public void testCancelCreateAdjustment() {
@@ -152,13 +183,49 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
     @Test
     @SneakyThrows
-    public void testGetDispute() {
-        WiremockUtils.mockS3AttachmentDownload();
-        var disputeId = pendingFlowHandler.handlePending();
+    public void testAttachmentRefsInCallbackAndGetDisputes() {
+        var disputeId = UUID.fromString(merchantApiMvcPerformer.createDispute("20McecNnWoy", "1").getDisputeId());
         var dispute = disputeDao.get(disputeId);
-        var disputes = debugAdminManagementController.getDisputes(
-                getGetDisputeRequest(dispute.getInvoiceId(), dispute.getPaymentId(), true));
-        assertEquals(1, disputes.getDisputes().size());
+        fileMetaDao.save(new FileMeta(generateId(), disputeId, "application/pdf"));
+        var files = fileMetaDao.getDisputeFiles(disputeId);
+        var expectedRefs = files.stream()
+                .map(file -> new AttachmentRef(file.getFileId(), file.getMimeType()))
+                .toList();
+        var client = new THSpawnClientBuilder()
+                .withAddress(new URI("http://127.0.0.1:" + serverPort + ADMIN_MANAGEMENT))
+                .withNetworkTimeout(5000)
+                .build(AdminManagementServiceSrv.Iface.class);
+        var request = new DisputeParamsRequest()
+                .setDisputeParams(List.of(new DisputeParams(dispute.getInvoiceId(), dispute.getPaymentId())))
+                .setWithAttachments(false);
+
+        var metadataOnly = client.getDisputes(request).getDisputes().getFirst();
+        assertEquals(expectedRefs, metadataOnly.getAttachmentRefs().orElseThrow());
+        assertFalse(metadataOnly.isSetAttachments());
+
+        callbackNotifier.notify(dispute);
+        var callback = ArgumentCaptor.forClass(Dispute.class);
+        org.mockito.Mockito.verify(adminCallbackDisputesTgBotClient, timeout(5000)).notify(callback.capture());
+        var notification = new Dispute();
+        new TDeserializer().deserialize(notification, new TSerializer().serialize(callback.getValue()));
+        assertEquals(disputeId.toString(), notification.getDisputeId());
+        assertEquals(expectedRefs, notification.getAttachmentRefs().orElseThrow());
+        assertFalse(notification.isSetAttachments());
+        org.mockito.Mockito.verify(fileStorageClient, never()).generateDownloadUrl(any(), any());
+        verify(0, getRequestedFor(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)));
+
+        var data = new byte[]{1, 2, 3};
+        stubFor(get(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)).willReturn(ok().withBody(data)));
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
+        var withAttachments = client.getDisputes(request.setWithAttachments(true)).getDisputes().getFirst();
+        assertEquals(expectedRefs, withAttachments.getAttachmentRefs().orElseThrow());
+        var attachments = withAttachments.getAttachments().orElseThrow();
+        assertEquals(files.size(), attachments.size());
+        for (int i = 0; i < files.size(); i++) {
+            assertEquals(files.get(i).getMimeType(), attachments.get(i).getMimeType());
+            assertArrayEquals(data, attachments.get(i).getData());
+        }
+        verify(files.size(), getRequestedFor(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)));
         disputeDao.finishFailed(disputeId, null);
     }
 

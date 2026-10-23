@@ -1,6 +1,7 @@
 package dev.vality.disputes.admin.converter;
 
 import dev.vality.disputes.admin.Attachment;
+import dev.vality.disputes.admin.AttachmentRef;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
@@ -50,12 +51,19 @@ public class DisputeThriftConverter {
         disputeThrift.setMode(dispute.getMode());
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
-        if (!withAttachments) {
-            return disputeThrift;
+        disputeThrift.setAttachmentRefs(new ArrayList<>());
+        if (withAttachments) {
+            disputeThrift.setAttachments(new ArrayList<>());
         }
         try {
-            disputeThrift.setAttachments(new ArrayList<>());
-            for (var disputeFile : fileMetaDao.getDisputeFiles(dispute.getId())) {
+            var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
+            disputeThrift.setAttachmentRefs(disputeFiles.stream()
+                    .map(file -> new AttachmentRef(file.getFileId(), file.getMimeType()))
+                    .toList());
+            if (!withAttachments) {
+                return disputeThrift;
+            }
+            for (var disputeFile : disputeFiles) {
                 var downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
                 var data = httpClient.execute(
                         new HttpGet(downloadUrl),
@@ -66,7 +74,8 @@ public class DisputeThriftConverter {
                             }
                         });
                 disputeThrift.getAttachments().get().add(new Attachment()
-                        .setData(data));
+                        .setData(data)
+                        .setMimeType(disputeFile.getMimeType()));
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
