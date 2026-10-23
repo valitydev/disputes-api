@@ -57,25 +57,33 @@ public class DisputeThriftConverter {
         }
         try {
             var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
-            disputeThrift.setAttachmentRefs(disputeFiles.stream()
-                    .map(file -> new AttachmentRef(file.getFileId(), file.getMimeType()))
-                    .toList());
-            if (!withAttachments) {
-                return disputeThrift;
-            }
             for (var disputeFile : disputeFiles) {
-                var downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
-                var data = httpClient.execute(
-                        new HttpGet(downloadUrl),
-                        new AbstractHttpClientResponseHandler<byte[]>() {
-                            @Override
-                            public byte[] handleEntity(HttpEntity entity) throws IOException {
-                                return EntityUtils.toByteArray(entity);
-                            }
-                        });
-                disputeThrift.getAttachments().get().add(new Attachment()
-                        .setData(data)
-                        .setMimeType(disputeFile.getMimeType()));
+                String downloadUrl;
+                try {
+                    downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
+                } catch (RuntimeException ex) {
+                    if (withAttachments) {
+                        throw ex;
+                    }
+                    log.warn("Unable to generate attachment URL for file {}, skipping the attachment",
+                            disputeFile.getFileId());
+                    continue;
+                }
+                disputeThrift.getAttachmentRefs().orElseThrow()
+                        .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType()));
+                if (withAttachments) {
+                    var data = httpClient.execute(
+                            new HttpGet(downloadUrl),
+                            new AbstractHttpClientResponseHandler<byte[]>() {
+                                @Override
+                                public byte[] handleEntity(HttpEntity entity) throws IOException {
+                                    return EntityUtils.toByteArray(entity);
+                                }
+                            });
+                    disputeThrift.getAttachments().get().add(new Attachment()
+                            .setData(data)
+                            .setMimeType(disputeFile.getMimeType()));
+                }
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
