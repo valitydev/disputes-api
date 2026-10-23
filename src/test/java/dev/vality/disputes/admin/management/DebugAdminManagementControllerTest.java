@@ -43,8 +43,10 @@ public class DebugAdminManagementControllerTest {
         byte[] a = new byte[20];
         new Random().nextBytes(a);
         randomed.setDisputes(List.of(
-                randomThrift(Dispute.class).setAttachments(List.of(new Attachment().setData(b))),
-                randomThrift(Dispute.class).setAttachments(List.of(new Attachment().setData(a)))));
+                randomThrift(Dispute.class).setAttachments(
+                        List.of(new Attachment().setData(b).setMimeType("image/png"))),
+                randomThrift(Dispute.class).setAttachments(
+                        List.of(new Attachment().setData(a).setMimeType("image/png")))));
         given(adminManagementHandler.getDisputes(any()))
                 .willReturn(randomed);
         var disputes = debugAdminManagementController.getDisputes(
