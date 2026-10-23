@@ -71,20 +71,19 @@ public class DisputeThriftConverter {
                 }
                 disputeThrift.getAttachmentRefs().orElseThrow()
                         .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType()));
-                if (!withAttachments) {
-                    continue;
+                if (withAttachments) {
+                    var data = httpClient.execute(
+                            new HttpGet(downloadUrl),
+                            new AbstractHttpClientResponseHandler<byte[]>() {
+                                @Override
+                                public byte[] handleEntity(HttpEntity entity) throws IOException {
+                                    return EntityUtils.toByteArray(entity);
+                                }
+                            });
+                    disputeThrift.getAttachments().get().add(new Attachment()
+                            .setData(data)
+                            .setMimeType(disputeFile.getMimeType()));
                 }
-                var data = httpClient.execute(
-                        new HttpGet(downloadUrl),
-                        new AbstractHttpClientResponseHandler<byte[]>() {
-                            @Override
-                            public byte[] handleEntity(HttpEntity entity) throws IOException {
-                                return EntityUtils.toByteArray(entity);
-                            }
-                        });
-                disputeThrift.getAttachments().get().add(new Attachment()
-                        .setData(data)
-                        .setMimeType(disputeFile.getMimeType()));
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
