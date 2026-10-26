@@ -5,7 +5,6 @@ import dev.vality.disputes.admin.AttachmentRef;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
-import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.service.external.FileStorageService;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -53,35 +53,36 @@ public class DisputeThriftConverter {
         disputeThrift.setMode(dispute.getMode());
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
-        var attachmentRefs = new ArrayList<AttachmentRef>();
+        var attachmentRefs = getAttachmentRefs(dispute.getId());
         disputeThrift.setAttachmentRefs(attachmentRefs);
-        try {
-            var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
-            for (var disputeFile : disputeFiles) {
-                addAttachmentRef(attachmentRefs, disputeFile);
-            }
-        } catch (NotFoundException ex) {
-            log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
-        }
         if (withAttachments) {
-            downloadAttachments(disputeThrift, attachmentRefs);
+            disputeThrift.setAttachments(downloadAttachments(attachmentRefs));
         }
         return disputeThrift;
     }
 
-    private void addAttachmentRef(List<AttachmentRef> attachmentRefs, FileMeta disputeFile) {
-        generateDownloadUrl(disputeFile.getFileId()).ifPresent(downloadUrl ->
-                attachmentRefs.add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
+    private List<AttachmentRef> getAttachmentRefs(UUID disputeId) {
+        var attachmentRefs = new ArrayList<AttachmentRef>();
+        try {
+            var disputeFiles = fileMetaDao.getDisputeFiles(disputeId);
+            for (var disputeFile : disputeFiles) {
+                generateDownloadUrl(disputeFile.getFileId()).ifPresent(downloadUrl ->
+                        attachmentRefs.add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
+            }
+        } catch (NotFoundException ex) {
+            log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
+        }
+        return attachmentRefs;
     }
 
-    private void downloadAttachments(Dispute dispute, List<AttachmentRef> attachmentRefs) throws IOException {
-        var attachments = dispute.getAttachments().orElseGet(ArrayList::new);
-        dispute.setAttachments(attachments);
+    private List<Attachment> downloadAttachments(List<AttachmentRef> attachmentRefs) throws IOException {
+        var attachments = new ArrayList<Attachment>();
         for (var attachmentRef : attachmentRefs) {
             attachments.add(new Attachment()
                     .setData(downloadAttachment(attachmentRef.getSourceUrl()))
                     .setMimeType(attachmentRef.getMimeType()));
         }
+        return attachments;
     }
 
     private Optional<String> generateDownloadUrl(String fileId) {
