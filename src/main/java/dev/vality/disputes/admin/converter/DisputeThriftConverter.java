@@ -53,31 +53,32 @@ public class DisputeThriftConverter {
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
         disputeThrift.setAttachmentRefs(new ArrayList<>());
-        if (withAttachments) {
-            disputeThrift.setAttachments(new ArrayList<>());
-        }
         try {
             var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
             for (var disputeFile : disputeFiles) {
-                addAttachment(disputeThrift, disputeFile, withAttachments);
+                addAttachmentRef(disputeThrift, disputeFile);
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
         }
+        if (withAttachments) {
+            downloadAttachments(disputeThrift);
+        }
         return disputeThrift;
     }
 
-    private void addAttachment(Dispute dispute, FileMeta disputeFile, boolean withAttachments) throws IOException {
-        var downloadUrl = generateDownloadUrl(disputeFile.getFileId());
-        if (downloadUrl.isEmpty()) {
-            return;
-        }
-        dispute.getAttachmentRefs().orElseThrow()
-                .add(new AttachmentRef(downloadUrl.get(), disputeFile.getMimeType()));
-        if (withAttachments) {
+    private void addAttachmentRef(Dispute dispute, FileMeta disputeFile) {
+        generateDownloadUrl(disputeFile.getFileId()).ifPresent(downloadUrl ->
+                dispute.getAttachmentRefs().orElseThrow()
+                        .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
+    }
+
+    private void downloadAttachments(Dispute dispute) throws IOException {
+        dispute.setAttachments(new ArrayList<>());
+        for (var attachmentRef : dispute.getAttachmentRefs().orElseThrow()) {
             dispute.getAttachments().orElseThrow().add(new Attachment()
-                    .setData(downloadAttachment(downloadUrl.get()))
-                    .setMimeType(disputeFile.getMimeType()));
+                    .setData(downloadAttachment(attachmentRef.getSourceUrl()))
+                    .setMimeType(attachmentRef.getMimeType()));
         }
     }
 

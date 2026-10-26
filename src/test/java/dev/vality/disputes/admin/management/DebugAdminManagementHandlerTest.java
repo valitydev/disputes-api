@@ -1,5 +1,6 @@
 package dev.vality.disputes.admin.management;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.AttachmentRef;
@@ -217,6 +218,12 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
 
         var data = new byte[]{1, 2, 3};
         stubFor(get(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)).willReturn(ok().withBody(data)));
+        var downloadUri = URI.create(wiremockAddressesHolder.getDownloadUrl());
+        var wireMock = new WireMock(downloadUri.getHost(), downloadUri.getPort());
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenAnswer(invocation -> {
+            wireMock.verifyThat(0, getRequestedFor(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)));
+            return wiremockAddressesHolder.getDownloadUrl();
+        });
         var withAttachments = client.getDisputes(request.setWithAttachments(true)).getDisputes().getFirst();
         assertEquals(expectedRefs, withAttachments.getAttachmentRefs().orElseThrow());
         var attachments = withAttachments.getAttachments().orElseThrow();
