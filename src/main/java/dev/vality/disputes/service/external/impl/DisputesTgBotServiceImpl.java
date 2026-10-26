@@ -33,8 +33,8 @@ public class DisputesTgBotServiceImpl implements DisputesTgBotService {
     @SneakyThrows
     @Override
     public void notify(Dispute disputeThrift) {
-        log.debug("Trying to call disputes-tg-bot.notify() {}", disputeThrift);
+        log.debug("Trying to call disputes-tg-bot.notify() {}", disputeThrift.getDisputeId());
         adminCallbackDisputesTgBotClient.notify(disputeThrift);
-        log.debug("disputes-tg-bot.notify() has been called {}", disputeThrift);
+        log.debug("disputes-tg-bot.notify() has been called {}", disputeThrift.getDisputeId());
     }
 }

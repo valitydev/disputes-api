@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -51,36 +53,56 @@ public class DisputeThriftConverter {
         disputeThrift.setMode(dispute.getMode());
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
-        disputeThrift.setAttachmentRefs(new ArrayList<>());
+        var attachmentRefs = getAttachmentRefs(dispute.getId());
+        disputeThrift.setAttachmentRefs(attachmentRefs);
         if (withAttachments) {
-            disputeThrift.setAttachments(new ArrayList<>());
+            disputeThrift.setAttachments(downloadAttachments(attachmentRefs));
         }
+        return disputeThrift;
+    }
+
+    private List<AttachmentRef> getAttachmentRefs(UUID disputeId) {
+        var attachmentRefs = new ArrayList<AttachmentRef>();
         try {
-            var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
-            disputeThrift.setAttachmentRefs(disputeFiles.stream()
-                    .map(file -> new AttachmentRef(file.getFileId(), file.getMimeType()))
-                    .toList());
-            if (!withAttachments) {
-                return disputeThrift;
-            }
+            var disputeFiles = fileMetaDao.getDisputeFiles(disputeId);
             for (var disputeFile : disputeFiles) {
-                var downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
-                var data = httpClient.execute(
-                        new HttpGet(downloadUrl),
-                        new AbstractHttpClientResponseHandler<byte[]>() {
-                            @Override
-                            public byte[] handleEntity(HttpEntity entity) throws IOException {
-                                return EntityUtils.toByteArray(entity);
-                            }
-                        });
-                disputeThrift.getAttachments().get().add(new Attachment()
-                        .setData(data)
-                        .setMimeType(disputeFile.getMimeType()));
+                generateDownloadUrl(disputeFile.getFileId()).ifPresent(downloadUrl ->
+                        attachmentRefs.add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
         }
-        return disputeThrift;
+        return attachmentRefs;
+    }
+
+    private Optional<String> generateDownloadUrl(String fileId) {
+        try {
+            return Optional.ofNullable(fileStorageService.generateDownloadUrl(fileId));
+        } catch (RuntimeException ex) {
+            log.warn("Unable to generate attachment URL for file {}, skipping the attachment", fileId);
+            return Optional.empty();
+        }
+    }
+
+    private List<Attachment> downloadAttachments(List<AttachmentRef> attachmentRefs) throws IOException {
+        var attachments = new ArrayList<Attachment>();
+        for (var attachmentRef : attachmentRefs) {
+            attachments.add(new Attachment()
+                    .setData(downloadAttachment(attachmentRef.getSourceUrl()))
+                    .setMimeType(attachmentRef.getMimeType()));
+        }
+        return attachments;
+    }
+
+    private byte[] downloadAttachment(String downloadUrl) throws IOException {
+        return httpClient.execute(
+                new HttpGet(downloadUrl),
+                new AbstractHttpClientResponseHandler<>() {
+                    @Override
+                    public byte[] handleEntity(HttpEntity entity) throws IOException {
+                        return EntityUtils.toByteArray(entity);
+                    }
+                });
     }
 
     private Optional<ProviderDispute> getProviderDispute(dev.vality.disputes.domain.tables.pojos.Dispute dispute) {

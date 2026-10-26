@@ -1,5 +1,6 @@
 package dev.vality.disputes.admin.management;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.AttachmentRef;
@@ -40,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.when;
 
@@ -188,8 +189,9 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         var dispute = disputeDao.get(disputeId);
         fileMetaDao.save(new FileMeta(generateId(), disputeId, "application/pdf"));
         var files = fileMetaDao.getDisputeFiles(disputeId);
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
         var expectedRefs = files.stream()
-                .map(file -> new AttachmentRef(file.getFileId(), file.getMimeType()))
+                .map(file -> new AttachmentRef(wiremockAddressesHolder.getDownloadUrl(), file.getMimeType()))
                 .toList();
         var client = new THSpawnClientBuilder()
                 .withAddress(new URI("http://127.0.0.1:" + serverPort + ADMIN_MANAGEMENT))
@@ -211,12 +213,17 @@ public class DebugAdminManagementHandlerTest extends AbstractMockitoConfig {
         assertEquals(disputeId.toString(), notification.getDisputeId());
         assertEquals(expectedRefs, notification.getAttachmentRefs().orElseThrow());
         assertFalse(notification.isSetAttachments());
-        org.mockito.Mockito.verify(fileStorageClient, never()).generateDownloadUrl(any(), any());
+        org.mockito.Mockito.verify(fileStorageClient, times(files.size() * 2)).generateDownloadUrl(any(), any());
         verify(0, getRequestedFor(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)));
 
         var data = new byte[]{1, 2, 3};
         stubFor(get(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)).willReturn(ok().withBody(data)));
-        when(fileStorageClient.generateDownloadUrl(any(), any())).thenReturn(wiremockAddressesHolder.getDownloadUrl());
+        var downloadUri = URI.create(wiremockAddressesHolder.getDownloadUrl());
+        var wireMock = new WireMock(downloadUri.getHost(), downloadUri.getPort());
+        when(fileStorageClient.generateDownloadUrl(any(), any())).thenAnswer(invocation -> {
+            wireMock.verifyThat(0, getRequestedFor(urlEqualTo(S3_PATH + MOCK_DOWNLOAD)));
+            return wiremockAddressesHolder.getDownloadUrl();
+        });
         var withAttachments = client.getDisputes(request.setWithAttachments(true)).getDisputes().getFirst();
         assertEquals(expectedRefs, withAttachments.getAttachmentRefs().orElseThrow());
         var attachments = withAttachments.getAttachments().orElseThrow();
