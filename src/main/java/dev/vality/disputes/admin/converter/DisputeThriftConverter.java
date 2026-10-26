@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -52,31 +53,32 @@ public class DisputeThriftConverter {
         disputeThrift.setMode(dispute.getMode());
         disputeThrift.setProviderMessage(dispute.getProviderMsg());
         log.debug("Dispute getDispute {}", disputeThrift);
-        disputeThrift.setAttachmentRefs(new ArrayList<>());
+        var attachmentRefs = new ArrayList<AttachmentRef>();
+        disputeThrift.setAttachmentRefs(attachmentRefs);
         try {
             var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
             for (var disputeFile : disputeFiles) {
-                addAttachmentRef(disputeThrift, disputeFile);
+                addAttachmentRef(attachmentRefs, disputeFile);
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
         }
         if (withAttachments) {
-            downloadAttachments(disputeThrift);
+            downloadAttachments(disputeThrift, attachmentRefs);
         }
         return disputeThrift;
     }
 
-    private void addAttachmentRef(Dispute dispute, FileMeta disputeFile) {
+    private void addAttachmentRef(List<AttachmentRef> attachmentRefs, FileMeta disputeFile) {
         generateDownloadUrl(disputeFile.getFileId()).ifPresent(downloadUrl ->
-                dispute.getAttachmentRefs().orElseThrow()
-                        .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
+                attachmentRefs.add(new AttachmentRef(downloadUrl, disputeFile.getMimeType())));
     }
 
-    private void downloadAttachments(Dispute dispute) throws IOException {
-        dispute.setAttachments(new ArrayList<>());
-        for (var attachmentRef : dispute.getAttachmentRefs().orElseThrow()) {
-            dispute.getAttachments().orElseThrow().add(new Attachment()
+    private void downloadAttachments(Dispute dispute, List<AttachmentRef> attachmentRefs) throws IOException {
+        var attachments = dispute.getAttachments().orElseGet(ArrayList::new);
+        dispute.setAttachments(attachments);
+        for (var attachmentRef : attachmentRefs) {
+            attachments.add(new Attachment()
                     .setData(downloadAttachment(attachmentRef.getSourceUrl()))
                     .setMimeType(attachmentRef.getMimeType()));
         }
