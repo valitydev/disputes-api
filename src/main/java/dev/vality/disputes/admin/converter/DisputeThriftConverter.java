@@ -68,23 +68,25 @@ public class DisputeThriftConverter {
     }
 
     private void addAttachment(Dispute dispute, FileMeta disputeFile, boolean withAttachments) throws IOException {
-        String downloadUrl;
-        try {
-            downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
-        } catch (RuntimeException ex) {
-            log.warn("Unable to generate attachment URL for file {}, skipping the attachment",
-                    disputeFile.getFileId());
-            return;
-        }
-        if (downloadUrl == null) {
+        var downloadUrl = generateDownloadUrl(disputeFile.getFileId());
+        if (downloadUrl.isEmpty()) {
             return;
         }
         dispute.getAttachmentRefs().orElseThrow()
-                .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType()));
+                .add(new AttachmentRef(downloadUrl.get(), disputeFile.getMimeType()));
         if (withAttachments) {
             dispute.getAttachments().orElseThrow().add(new Attachment()
-                    .setData(downloadAttachment(downloadUrl))
+                    .setData(downloadAttachment(downloadUrl.get()))
                     .setMimeType(disputeFile.getMimeType()));
+        }
+    }
+
+    private Optional<String> generateDownloadUrl(String fileId) {
+        try {
+            return Optional.ofNullable(fileStorageService.generateDownloadUrl(fileId));
+        } catch (RuntimeException ex) {
+            log.warn("Unable to generate attachment URL for file {}, skipping the attachment", fileId);
+            return Optional.empty();
         }
     }
 
