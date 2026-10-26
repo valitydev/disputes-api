@@ -5,6 +5,7 @@ import dev.vality.disputes.admin.AttachmentRef;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.dao.FileMetaDao;
 import dev.vality.disputes.dao.ProviderDisputeDao;
+import dev.vality.disputes.domain.tables.pojos.FileMeta;
 import dev.vality.disputes.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.exception.NotFoundException;
 import dev.vality.disputes.service.external.FileStorageService;
@@ -58,37 +59,44 @@ public class DisputeThriftConverter {
         try {
             var disputeFiles = fileMetaDao.getDisputeFiles(dispute.getId());
             for (var disputeFile : disputeFiles) {
-                String downloadUrl;
-                try {
-                    downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
-                } catch (RuntimeException ex) {
-                    if (withAttachments) {
-                        throw ex;
-                    }
-                    log.warn("Unable to generate attachment URL for file {}, skipping the attachment",
-                            disputeFile.getFileId());
-                    continue;
-                }
-                disputeThrift.getAttachmentRefs().orElseThrow()
-                        .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType()));
-                if (withAttachments) {
-                    var data = httpClient.execute(
-                            new HttpGet(downloadUrl),
-                            new AbstractHttpClientResponseHandler<byte[]>() {
-                                @Override
-                                public byte[] handleEntity(HttpEntity entity) throws IOException {
-                                    return EntityUtils.toByteArray(entity);
-                                }
-                            });
-                    disputeThrift.getAttachments().get().add(new Attachment()
-                            .setData(data)
-                            .setMimeType(disputeFile.getMimeType()));
-                }
+                addAttachment(disputeThrift, disputeFile, withAttachments);
             }
         } catch (NotFoundException ex) {
             log.warn("NotFound when handle AdminManagementDisputesService.getDispute, type={}", ex.getType(), ex);
         }
         return disputeThrift;
+    }
+
+    private void addAttachment(Dispute dispute, FileMeta disputeFile, boolean withAttachments) throws IOException {
+        String downloadUrl;
+        try {
+            downloadUrl = fileStorageService.generateDownloadUrl(disputeFile.getFileId());
+        } catch (RuntimeException ex) {
+            log.warn("Unable to generate attachment URL for file {}, skipping the attachment",
+                    disputeFile.getFileId());
+            return;
+        }
+        if (downloadUrl == null) {
+            return;
+        }
+        dispute.getAttachmentRefs().orElseThrow()
+                .add(new AttachmentRef(downloadUrl, disputeFile.getMimeType()));
+        if (withAttachments) {
+            dispute.getAttachments().orElseThrow().add(new Attachment()
+                    .setData(downloadAttachment(downloadUrl))
+                    .setMimeType(disputeFile.getMimeType()));
+        }
+    }
+
+    private byte[] downloadAttachment(String downloadUrl) throws IOException {
+        return httpClient.execute(
+                new HttpGet(downloadUrl),
+                new AbstractHttpClientResponseHandler<>() {
+                    @Override
+                    public byte[] handleEntity(HttpEntity entity) throws IOException {
+                        return EntityUtils.toByteArray(entity);
+                    }
+                });
     }
 
     private Optional<ProviderDispute> getProviderDispute(dev.vality.disputes.domain.tables.pojos.Dispute dispute) {
