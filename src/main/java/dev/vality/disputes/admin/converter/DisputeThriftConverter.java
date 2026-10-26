@@ -75,6 +75,15 @@ public class DisputeThriftConverter {
         return attachmentRefs;
     }
 
+    private Optional<String> generateDownloadUrl(String fileId) {
+        try {
+            return Optional.ofNullable(fileStorageService.generateDownloadUrl(fileId));
+        } catch (RuntimeException ex) {
+            log.warn("Unable to generate attachment URL for file {}, skipping the attachment", fileId);
+            return Optional.empty();
+        }
+    }
+
     private List<Attachment> downloadAttachments(List<AttachmentRef> attachmentRefs) throws IOException {
         var attachments = new ArrayList<Attachment>();
         for (var attachmentRef : attachmentRefs) {
@@ -83,15 +92,6 @@ public class DisputeThriftConverter {
                     .setMimeType(attachmentRef.getMimeType()));
         }
         return attachments;
-    }
-
-    private Optional<String> generateDownloadUrl(String fileId) {
-        try {
-            return Optional.ofNullable(fileStorageService.generateDownloadUrl(fileId));
-        } catch (RuntimeException ex) {
-            log.warn("Unable to generate attachment URL for file {}, skipping the attachment", fileId);
-            return Optional.empty();
-        }
     }
 
     private byte[] downloadAttachment(String downloadUrl) throws IOException {
