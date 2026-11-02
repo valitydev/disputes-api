@@ -1,5 +1,18 @@
 # disputes-api
 
+## Document Registry
+
+New dispute attachments are registered asynchronously in Candlekeep. The file stays in file-storage;
+its metadata is saved to `dspt.attachment_document` in the dispute creation transaction.
+Configure `service.candlekeep.url` with the registry endpoint and allow the `disputes-api` source in Candlekeep.
+`service.candlekeep.registration.enabled=false` pauses delivery but keeps collecting outbox records.
+The dedicated scheduler uses per-document database locks, so it can run on multiple service instances.
+Delivery is idempotent by `file_data_id`; retries do not upload the file again.
+By default, batches contain up to 100 documents, with five attempts and a five-minute retry delay.
+An `InvalidRequest` or an exhausted attempt limit leaves the record in `failed` for operator investigation.
+After the cause is fixed, requeue such records by resetting their status, attempt count and next attempt time.
+Existing attachments are not backfilled automatically.
+
 ## Общее описание
 
 **Disputes API** — это сервис на Java (Spring Boot), предназначенный для работы со спорами (disputes) в финансовой инфраструктуре. Основные задачи:

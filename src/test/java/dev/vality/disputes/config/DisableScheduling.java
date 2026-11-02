@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
         "dispute.isSchedulePendingEnabled=false",
         "dispute.isScheduleForgottenEnabled=false",
         "provider.payments.isScheduleCreateAdjustmentsEnabled=false",
+        "service.candlekeep.registration.enabled=false",
 })
 public @interface DisableScheduling {
 }

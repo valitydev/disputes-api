@@ -13,6 +13,7 @@ public class SchedulingConfig {
     public static final String PENDING_DISPUTES_SCHEDULER = "pendingDisputesScheduler";
     public static final String FORGOTTEN_DISPUTES_SCHEDULER = "forgottenDisputesScheduler";
     public static final String NOTIFICATION_SCHEDULER = "notificationScheduler";
+    public static final String DOCUMENT_REGISTRATION_SCHEDULER = "documentRegistrationScheduler";
     public static final String PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER = "providerPaymentsAdjustmentScheduler";
 
     /**
@@ -43,6 +44,11 @@ public class SchedulingConfig {
     @Bean(NOTIFICATION_SCHEDULER)
     public ThreadPoolTaskScheduler notificationScheduler() {
         return disputeScheduler("dispute-notification-scheduler-");
+    }
+
+    @Bean(DOCUMENT_REGISTRATION_SCHEDULER)
+    public ThreadPoolTaskScheduler documentRegistrationScheduler() {
+        return disputeScheduler("document-registration-scheduler-");
     }
 
     @Bean(PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER)

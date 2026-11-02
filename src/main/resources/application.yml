@@ -60,6 +60,16 @@ service:
     networkTimeout: 5000
     urlLifeTimeDuration: 360
     timeZone: Europe/Moscow
+  candlekeep:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    registration:
+      enabled: true
+      fixed-delay: 300000
+      initial-delay: 5000
+      batch-size: 100
+      max-attempts: 5
+      retry-delay: 5m
   disputes-tg-bot:
     provider:
       url: http://localhost:8022/change_it

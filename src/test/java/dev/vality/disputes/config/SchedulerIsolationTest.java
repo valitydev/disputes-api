@@ -8,6 +8,7 @@ import dev.vality.disputes.domain.tables.pojos.ProviderCallback;
 import dev.vality.disputes.provider.payments.schedule.ProviderPaymentsTask;
 import dev.vality.disputes.provider.payments.service.ProviderPaymentsService;
 import dev.vality.disputes.schedule.CreatedDisputesTask;
+import dev.vality.disputes.schedule.DocumentRegistrationTask;
 import dev.vality.disputes.schedule.ForgottenDisputesTask;
 import dev.vality.disputes.schedule.NotificationTask;
 import dev.vality.disputes.schedule.PendingDisputesTask;
@@ -15,6 +16,7 @@ import dev.vality.disputes.schedule.core.CreatedDisputesService;
 import dev.vality.disputes.schedule.core.ForgottenDisputesService;
 import dev.vality.disputes.schedule.core.NotificationService;
 import dev.vality.disputes.schedule.core.PendingDisputesService;
+import dev.vality.disputes.service.DocumentRegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
@@ -105,23 +107,29 @@ class SchedulerIsolationTest {
         when(services.pending.getPendingSkipLocked(anyInt())).thenAnswer(inv -> record(polledOn, "pending"));
         when(services.forgotten.getForgottenSkipLocked(anyInt())).thenAnswer(inv -> record(polledOn, "forgotten"));
         when(services.notification.getNotifyRequests(anyInt())).thenAnswer(inv -> record(polledOn, "notification"));
+        when(services.documents.findPending()).thenAnswer(inv -> {
+            record(polledOn, "documents");
+            return List.of();
+        });
 
         try (var context = start(IsolatedSchedulersConfig.class, services,
                 "dispute.isScheduleCreatedEnabled=true",
                 "dispute.isSchedulePendingEnabled=true",
                 "dispute.isScheduleForgottenEnabled=true",
                 "dispute.isScheduleNotificationEnabled=true",
+                "service.candlekeep.registration.enabled=true",
                 "provider.payments.isScheduleCreateAdjustmentsEnabled=false")) {
-            await().atMost(AWAIT).until(() -> polledOn.size() == 4);
+            await().atMost(AWAIT).until(() -> polledOn.size() == 5);
 
             assertThat(context.getBeansOfType(ProviderPaymentsTask.class)).isEmpty();
             verifyNoInteractions(services.providerPayments);
-            assertThat(polledOn).containsOnlyKeys("created", "pending", "forgotten", "notification");
+            assertThat(polledOn).containsOnlyKeys("created", "pending", "forgotten", "notification", "documents");
             Map.of(
                     "created", CREATED_SCHEDULER_PREFIX,
                     "pending", "dispute-pending-scheduler-",
                     "forgotten", "dispute-forgotten-scheduler-",
-                    "notification", "dispute-notification-scheduler-")
+                    "notification", "dispute-notification-scheduler-",
+                    "documents", "document-registration-scheduler-")
                     .forEach((task, prefix) -> assertThat(polledOn.get(task)).startsWith(prefix));
 
             assertThat(context.getBeansOfType(TaskScheduler.class)).containsOnlyKeys(
@@ -130,6 +138,7 @@ class SchedulerIsolationTest {
                     SchedulingConfig.PENDING_DISPUTES_SCHEDULER,
                     SchedulingConfig.FORGOTTEN_DISPUTES_SCHEDULER,
                     SchedulingConfig.NOTIFICATION_SCHEDULER,
+                    SchedulingConfig.DOCUMENT_REGISTRATION_SCHEDULER,
                     SchedulingConfig.PROVIDER_PAYMENTS_ADJUSTMENT_SCHEDULER);
             var defaultScheduler = context.getBean("taskScheduler", ThreadPoolTaskScheduler.class);
             var adjustmentScheduler = context.getBean(
@@ -158,7 +167,10 @@ class SchedulerIsolationTest {
                 "dispute.initialDelayNotification=0",
                 "provider.payments.batchSize=1",
                 "provider.payments.fixedDelayCreateAdjustments=50",
-                "provider.payments.initialDelayCreateAdjustments=0"));
+                "provider.payments.initialDelayCreateAdjustments=0",
+                "service.candlekeep.registration.enabled=false",
+                "service.candlekeep.registration.fixed-delay=50",
+                "service.candlekeep.registration.initial-delay=0"));
         properties.addAll(List.of(flags));
         var context = new AnnotationConfigApplicationContext();
         TestPropertyValues.of(properties.toArray(String[]::new)).applyTo(context);
@@ -168,6 +180,7 @@ class SchedulerIsolationTest {
         context.registerBean(ForgottenDisputesService.class, () -> services.forgotten);
         context.registerBean(NotificationService.class, () -> services.notification);
         context.registerBean(ProviderPaymentsService.class, () -> services.providerPayments);
+        context.registerBean(DocumentRegistrationService.class, () -> services.documents);
         context.refresh();
         return context;
     }
@@ -179,6 +192,7 @@ class SchedulerIsolationTest {
         final ForgottenDisputesService forgotten = mock(ForgottenDisputesService.class);
         final NotificationService notification = mock(NotificationService.class);
         final ProviderPaymentsService providerPayments = mock(ProviderPaymentsService.class);
+        final DocumentRegistrationService documents = mock(DocumentRegistrationService.class);
     }
 
     /**
@@ -264,6 +278,7 @@ class SchedulerIsolationTest {
             PendingDisputesTask.class,
             ForgottenDisputesTask.class,
             NotificationTask.class,
+            DocumentRegistrationTask.class,
             ProviderPaymentsTask.class})
     static class TasksConfig {
         @Bean

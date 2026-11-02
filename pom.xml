@@ -67,6 +67,11 @@
             <version>1.49-f01d2d9</version>
         </dependency>
         <dependency>
+            <groupId>com.bg</groupId>
+            <artifactId>document-storage-proto</artifactId>
+            <version>1.2-1cfe94d</version>
+        </dependency>
+        <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>db-common-lib</artifactId>
         </dependency>
